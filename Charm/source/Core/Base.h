@@ -13,8 +13,6 @@ typedef uint64_t u64;
 
 typedef bool b8;
 
-#define M_PI = 3.14159265359f;
-
 #define V2_FMT "<%.3f, %.3f>"
 #define V3_FMT "<%.3f, %.3f, %.3f>"
 #define V4_FMT "<%.3f, %.3f, %.3f, %.3f>"

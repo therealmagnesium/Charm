@@ -8,12 +8,15 @@ systemversion("latest")
 files({ "source/**.h", "source/**.cpp" })
 
 includedirs({
-    "source",
-    "${IncludeDir.SDL3}",
+	"source",
+	IncludeDir.SDL3,
+	IncludeDir.glad,
+	IncludeDir.glm,
 })
 
 links({
-    "SDL3",
+	"SDL3",
+	"glad",
 })
 
 targetdir("../bin/" .. outputdir .. "/%{prj.name}")
@@ -21,11 +24,17 @@ objdir("../build/" .. outputdir .. "/%{prj.name}")
 
 filter("system:windows")
 defines({ "CH_PLATFORM_WINDOWS" })
-libdirs({ "%{LibraryDir.SDL3_Windows}" })
+libdirs({
+	LibraryDir.SDL3_Windows,
+	LibraryDir.glad_Windows,
+})
 
 filter("system:linux")
 defines({ "CH_PLATFORM_LINUX", "SDL_STATIC_LIB" })
-libdirs({ "%{LibraryDir.SDL3_Linux}" })
+libdirs({
+	LibraryDir.SDL3_Linux,
+	LibraryDir.glad_Linux,
+})
 
 filter("configurations:Debug")
 defines({ "CH_DEBUG" })

@@ -37,6 +37,7 @@ namespace Charm
             void Setup(const ApplicationConfig& config);
             void Shutdown();
             void Run();
+            void Quit();
 
             bool IsRunning();
             ApplicationConfig& GetConfig();

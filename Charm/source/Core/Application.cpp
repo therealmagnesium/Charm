@@ -1,6 +1,12 @@
 #include "Core/Application.h"
 #include "Core/Log.h"
 
+#include "Graphics/Renderer.h"
+#include "Graphics/RenderCommand.h"
+#include "Graphics/Window.h"
+
+using namespace Charm::Graphics;
+
 namespace Charm
 {
     namespace Core
@@ -27,15 +33,22 @@ namespace Charm
                            state.config.funcs.OnShutdown != NULL,
                        "The application's implementation hasn't been defined!");
 
+                printf("============================================ Core Program Begins "
+                       "=============================================\n");
+
+                Renderer::Initialize();
+
                 state.isRunning = true;
                 isInitialized = true;
-
                 INFO("Application \"%s\" was initiallized successfully", state.config.name.c_str());
+                printf("============================================ Client Program Begins "
+                       "=============================================\n");
             }
 
             void Shutdown()
             {
-                INFO("Shutting down the application...");
+                INFO("Application \"%s\" is shutting down...", state.config.name.c_str());
+                Renderer::Shutdown();
             }
 
             void Run()
@@ -44,13 +57,28 @@ namespace Charm
 
                 while (state.isRunning)
                 {
-                    /*
+                    Window::HandleEvents();
                     state.config.funcs.OnUpdate();
+
+                    RenderCommand::Clear();
                     state.config.funcs.OnRender();
-                    state.config.funcs.OnRenderUI();*/
+                    state.config.funcs.OnRenderUI();
+
+                    Window::Display();
                 }
 
+                printf("============================================ Client Program Ends "
+                       "=============================================\n");
+
                 state.config.funcs.OnShutdown();
+
+                printf("============================================ Core Program Ends "
+                       "=============================================\n");
+            }
+
+            void Quit()
+            {
+                state.isRunning = false;
             }
 
             bool IsRunning() { return state.isRunning; }

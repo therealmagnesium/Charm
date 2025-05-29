@@ -13,13 +13,15 @@ namespace Charm
             u32 height = 720;
             std::string title = "Untitled";
             SDL_Window* handle = NULL;
+            SDL_GLContextState* context = NULL;
         };
 
         namespace Window
         {
-            void Initialize();
+            void Initialize(u32 width, u32 height, const char* title);
             void Shutdown();
             void HandleEvents();
+            void Display();
         }
     }
 }
