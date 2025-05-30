@@ -14,11 +14,11 @@ namespace Charm
 {
     namespace Graphics
     {
+        static RenderState state;
+        static bool isInitialized = false;
+
         namespace Renderer
         {
-            static RenderState state;
-            static bool isInitialized = false;
-
             void Initialize()
             {
                 if (isInitialized)

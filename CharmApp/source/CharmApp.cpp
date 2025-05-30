@@ -1,7 +1,10 @@
 #include "CharmApp.h"
 
+#include <Core/Log.h>
+#include <Core/Time.h>
 #include <Graphics/Renderer.h>
 
+using namespace Charm::Core;
 using namespace Charm::Graphics;
 
 namespace CharmApp

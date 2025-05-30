@@ -1,5 +1,6 @@
 #include "Core/Application.h"
 #include "Core/Log.h"
+#include "Core/Time.h"
 
 #include "Graphics/Renderer.h"
 #include "Graphics/RenderCommand.h"
@@ -36,6 +37,7 @@ namespace Charm
                 printf("============================================ Core Program Begins "
                        "=============================================\n");
 
+                Time::Initialize(60);
                 Renderer::Initialize();
 
                 state.isRunning = true;
@@ -57,6 +59,7 @@ namespace Charm
 
                 while (state.isRunning)
                 {
+                    Time::Update();
                     Window::HandleEvents();
                     state.config.funcs.OnUpdate();
 
