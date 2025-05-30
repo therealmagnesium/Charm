@@ -1,4 +1,5 @@
 #include "Core/Application.h"
+#include "Core/Input.h"
 #include "Core/Log.h"
 #include "Core/Time.h"
 
@@ -37,6 +38,7 @@ namespace Charm
                 printf("============================================ Core Program Begins "
                        "=============================================\n");
 
+                Input::Initialize();
                 Time::Initialize(60);
                 Renderer::Initialize();
 
