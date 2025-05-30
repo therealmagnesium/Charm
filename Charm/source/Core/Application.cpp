@@ -7,6 +7,8 @@
 #include "Graphics/RenderCommand.h"
 #include "Graphics/Window.h"
 
+#include "UI/UI.h"
+
 using namespace Charm::Graphics;
 
 namespace Charm
@@ -41,6 +43,7 @@ namespace Charm
                 Input::Initialize();
                 Time::Initialize(60);
                 Renderer::Initialize();
+                UI::SetupContext();
 
                 state.isRunning = true;
                 isInitialized = true;
@@ -53,6 +56,7 @@ namespace Charm
             {
                 INFO("Application \"%s\" is shutting down...", state.config.name.c_str());
                 Renderer::Shutdown();
+                UI::DestroyContext();
             }
 
             void Run()
@@ -66,9 +70,14 @@ namespace Charm
                     state.config.funcs.OnUpdate();
 
                     RenderCommand::Clear();
-                    state.config.funcs.OnRender();
-                    state.config.funcs.OnRenderUI();
 
+                    UI::BeginFrome();
+                    state.config.funcs.OnRenderUI();
+                    UI::EndFrame();
+
+                    state.config.funcs.OnRender();
+
+                    UI::Display();
                     Window::Display();
                 }
 

@@ -1,7 +1,11 @@
 #include "Graphics/Window.h"
+#include "Graphics/RenderCommand.h"
+
 #include "Core/Application.h"
 #include "Core/Input.h"
 #include "Core/Log.h"
+
+#include "UI/UI.h"
 
 #include <SDL3/SDL.h>
 
@@ -38,10 +42,10 @@ namespace Charm
                 state.handle = SDL_CreateWindow(title, width, height, flags);
                 ASSERT(state.handle != NULL, "Failed to initialize the window!");
 
-                state.context = SDL_GL_CreateContext(state.handle);
+                state.context = SDL_GL_CreateContext((SDL_Window*)state.handle);
                 ASSERT(state.context != NULL, "Failed to initialize the window's OpenGL context!");
 
-                ASSERT(SDL_GL_MakeCurrent(state.handle, state.context) != false,
+                ASSERT(SDL_GL_MakeCurrent((SDL_Window*)state.handle, (SDL_GLContext)state.context) != false,
                        "Failed to set the window's OpenGL context");
 
                 INFO("Window \"%s\" was successfully created with an OpenGL context", state.title.c_str());
@@ -50,8 +54,8 @@ namespace Charm
             void Shutdown()
             {
                 INFO("Window \"%s\" is shutting down...", state.title.c_str());
-                SDL_DestroyWindow(state.handle);
-                SDL_GL_DestroyContext(state.context);
+                SDL_DestroyWindow((SDL_Window*)state.handle);
+                SDL_GL_DestroyContext((SDL_GLContext)state.context);
             }
 
             void HandleEvents()
@@ -61,6 +65,8 @@ namespace Charm
                 SDL_Event event;
                 while (SDL_PollEvent(&event))
                 {
+                    UI::HandleEvents(&event);
+
                     switch (event.type)
                     {
                         case SDL_EVENT_QUIT:
@@ -93,14 +99,23 @@ namespace Charm
                             _Input->mouse.buttonsClicked[event.button.button] = false;
                             _Input->mouse.buttonsHeld[event.button.button] = false;
                             break;
+
+                        case SDL_EVENT_WINDOW_RESIZED:
+                            state.width = event.window.data1;
+                            state.height = event.window.data2;
+                            RenderCommand::SetViewport(0, 0, state.width, state.height);
+                            break;
                     }
                 }
             }
 
             void Display()
             {
-                SDL_GL_SwapWindow(state.handle);
+                SDL_GL_SwapWindow((SDL_Window*)state.handle);
             }
+
+            void* GetHandle() { return state.handle; }
+            void* GetContext() { return state.context; }
         }
     }
 }

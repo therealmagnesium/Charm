@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Base.h"
 #include <string>
-#include <SDL3/SDL_video.h>
 
 namespace Charm
 {
@@ -12,8 +11,8 @@ namespace Charm
             u32 width = 1280;
             u32 height = 720;
             std::string title = "Untitled";
-            SDL_Window* handle = NULL;
-            SDL_GLContextState* context = NULL;
+            void* handle = NULL;
+            void* context = NULL;
         };
 
         namespace Window
@@ -22,6 +21,9 @@ namespace Charm
             void Shutdown();
             void HandleEvents();
             void Display();
+
+            void* GetHandle();
+            void* GetContext();
         }
     }
 }
