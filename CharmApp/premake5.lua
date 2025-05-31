@@ -5,40 +5,47 @@ cppdialect("C++17")
 staticruntime("off")
 systemversion("latest")
 
-files({ "source/**.h", "source/**.cpp" })
+targetdir("../bin/" .. outputdir .. "/%{prj.name}")
+objdir("../build/" .. outputdir .. "/%{prj.name}")
+
+files({
+    "source/**.h",
+    "source/**.cpp",
+})
 
 includedirs({
-	"../Charm/source",
-	IncludeDir.SDL3,
-	IncludeDir.glad,
-	IncludeDir.glm,
-	IncludeDir.imgui,
+    "../Charm/source",
+    IncludeDir.SDL3,
+    IncludeDir.glad,
+    IncludeDir.glm,
+    IncludeDir.imgui,
 })
 
 links({
-	"Charm",
-	"SDL3",
-	"glad",
-	"imgui",
+    "Charm",
+    "SDL3",
+    "glad",
+    "imgui",
 })
 
-targetdir("../bin/" .. outputdir .. "/%{prj.name}")
-objdir("../build/" .. outputdir .. "/%{prj.name}")
+postbuildcommands({
+    "{COPYDIR} assets/ %{cfg.buildtarget.directory}",
+})
 
 filter("system:windows")
 defines({ "CH_PLATFORM_WINDOWS" })
 libdirs({
-	LibraryDir.SDL3_Windows,
-	LibraryDir.glad_Windows,
-	LibraryDir.imgui_Windows,
+    LibraryDir.SDL3_Windows,
+    LibraryDir.glad_Windows,
+    LibraryDir.imgui_Windows,
 })
 
 filter("system:linux")
 defines({ "CH_PLATFORM_LINUX" })
 libdirs({
-	LibraryDir.SDL3_Linux,
-	LibraryDir.glad_Linux,
-	LibraryDir.imgui_Linux,
+    LibraryDir.SDL3_Linux,
+    LibraryDir.glad_Linux,
+    LibraryDir.imgui_Linux,
 })
 
 filter("configurations:Debug")

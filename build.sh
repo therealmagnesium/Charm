@@ -21,11 +21,11 @@ elif [[ $config = "assets" ]]; then
 	mode="$2"
 	system="$3"
 	if [[ $mode = "debug" ]]; then
-		cp -r "Sandbox/assets/" "bin/Debug-$system/$appName/"
+		cp -r "$appName/assets/" "bin/Debug-$system/$appName/"
 	elif [[ $mode = "release" ]]; then
-		cp -r "Sandbox/assets/" "bin/Release-$system/$appName/"
+		cp -r "$appName/assets/" "bin/Release-$system/$appName/"
 	elif [[ $mode = "dist" ]]; then
-		cp -r "Sandbox/assets/" "bin/Dist-$system/$appName/"
+		cp -r "$appName/assets/" "bin/Dist-$system/$appName/"
 	fi
 elif [[ $config = "clean" ]]; then
 	rm -rf bin build
