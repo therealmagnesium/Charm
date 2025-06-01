@@ -39,7 +39,7 @@ namespace Charm
                 SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
                 SDL_GL_SetSwapInterval(0);
 
-                state.handle = SDL_CreateWindow(title, width, height, flags);
+                state.handle = SDL_CreateWindow(state.title.c_str(), state.width, state.height, flags);
                 ASSERT(state.handle != NULL, "Failed to initialize the window!");
 
                 state.context = SDL_GL_CreateContext((SDL_Window*)state.handle);

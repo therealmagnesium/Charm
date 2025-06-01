@@ -18,40 +18,11 @@ namespace CharmApp
         Renderer::SetClearColor(0.15f, 0.15f, 0.17f);
 
         state.camera.target = glm::vec2(0.f, 0.f);
-        state.camera.offset.x = config.virtualWidth / 2.f;
-        state.camera.offset.y = config.virtualHeight / 2.f;
+        // state.camera.offset.x = config.virtualWidth / 2.f;
+        // state.camera.offset.y = config.virtualHeight / 2.f;
 
-        const float size = 128.f;
-        float vertices[] = {
-            0.5f * size, 0.5f * size, 0.0f,   // top right
-            0.5f * size, -0.5f * size, 0.0f,  // bottom right
-            -0.5f * size, -0.5f * size, 0.0f, // bottom left
-            -0.5f * size, 0.5f * size, 0.0f   // top left
-        };
-
-        u32 indices[] = {
-            0, 1, 3, // first Triangle
-            1, 2, 3  // second Triangle
-        };
-
-        glGenVertexArrays(1, &state.vertexArray);
-        glGenBuffers(1, &state.vertexBuffer);
-        glGenBuffers(1, &state.indexBuffer);
-
-        glBindVertexArray(state.vertexArray);
-
-        glBindBuffer(GL_ARRAY_BUFFER, state.vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, state.indexBuffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), NULL);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
+        state.playerPosition.x = config.virtualWidth / 2.f;
+        state.playerPosition.y = config.virtualHeight / 2.f;
     }
 
     void OnUpdate()
@@ -61,33 +32,53 @@ namespace CharmApp
 
         if (Input::IsKeyPressed(KEY_0))
             state.showDebugUI = !state.showDebugUI;
+
+        const float playerSpeed = 650.f;
+        glm::vec2 playerDirection;
+        playerDirection.x = Input::GetInputAxisAlt(InputAxis::Horizontal);
+        playerDirection.y = Input::GetInputAxisAlt(InputAxis::Vertical);
+        if (playerDirection.x != 0.f && playerDirection.y != 0.f)
+            playerDirection = glm::normalize(playerDirection);
+        state.playerPosition.x += playerDirection.x * playerSpeed * Time::GetDelta();
+        state.playerPosition.y += playerDirection.y * playerSpeed * Time::GetDelta();
     }
 
     void OnRender()
     {
+        const ApplicationConfig& config = Application::GetConfig();
+        const u32 tileSize = 8;
+
         Renderer::BeginScene2D(state.camera);
 
-        glBindVertexArray(state.vertexArray);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, state.indexBuffer);
+        glm::vec3 color;
+        for (s32 i = 0; i < config.virtualHeight; i += tileSize)
+        {
+            for (s32 j = 0; j < config.virtualWidth; j += tileSize)
+            {
+                color.r = 1.f;
+                color.g = (j / (float)tileSize) / 255.f;
+                color.b = (i / (float)tileSize) / 255.f;
+                Renderer::DrawRectangle(j, i, tileSize, tileSize, color);
+            }
+        }
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-
+        Renderer::DrawRectangle(state.playerPosition.x - 32.f, state.playerPosition.y - 32.f, 64.f, 64.f, glm::vec3(1.f));
         Renderer::EndScene2D();
     }
 
     void OnRenderUI()
     {
         if (state.showDebugUI)
-            ImGui::ShowDemoWindow();
+        {
+            ImGui::Begin("Debug Stats");
+            ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));
+            ImGui::Text("MS per frame: %.3f", Time::GetDelta());
+            ImGui::Text("Player position: " V2_FMT, V2_OPEN(state.playerPosition));
+            ImGui::End();
+        }
     }
 
     void OnShutdown()
     {
-        glDeleteVertexArrays(1, &state.vertexArray);
-        glDeleteBuffers(1, &state.vertexBuffer);
-        glDeleteBuffers(1, &state.indexBuffer);
     }
 }

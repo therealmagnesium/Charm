@@ -10,6 +10,8 @@ int main(int argc, char** argv)
     ApplicationConfig config;
     config.name = "Charm Framework";
     config.author = "Magnus Ahlstromer V";
+    config.virtualWidth = 1280;
+    config.virtualHeight = 720;
     config.funcs.OnCreate = CharmApp::OnCreate;
     config.funcs.OnUpdate = CharmApp::OnUpdate;
     config.funcs.OnRender = CharmApp::OnRender;

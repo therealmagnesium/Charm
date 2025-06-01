@@ -21,8 +21,8 @@ namespace Charm
         {
             std::string name = "Untitled";
             std::string author = "None specified";
-            u32 virtualWidth = 1280;
-            u32 virtualHeight = 720;
+            s32 virtualWidth = 1280;
+            s32 virtualHeight = 720;
             ApplicationImplementation funcs;
         };
 

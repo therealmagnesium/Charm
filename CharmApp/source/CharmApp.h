@@ -9,9 +9,7 @@ namespace CharmApp
     {
         bool showDebugUI = false;
         Camera2D camera;
-        u32 vertexArray;
-        u32 vertexBuffer;
-        u32 indexBuffer;
+        glm::vec2 playerPosition;
     };
 
     void OnCreate();
