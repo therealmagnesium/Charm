@@ -30,8 +30,8 @@ namespace Charm
             void Link(u32 vertexShader, u32 fragmentShader);
 
         private:
-            u32 m_id = 0;
-            std::unordered_map<std::string, s32> m_uniformLocations;
+            u32 m_ID = 0;
+            std::unordered_map<std::string, s32> m_UniformLocations;
         };
 
     }

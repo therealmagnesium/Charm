@@ -19,13 +19,13 @@ namespace Charm
 
         Shader::Shader()
         {
-            m_uniformLocations.reserve(reservedUniformCount);
+            m_UniformLocations.reserve(reservedUniformCount);
         }
 
         Shader::~Shader()
         {
-            glDeleteProgram(m_id);
-            m_id = 0;
+            glDeleteProgram(m_ID);
+            m_ID = 0;
         }
 
         void Shader::Load(const char* vertexPath, const char* fragmentPath)
@@ -35,7 +35,7 @@ namespace Charm
 
             if (!vertexFile.isValid || !fragmentFile.isValid)
             {
-                WARN("Failed to load shader with an ID of %d", m_id);
+                WARN("Failed to load shader with an ID of %d", m_ID);
                 return;
             }
 
@@ -50,12 +50,12 @@ namespace Charm
             std::string vertexShaderName = Utils::GetFileName(vertexPath);
             std::string fragmentShaderName = Utils::GetFileName(fragmentPath);
             INFO("Shader [\"%s\", \"%s\"] was successfully created with an ID of %d",
-                 vertexShaderName.c_str(), fragmentShaderName.c_str(), m_id);
+                 vertexShaderName.c_str(), fragmentShaderName.c_str(), m_ID);
         }
 
         void Shader::Bind() const
         {
-            glUseProgram(m_id);
+            glUseProgram(m_ID);
         }
 
         void Shader::Unbind() const
@@ -65,46 +65,46 @@ namespace Charm
 
         void Shader::CreateUniform(const char* name)
         {
-            if (m_uniformLocations.find(name) != m_uniformLocations.end())
+            if (m_UniformLocations.find(name) != m_UniformLocations.end())
             {
-                WARN("Shader with id %d already has uniform \"%s\"", m_id, name);
+                WARN("Shader with id %d already has uniform \"%s\"", m_ID, name);
                 return;
             }
 
-            m_uniformLocations[name] = glGetUniformLocation(m_id, name);
+            m_UniformLocations[name] = glGetUniformLocation(m_ID, name);
 
-            if (m_uniformLocations[name] == -1)
-                WARN("Shader with id %d could not find uniform \"%s\"", m_id, name);
+            if (m_UniformLocations[name] == -1)
+                WARN("Shader with id %d could not find uniform \"%s\"", m_ID, name);
         }
 
         void Shader::SetUniform(const char* name, u32 value)
         {
-            if (m_uniformLocations.find(name) != m_uniformLocations.end())
-                glUniform1i(m_uniformLocations[name], value);
+            if (m_UniformLocations.find(name) != m_UniformLocations.end())
+                glUniform1i(m_UniformLocations[name], value);
         }
 
         void Shader::SetUniform(const char* name, float value)
         {
-            if (m_uniformLocations.find(name) != m_uniformLocations.end())
-                glUniform1f(m_uniformLocations[name], value);
+            if (m_UniformLocations.find(name) != m_UniformLocations.end())
+                glUniform1f(m_UniformLocations[name], value);
         }
 
         void Shader::SetUniform(const char* name, const glm::vec3& value)
         {
-            if (m_uniformLocations.find(name) != m_uniformLocations.end())
-                glUniform3fv(m_uniformLocations[name], 1, glm::value_ptr(value));
+            if (m_UniformLocations.find(name) != m_UniformLocations.end())
+                glUniform3fv(m_UniformLocations[name], 1, glm::value_ptr(value));
         }
 
         void Shader::SetUniform(const char* name, const glm::vec4& value)
         {
-            if (m_uniformLocations.find(name) != m_uniformLocations.end())
-                glUniform4fv(m_uniformLocations[name], 1, glm::value_ptr(value));
+            if (m_UniformLocations.find(name) != m_UniformLocations.end())
+                glUniform4fv(m_UniformLocations[name], 1, glm::value_ptr(value));
         }
 
         void Shader::SetUniform(const char* name, const glm::mat4& value)
         {
-            if (m_uniformLocations.find(name) != m_uniformLocations.end())
-                glUniformMatrix4fv(m_uniformLocations[name], 1, false, glm::value_ptr(value));
+            if (m_UniformLocations.find(name) != m_UniformLocations.end())
+                glUniformMatrix4fv(m_UniformLocations[name], 1, false, glm::value_ptr(value));
         }
 
         u32 Shader::Compile(u32 type, const char* source)
@@ -128,19 +128,19 @@ namespace Charm
 
         void Shader::Link(u32 vertexShader, u32 fragmentShader)
         {
-            m_id = glCreateProgram();
-            glAttachShader(m_id, vertexShader);
-            glAttachShader(m_id, fragmentShader);
-            glLinkProgram(m_id);
-            glValidateProgram(m_id);
+            m_ID = glCreateProgram();
+            glAttachShader(m_ID, vertexShader);
+            glAttachShader(m_ID, fragmentShader);
+            glLinkProgram(m_ID);
+            glValidateProgram(m_ID);
 
             s32 success = 0;
             char infoLog[512];
 
-            glGetProgramiv(m_id, GL_LINK_STATUS, &success);
+            glGetProgramiv(m_ID, GL_LINK_STATUS, &success);
             if (!success)
             {
-                glGetProgramInfoLog(m_id, 512, NULL, infoLog);
+                glGetProgramInfoLog(m_ID, 512, NULL, infoLog);
                 ERROR("Failed to link shader! \n%s", infoLog);
             };
 

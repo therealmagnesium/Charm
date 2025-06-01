@@ -7,7 +7,11 @@ namespace CharmApp
 {
     struct CharmState
     {
-        Shader defaultShader;
+        bool showDebugUI = false;
+        Camera2D camera;
+        u32 vertexArray;
+        u32 vertexBuffer;
+        u32 indexBuffer;
     };
 
     void OnCreate();
