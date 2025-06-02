@@ -8,8 +8,12 @@ namespace CharmApp
     struct CharmState
     {
         bool showDebugUI = false;
+
         Camera2D camera;
+        Texture texture;
+
         glm::vec2 playerPosition;
+        glm::vec2 playerDirection;
     };
 
     void OnCreate();

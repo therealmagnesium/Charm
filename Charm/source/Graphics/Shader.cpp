@@ -107,6 +107,12 @@ namespace Charm
                 glUniformMatrix4fv(m_UniformLocations[name], 1, false, glm::value_ptr(value));
         }
 
+        void Shader::SetUniform(const char* name, s32* values, u32 count)
+        {
+            if (m_UniformLocations.find(name) != m_UniformLocations.end())
+                glUniform1iv(m_UniformLocations[name], count, values);
+        }
+
         u32 Shader::Compile(u32 type, const char* source)
         {
             u32 shader = glCreateShader(type);

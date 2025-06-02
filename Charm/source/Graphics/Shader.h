@@ -24,6 +24,7 @@ namespace Charm
             void SetUniform(const char* name, const glm::vec3& value);
             void SetUniform(const char* name, const glm::vec4& value);
             void SetUniform(const char* name, const glm::mat4& value);
+            void SetUniform(const char* name, s32* values, u32 count);
 
         private:
             u32 Compile(u32 type, const char* source);

@@ -1,5 +1,6 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/Camera.h"
+#include "Graphics/Texture.h"
 #include "Graphics/Window.h"
 
 #include "Core/Application.h"
@@ -27,16 +28,17 @@ namespace Charm
             u32 vertexBuffer = 0;
             u32 indexBuffer = 0;
 
-            u32 whiteTexture = 0;
-            u32 whiteTextureSlot = 0;
-
-            u32 indexCount = 0;
+            Texture whiteTexture;
 
             Vertex* quadBuffer = NULL;
             Vertex* quadBufferRef = NULL;
 
-            u32 textureSlots[k_MaxTextures];
+            Texture textureSlots[k_MaxTextures];
             u32 textureSlotIndex = 1;
+
+            u32 indexCount = 0;
+            u32 drawCount = 0;
+            u32 quadCount = 0;
         };
 
         static RenderState state;
@@ -45,6 +47,10 @@ namespace Charm
 
         namespace Renderer
         {
+            void SetupBatchRendering();
+            void CleanUpBatchRendering();
+            void CheckForNewBatch();
+
             void Initialize()
             {
                 if (isInitialized)
@@ -70,7 +76,167 @@ namespace Charm
                 state.defaultShader.Load("assets/shaders/Default_vs.glsl", "assets/shaders/Default_fs.glsl");
                 state.defaultShader.CreateUniform("viewMatrix");
                 state.defaultShader.CreateUniform("projectionMatrix");
+                state.defaultShader.CreateUniform("textures");
 
+                SetupBatchRendering();
+
+                INFO("The renderer was successfully initialized");
+                isInitialized = true;
+            }
+
+            void Shutdown()
+            {
+                INFO("The renderer is shutting down...");
+                CleanUpBatchRendering();
+                Window::Shutdown();
+                SDL_Quit();
+            }
+
+            void BeginScene2D(const Camera2D& camera)
+            {
+                const ApplicationConfig& config = Application::GetConfig();
+                state.viewMatrix = Cameras::GetViewMatrix(camera);
+                state.projectionMatrix = glm::ortho(0.f, (float)config.virtualWidth, (float)config.virtualHeight, 0.f, -1.f, 1.f);
+
+                state.defaultShader.Bind();
+                state.defaultShader.SetUniform("viewMatrix", state.viewMatrix);
+                state.defaultShader.SetUniform("projectionMatrix", state.projectionMatrix);
+
+                batchData.textureSlotIndex = 1;
+                batchData.quadCount = 0;
+                batchData.drawCount = 0;
+                batchData.indexCount = 0;
+
+                BeginBatch();
+            }
+
+            void EndScene2D()
+            {
+                EndBatch();
+                Flush();
+            }
+
+            void BeginBatch()
+            {
+                batchData.quadBufferRef = batchData.quadBuffer;
+            }
+
+            void EndBatch()
+            {
+                u64 size = (u8*)batchData.quadBufferRef - (u8*)batchData.quadBuffer;
+
+                glBindBuffer(GL_ARRAY_BUFFER, batchData.vertexBuffer);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, size, batchData.quadBuffer);
+            }
+
+            void Flush()
+            {
+                for (u32 i = 0; i < batchData.textureSlotIndex; i++)
+                    Textures::Bind(batchData.textureSlots[i], i);
+
+                glBindVertexArray(batchData.vertexArray);
+                glDrawElements(GL_TRIANGLES, batchData.indexCount, GL_UNSIGNED_INT, NULL);
+
+                batchData.drawCount++;
+            }
+
+            void DrawRectangle(float x, float y, float width, float height, const glm::vec3& color)
+            {
+                CheckForNewBatch();
+
+                const float textureIndex = 0.f;
+
+                batchData.quadBufferRef->position = glm::vec3(x, y, 0.f);
+                batchData.quadBufferRef->color = color;
+                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 0.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = glm::vec3(x + width, y, 0.f);
+                batchData.quadBufferRef->color = color;
+                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 0.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = glm::vec3(x + width, y + height, 0.f);
+                batchData.quadBufferRef->color = color;
+                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 1.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = glm::vec3(x, y + height, 0.f);
+                batchData.quadBufferRef->color = color;
+                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 1.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.indexCount += 6;
+                batchData.quadCount++;
+            }
+
+            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec2& size, const glm::vec3& tint)
+            {
+                CheckForNewBatch();
+
+                float textureIndex = 0.f;
+
+                for (u32 i = 1; i < batchData.textureSlotIndex; i++)
+                {
+                    if (batchData.textureSlots[i] == texture)
+                    {
+                        textureIndex = (float)i;
+                        break;
+                    }
+                }
+
+                if (textureIndex == 0.f)
+                {
+                    textureIndex = (float)batchData.textureSlotIndex;
+                    batchData.textureSlots[batchData.textureSlotIndex] = texture;
+                    batchData.textureSlotIndex++;
+                }
+
+                batchData.quadBufferRef->position = glm::vec3(position.x, position.y, 0.f);
+                batchData.quadBufferRef->color = tint;
+                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 0.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = glm::vec3(position.x + size.x, position.y, 0.f);
+                batchData.quadBufferRef->color = tint;
+                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 0.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = glm::vec3(position.x + size.x, position.y + size.y, 0.f);
+                batchData.quadBufferRef->color = tint;
+                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 1.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = glm::vec3(position.x, position.y + size.y, 0.f);
+                batchData.quadBufferRef->color = tint;
+                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 1.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.indexCount += 6;
+                batchData.quadCount++;
+            }
+
+            glm::vec3& GetClearColor() { return state.clearColor; }
+            u32 GetQuadCount() { return batchData.quadCount; }
+            u32 GetDrawCount() { return batchData.drawCount; }
+
+            void SetClearColor(float r, float g, float b)
+            {
+                state.clearColor.r = r;
+                state.clearColor.g = g;
+                state.clearColor.b = b;
+            }
+
+            void SetupBatchRendering()
+            {
                 batchData.quadBuffer = new Vertex[k_MaxVertexCount];
 
                 glGenVertexArrays(1, &batchData.vertexArray);
@@ -115,81 +281,27 @@ namespace Charm
 
                 delete[] indices;
 
-                glGenTextures(1, &batchData.whiteTexture);
-                glBindTexture(GL_TEXTURE_2D, batchData.whiteTexture);
-                glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTextureParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                u32 color = 0xFFFFFFFF;
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &color);
+                s32 samplers[k_MaxTextures];
+                for (u32 i = 0; i < k_MaxTextures; i++)
+                    samplers[i] = i;
 
+                state.defaultShader.Bind();
+                state.defaultShader.SetUniform("textures", samplers, k_MaxTextures);
+
+                batchData.whiteTexture = Textures::LoadDefaultWhite();
                 batchData.textureSlots[0] = batchData.whiteTexture;
-                for (u32 i = 1; i < k_MaxTextures; i++)
-                    batchData.textureSlots[i] = 0;
-
-                INFO("The renderer was successfully initialized");
-                isInitialized = true;
             }
 
-            void Shutdown()
+            void CleanUpBatchRendering()
             {
-                INFO("The renderer is shutting down...");
                 delete[] batchData.quadBuffer;
                 glDeleteVertexArrays(1, &batchData.vertexArray);
                 glDeleteBuffers(1, &batchData.vertexBuffer);
                 glDeleteBuffers(1, &batchData.indexBuffer);
-                glDeleteTextures(1, &batchData.whiteTexture);
-
-                Window::Shutdown();
-                SDL_Quit();
+                Textures::Unload(batchData.whiteTexture);
             }
 
-            void BeginScene2D(const Camera2D& camera)
-            {
-                const ApplicationConfig& config = Application::GetConfig();
-                state.viewMatrix = Cameras::GetViewMatrix(camera);
-                state.projectionMatrix = glm::ortho(0.f, (float)config.virtualWidth, (float)config.virtualHeight, 0.f, -1.f, 1.f);
-
-                state.defaultShader.Bind();
-                state.defaultShader.SetUniform("viewMatrix", state.viewMatrix);
-                state.defaultShader.SetUniform("projectionMatrix", state.projectionMatrix);
-
-                BeginBatch();
-            }
-
-            void EndScene2D()
-            {
-                EndBatch();
-                Flush();
-            }
-
-            void BeginBatch()
-            {
-                batchData.quadBufferRef = batchData.quadBuffer;
-            }
-
-            void EndBatch()
-            {
-                u64 size = (u8*)batchData.quadBufferRef - (u8*)batchData.quadBuffer;
-
-                glBindBuffer(GL_ARRAY_BUFFER, batchData.vertexBuffer);
-                glBufferSubData(GL_ARRAY_BUFFER, 0, size, batchData.quadBuffer);
-            }
-
-            void Flush()
-            {
-                for (u32 i = 0; i < batchData.textureSlotIndex; i++)
-                    glBindTextureUnit(i, batchData.textureSlots[i]);
-
-                glBindVertexArray(batchData.vertexArray);
-                glDrawElements(GL_TRIANGLES, batchData.indexCount, GL_UNSIGNED_INT, NULL);
-
-                batchData.indexCount = 0;
-                batchData.textureSlotIndex = 1;
-            }
-
-            void DrawRectangle(float x, float y, float width, float height, const glm::vec3& color)
+            void CheckForNewBatch()
             {
                 if (batchData.indexCount >= k_MaxIndexCount)
                 {
@@ -197,45 +309,6 @@ namespace Charm
                     Flush();
                     BeginBatch();
                 }
-
-                float textureIndex = 0.f;
-
-                batchData.quadBufferRef->position = glm::vec3(x, y, 0.f);
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 0.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(x + width, y, 0.f);
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 0.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(x + width, y + height, 0.f);
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 1.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(x, y + height, 0.f);
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 1.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.indexCount += 6;
-
-                state.defaultShader.SetUniform("tint", color);
-            }
-
-            glm::vec3& GetClearColor() { return state.clearColor; }
-
-            void SetClearColor(float r, float g, float b)
-            {
-                state.clearColor.r = r;
-                state.clearColor.g = g;
-                state.clearColor.b = b;
             }
         }
     }

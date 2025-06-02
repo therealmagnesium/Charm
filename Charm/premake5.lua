@@ -13,12 +13,14 @@ includedirs({
 	IncludeDir.glad,
 	IncludeDir.glm,
 	IncludeDir.imgui,
+	IncludeDir.stb_image,
 })
 
 links({
 	"SDL3",
 	"glad",
 	"imgui",
+	"stb_image",
 })
 
 targetdir("../bin/" .. outputdir .. "/%{prj.name}")
@@ -30,6 +32,7 @@ libdirs({
 	LibraryDir.SDL3_Windows,
 	LibraryDir.glad_Windows,
 	LibraryDir.imgui_Windows,
+	LibraryDir.stb_image_Windows,
 })
 
 filter("system:linux")
@@ -38,6 +41,7 @@ libdirs({
 	LibraryDir.SDL3_Linux,
 	LibraryDir.glad_Linux,
 	LibraryDir.imgui_Linux,
+	LibraryDir.stb_image_Linux,
 })
 
 filter("configurations:Debug")

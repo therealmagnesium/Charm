@@ -9,9 +9,12 @@ in VERTEX_DATA
 
 out vec4 finalColor;
 
+uniform sampler2D textures[32];
+
 void main()
 {
-    vec3 result = data.color;
+    vec3 result = texture(textures[int(data.texIndex)], data.texCoord).xyz * data.color;
+
     result = pow(result, vec3(1.f / 2.2f));
     finalColor = vec4(result, 1.f);
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/Camera.h"
+#include "Graphics/Texture.h"
 #include "Graphics/Shader.h"
 
 #include <glm/glm.hpp>
@@ -37,8 +38,12 @@ namespace Charm
             void Flush();
 
             void DrawRectangle(float x, float y, float width, float height, const glm::vec3& color);
+            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec2& size, const glm::vec3& tint);
 
             glm::vec3& GetClearColor();
+            u32 GetQuadCount();
+            u32 GetDrawCount();
+
             void SetClearColor(float r, float g, float b);
         }
     }
