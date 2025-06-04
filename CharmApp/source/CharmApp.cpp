@@ -49,7 +49,7 @@ namespace CharmApp
         Renderer::BeginScene2D(state.camera);
 
         DrawBackground(state.tileSize, state.tileSpacing, state.tileOffset);
-        Renderer::DrawTexturePro(state.texture, state.playerPosition, glm::vec2(64.f), 0.f, glm::vec2(32.f), glm::vec3(1.f));
+        Renderer::DrawTextureEx(state.texture, state.playerPosition, 45.f, 0.25f, glm::vec3(1.f));
 
         Renderer::EndScene2D();
     }
@@ -60,7 +60,7 @@ namespace CharmApp
         {
             ImGui::Begin("Debug Stats");
             ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));
-            ImGui::Text("MS per frame: %.3f", Time::GetDelta());
+            ImGui::Text("MS per frame: %.7f", Time::GetDelta());
             ImGui::Text("Player position: " V2_FMT, V2_OPEN(state.playerPosition));
             ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());
             ImGui::Text("Number of draw calls: %d", Renderer::GetDrawCount());
@@ -84,14 +84,22 @@ namespace CharmApp
         const ApplicationConfig& config = Application::GetConfig();
 
         glm::vec3 color = glm::vec3(1.f);
+        Rectangle rectangle;
+
         for (s32 i = (s32)tileSize / 2; i <= config.virtualHeight + tileSize; i += tileSize + spacing)
         {
             for (s32 j = (s32)tileSize / 2; j <= config.virtualWidth; j += tileSize + spacing)
             {
+                rectangle.x = j + offset;
+                rectangle.y = i + offset;
+                rectangle.width = tileSize;
+                rectangle.height = tileSize;
+
                 color.r = 0.5f;
                 color.g = ((float)j / 8.f) / 255.f;
                 color.b = ((float)i / 8.f) / 255.f;
-                Renderer::DrawRectanglePro(glm::vec2(j + offset, i + offset), glm::vec2(tileSize), 0.f, glm::vec2(tileSize / 2.f), color);
+
+                Renderer::DrawRectanglePro(rectangle, glm::vec2(tileSize / 2.f), 0.f, color);
             }
         }
     }

@@ -24,6 +24,7 @@ namespace Charm
 
         Shader::~Shader()
         {
+            INFO("Unloading shader with an ID of %d", m_ID);
             glDeleteProgram(m_ID);
             m_ID = 0;
         }

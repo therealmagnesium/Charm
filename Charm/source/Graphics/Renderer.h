@@ -1,7 +1,8 @@
 #pragma once
 #include "Graphics/Camera.h"
-#include "Graphics/Texture.h"
 #include "Graphics/Shader.h"
+#include "Graphics/Shapes.h"
+#include "Graphics/Texture.h"
 
 #include <glm/glm.hpp>
 
@@ -38,9 +39,13 @@ namespace Charm
             void Flush();
 
             void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color);
-            void DrawRectanglePro(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin, const glm::vec3& color);
-            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec2& size, const glm::vec3& tint);
-            void DrawTexturePro(Texture& texture, const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin, const glm::vec3& tint);
+            void DrawRectangleRec(const Rectangle& rectangle, const glm::vec3& color);
+            void DrawRectanglePro(const Rectangle& rectangle, const glm::vec2& origin, float rotation, const glm::vec3& color);
+
+            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec3& tint);
+            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, float scale, const glm::vec3& tint);
+            void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec3& tint);
+            void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec3& tint);
 
             glm::vec3& GetClearColor();
             u32 GetQuadCount();

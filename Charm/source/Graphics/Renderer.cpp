@@ -55,7 +55,7 @@ namespace Charm
             void CleanUpBatchRendering();
             void CheckForNewBatch();
             float CheckBatchForTextureIndex(Texture& texture);
-            void AddQuadToBatch(const glm::mat4& transform, const glm::vec3& color, float textureIndex);
+            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, float textureIndex, const glm::vec2& textureSize, const glm::vec3& color);
 
             void Initialize()
             {
@@ -148,32 +148,97 @@ namespace Charm
 
             void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color)
             {
-                DrawRectanglePro(position, size, 0.f, glm::vec2(0.f), color);
+                Rectangle rectangle;
+                rectangle.x = position.x;
+                rectangle.y = position.y;
+                rectangle.width = size.x;
+                rectangle.height = size.y;
+
+                DrawRectanglePro(rectangle, glm::vec2(0.f), 0.f, color);
             }
 
-            void DrawRectanglePro(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin, const glm::vec3& color)
+            void DrawRectangleRec(const Rectangle& rectangle, const glm::vec3& color)
+            {
+                DrawRectanglePro(rectangle, glm::vec2(0.f), 0.f, color);
+            }
+
+            void DrawRectanglePro(const Rectangle& rectangle, const glm::vec2& origin, float rotation, const glm::vec3& color)
             {
                 CheckForNewBatch();
 
+                const glm::vec2 position = glm::vec2(rectangle.x, rectangle.y);
+                const glm::vec2 size = glm::vec2(rectangle.width, rectangle.height);
                 const glm::mat4 transform = Utils::GetTransfomMatrix2D(position, size, rotation, origin);
                 const float textureIndex = 0.f;
 
-                AddQuadToBatch(transform, color, textureIndex);
+                Rectangle source;
+                source.width = 1.f;
+                source.height = 1.f;
+
+                AddQuadToBatch(transform, source, textureIndex, glm::vec2(1.f), color);
             }
 
-            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec2& size, const glm::vec3& tint)
+            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec3& tint)
             {
-                DrawTexturePro(texture, position, size, 0.f, glm::vec2(0.f), tint);
+                Rectangle source;
+                source.width = texture.width;
+                source.height = texture.height;
+
+                Rectangle dest;
+                dest.x = position.x;
+                dest.y = position.y;
+                dest.width = texture.width;
+                dest.height = texture.height;
+
+                DrawTexturePro(texture, source, dest, glm::vec2(0.f), 0.f, tint);
             }
 
-            void DrawTexturePro(Texture& texture, const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin, const glm::vec3& tint)
+            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, float scale, const glm::vec3& tint)
+            {
+                Rectangle source;
+                source.width = texture.width;
+                source.height = texture.height;
+
+                Rectangle dest;
+                dest.x = position.x;
+                dest.y = position.y;
+
+                if (texture.id != 0)
+                {
+                    dest.width = texture.width * scale;
+                    dest.height = texture.height * scale;
+                }
+                else
+                {
+                    dest.width = texture.width;   // 64 Default White
+                    dest.height = texture.height; // 64 Default White
+                }
+
+                DrawTexturePro(texture, source, dest, glm::vec2(dest.width / 2.f), rotation, tint);
+            }
+
+            void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec3& tint)
+            {
+                Rectangle dest;
+                dest.x = position.x;
+                dest.y = position.y;
+                dest.width = texture.width;
+                dest.height = texture.height;
+
+                DrawTexturePro(texture, source, dest, glm::vec2(0.f), 0.f, tint);
+            }
+
+            void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec3& tint)
             {
                 CheckForNewBatch();
 
+                const glm::vec2 position = glm::vec2(dest.x, dest.y);
+                const glm::vec2 size = glm::vec2(dest.width, dest.height);
+                const glm::vec2 textureSize = glm::vec2(texture.width, texture.height);
                 const float textureIndex = CheckBatchForTextureIndex(texture);
                 const glm::mat4 transform = Utils::GetTransfomMatrix2D(position, size, rotation, origin);
 
-                AddQuadToBatch(transform, tint, textureIndex);
+                AddQuadToBatch(transform, source, textureIndex, textureSize, tint);
             }
 
             glm::vec3& GetClearColor() { return state.clearColor; }
@@ -272,48 +337,51 @@ namespace Charm
             {
                 float textureIndex = 0.f;
 
-                for (u32 i = 1; i < batchData.textureSlotIndex; i++)
+                if (texture.id != 0)
                 {
-                    if (batchData.textureSlots[i] == texture)
+                    for (u32 i = 1; i < batchData.textureSlotIndex; i++)
                     {
-                        textureIndex = (float)i;
-                        break;
+                        if (batchData.textureSlots[i] == texture)
+                        {
+                            textureIndex = (float)i;
+                            break;
+                        }
                     }
-                }
 
-                if (textureIndex == 0.f)
-                {
-                    textureIndex = (float)batchData.textureSlotIndex;
-                    batchData.textureSlots[batchData.textureSlotIndex] = texture;
-                    batchData.textureSlotIndex++;
+                    if (textureIndex == 0.f)
+                    {
+                        textureIndex = (float)batchData.textureSlotIndex;
+                        batchData.textureSlots[batchData.textureSlotIndex] = texture;
+                        batchData.textureSlotIndex++;
+                    }
                 }
 
                 return textureIndex;
             }
 
-            void AddQuadToBatch(const glm::mat4& transform, const glm::vec3& color, float textureIndex)
+            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, float textureIndex, const glm::vec2& textureSize, const glm::vec3& color)
             {
                 batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[0];
                 batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 0.f);
+                batchData.quadBufferRef->texCoord = glm::vec2(source.x / textureSize.x, source.y / textureSize.y);
                 batchData.quadBufferRef->texIndex = textureIndex;
                 batchData.quadBufferRef++;
 
                 batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[1];
                 batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 0.f);
+                batchData.quadBufferRef->texCoord = glm::vec2((source.x + source.width) / textureSize.x, source.y / textureSize.y);
                 batchData.quadBufferRef->texIndex = textureIndex;
                 batchData.quadBufferRef++;
 
                 batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[2];
                 batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 1.f);
+                batchData.quadBufferRef->texCoord = glm::vec2((source.x + source.width) / textureSize.x, (source.y + source.height) / textureSize.y);
                 batchData.quadBufferRef->texIndex = textureIndex;
                 batchData.quadBufferRef++;
 
                 batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[3];
                 batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 1.f);
+                batchData.quadBufferRef->texCoord = glm::vec2(source.x / textureSize.x, (source.y + source.height) / textureSize.y);
                 batchData.quadBufferRef->texIndex = textureIndex;
                 batchData.quadBufferRef++;
 

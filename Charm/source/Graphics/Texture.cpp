@@ -18,6 +18,8 @@ namespace Charm
                 if (data == NULL)
                 {
                     WARN("Failed to load texture \"%s\"", path, texture.id);
+                    texture.width = 64;
+                    texture.height = 64;
                     return texture;
                 }
 
