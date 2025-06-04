@@ -11,7 +11,7 @@ namespace CharmApp
 {
     static CharmState state;
 
-    void DrawBackground();
+    void DrawBackground(float tileSize, float spacing, float offset);
 
     void OnCreate()
     {
@@ -29,7 +29,7 @@ namespace CharmApp
         if (Input::IsKeyPressed(KEY_ESCAPE))
             Application::Quit();
 
-        if (Input::IsKeyPressed(KEY_0))
+        if (Input::IsKeyPressed(KEY_F2))
             state.showDebugUI = !state.showDebugUI;
 
         const float playerSpeed = 650.f;
@@ -48,8 +48,8 @@ namespace CharmApp
     {
         Renderer::BeginScene2D(state.camera);
 
-        DrawBackground();
-        Renderer::DrawTexture(state.texture, state.playerPosition, glm::vec2(64.f), glm::vec3(1.f));
+        DrawBackground(state.tileSize, state.tileSpacing, state.tileOffset);
+        Renderer::DrawTexturePro(state.texture, state.playerPosition, glm::vec2(64.f), 0.f, glm::vec2(32.f), glm::vec3(1.f));
 
         Renderer::EndScene2D();
     }
@@ -65,6 +65,12 @@ namespace CharmApp
             ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());
             ImGui::Text("Number of draw calls: %d", Renderer::GetDrawCount());
             ImGui::End();
+
+            ImGui::Begin("Controls");
+            ImGui::DragFloat("Tile size", &state.tileSize, 1.f, 4.f, 128.f);
+            ImGui::DragFloat("Tile spacing", &state.tileSpacing, 1.f, 0.f, 32.f);
+            ImGui::DragFloat("Tile offset", &state.tileOffset, 1.f);
+            ImGui::End();
         }
     }
 
@@ -73,20 +79,19 @@ namespace CharmApp
         Textures::Unload(state.texture);
     }
 
-    void DrawBackground()
+    void DrawBackground(float tileSize, float spacing, float offset)
     {
         const ApplicationConfig& config = Application::GetConfig();
-        const u32 tileSize = 16;
 
         glm::vec3 color;
-        for (s32 i = 0; i < config.virtualHeight; i += tileSize)
+        for (s32 i = (s32)tileSize / 2; i <= config.virtualHeight; i += tileSize + spacing)
         {
-            for (s32 j = 0; j < config.virtualWidth; j += tileSize)
+            for (s32 j = (s32)tileSize / 2; j <= config.virtualWidth; j += tileSize + spacing)
             {
-                color.r = 1.f;
-                color.g = (j / (float)tileSize) / 255.f;
-                color.b = (i / (float)tileSize) / 255.f;
-                Renderer::DrawRectangle(j, i, tileSize, tileSize, color);
+                color.r = 0.5f;
+                color.g = ((float)j / 8.f) / 255.f;
+                color.b = ((float)i / 8.f) / 255.f;
+                Renderer::DrawRectanglePro(glm::vec2(j + offset, i + offset), glm::vec2(tileSize), 0.f, glm::vec2(tileSize / 2.f), color);
             }
         }
     }

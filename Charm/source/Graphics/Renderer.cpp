@@ -5,9 +5,11 @@
 
 #include "Core/Application.h"
 #include "Core/Log.h"
+#include "Core/Utils.h"
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <SDL3/SDL.h>
 
@@ -17,7 +19,7 @@ namespace Charm
 {
     namespace Graphics
     {
-        const static u32 k_MaxQuadCount = 10000;
+        const static u32 k_MaxQuadCount = 5000;
         const static u32 k_MaxVertexCount = k_MaxQuadCount * 4;
         const static u32 k_MaxIndexCount = k_MaxQuadCount * 6;
         const static u32 k_MaxTextures = 32;
@@ -36,6 +38,8 @@ namespace Charm
             Texture textureSlots[k_MaxTextures];
             u32 textureSlotIndex = 1;
 
+            glm::vec4 quadVertexPositions[4];
+
             u32 indexCount = 0;
             u32 drawCount = 0;
             u32 quadCount = 0;
@@ -50,6 +54,8 @@ namespace Charm
             void SetupBatchRendering();
             void CleanUpBatchRendering();
             void CheckForNewBatch();
+            float CheckBatchForTextureIndex(Texture& texture);
+            void AddQuadToBatch(const glm::mat4& transform, const glm::vec3& color, float textureIndex);
 
             void Initialize()
             {
@@ -105,7 +111,6 @@ namespace Charm
                 batchData.textureSlotIndex = 1;
                 batchData.quadCount = 0;
                 batchData.drawCount = 0;
-                batchData.indexCount = 0;
 
                 BeginBatch();
             }
@@ -118,6 +123,7 @@ namespace Charm
 
             void BeginBatch()
             {
+                batchData.indexCount = 0;
                 batchData.quadBufferRef = batchData.quadBuffer;
             }
 
@@ -140,88 +146,34 @@ namespace Charm
                 batchData.drawCount++;
             }
 
-            void DrawRectangle(float x, float y, float width, float height, const glm::vec3& color)
+            void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color)
+            {
+                DrawRectanglePro(position, size, 0.f, glm::vec2(0.f), color);
+            }
+
+            void DrawRectanglePro(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin, const glm::vec3& color)
             {
                 CheckForNewBatch();
 
+                const glm::mat4 transform = Utils::GetTransfomMatrix2D(position, size, rotation, origin);
                 const float textureIndex = 0.f;
 
-                batchData.quadBufferRef->position = glm::vec3(x, y, 0.f);
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 0.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(x + width, y, 0.f);
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 0.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(x + width, y + height, 0.f);
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 1.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(x, y + height, 0.f);
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 1.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.indexCount += 6;
-                batchData.quadCount++;
+                AddQuadToBatch(transform, color, textureIndex);
             }
 
             void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec2& size, const glm::vec3& tint)
             {
+                DrawTexturePro(texture, position, size, 0.f, glm::vec2(0.f), tint);
+            }
+
+            void DrawTexturePro(Texture& texture, const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin, const glm::vec3& tint)
+            {
                 CheckForNewBatch();
 
-                float textureIndex = 0.f;
+                const float textureIndex = CheckBatchForTextureIndex(texture);
+                const glm::mat4 transform = Utils::GetTransfomMatrix2D(position, size, rotation, origin);
 
-                for (u32 i = 1; i < batchData.textureSlotIndex; i++)
-                {
-                    if (batchData.textureSlots[i] == texture)
-                    {
-                        textureIndex = (float)i;
-                        break;
-                    }
-                }
-
-                if (textureIndex == 0.f)
-                {
-                    textureIndex = (float)batchData.textureSlotIndex;
-                    batchData.textureSlots[batchData.textureSlotIndex] = texture;
-                    batchData.textureSlotIndex++;
-                }
-
-                batchData.quadBufferRef->position = glm::vec3(position.x, position.y, 0.f);
-                batchData.quadBufferRef->color = tint;
-                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 0.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(position.x + size.x, position.y, 0.f);
-                batchData.quadBufferRef->color = tint;
-                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 0.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(position.x + size.x, position.y + size.y, 0.f);
-                batchData.quadBufferRef->color = tint;
-                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 1.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = glm::vec3(position.x, position.y + size.y, 0.f);
-                batchData.quadBufferRef->color = tint;
-                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 1.f);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.indexCount += 6;
-                batchData.quadCount++;
+                AddQuadToBatch(transform, tint, textureIndex);
             }
 
             glm::vec3& GetClearColor() { return state.clearColor; }
@@ -290,6 +242,11 @@ namespace Charm
 
                 batchData.whiteTexture = Textures::LoadDefaultWhite();
                 batchData.textureSlots[0] = batchData.whiteTexture;
+
+                batchData.quadVertexPositions[0] = glm::vec4(0.f, 0.f, 0.f, 1.f);
+                batchData.quadVertexPositions[1] = glm::vec4(1.f, 0.f, 0.f, 1.f);
+                batchData.quadVertexPositions[2] = glm::vec4(1.f, 1.f, 0.f, 1.f);
+                batchData.quadVertexPositions[3] = glm::vec4(0.f, 1.f, 0.f, 1.f);
             }
 
             void CleanUpBatchRendering()
@@ -309,6 +266,59 @@ namespace Charm
                     Flush();
                     BeginBatch();
                 }
+            }
+
+            float CheckBatchForTextureIndex(Texture& texture)
+            {
+                float textureIndex = 0.f;
+
+                for (u32 i = 1; i < batchData.textureSlotIndex; i++)
+                {
+                    if (batchData.textureSlots[i] == texture)
+                    {
+                        textureIndex = (float)i;
+                        break;
+                    }
+                }
+
+                if (textureIndex == 0.f)
+                {
+                    textureIndex = (float)batchData.textureSlotIndex;
+                    batchData.textureSlots[batchData.textureSlotIndex] = texture;
+                    batchData.textureSlotIndex++;
+                }
+
+                return textureIndex;
+            }
+
+            void AddQuadToBatch(const glm::mat4& transform, const glm::vec3& color, float textureIndex)
+            {
+                batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[0];
+                batchData.quadBufferRef->color = color;
+                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 0.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[1];
+                batchData.quadBufferRef->color = color;
+                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 0.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[2];
+                batchData.quadBufferRef->color = color;
+                batchData.quadBufferRef->texCoord = glm::vec2(1.f, 1.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[3];
+                batchData.quadBufferRef->color = color;
+                batchData.quadBufferRef->texCoord = glm::vec2(0.f, 1.f);
+                batchData.quadBufferRef->texIndex = textureIndex;
+                batchData.quadBufferRef++;
+
+                batchData.indexCount += 6;
+                batchData.quadCount++;
             }
         }
     }

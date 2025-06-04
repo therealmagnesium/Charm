@@ -37,8 +37,10 @@ namespace Charm
             void EndBatch();
             void Flush();
 
-            void DrawRectangle(float x, float y, float width, float height, const glm::vec3& color);
+            void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color);
+            void DrawRectanglePro(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin, const glm::vec3& color);
             void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec2& size, const glm::vec3& tint);
+            void DrawTexturePro(Texture& texture, const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin, const glm::vec3& tint);
 
             glm::vec3& GetClearColor();
             u32 GetQuadCount();
