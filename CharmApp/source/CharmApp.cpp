@@ -83,8 +83,8 @@ namespace CharmApp
     {
         const ApplicationConfig& config = Application::GetConfig();
 
-        glm::vec3 color;
-        for (s32 i = (s32)tileSize / 2; i <= config.virtualHeight; i += tileSize + spacing)
+        glm::vec3 color = glm::vec3(1.f);
+        for (s32 i = (s32)tileSize / 2; i <= config.virtualHeight + tileSize; i += tileSize + spacing)
         {
             for (s32 j = (s32)tileSize / 2; j <= config.virtualWidth; j += tileSize + spacing)
             {

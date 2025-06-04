@@ -108,7 +108,6 @@ namespace Charm
                 state.defaultShader.SetUniform("viewMatrix", state.viewMatrix);
                 state.defaultShader.SetUniform("projectionMatrix", state.projectionMatrix);
 
-                batchData.textureSlotIndex = 1;
                 batchData.quadCount = 0;
                 batchData.drawCount = 0;
 
@@ -124,6 +123,7 @@ namespace Charm
             void BeginBatch()
             {
                 batchData.indexCount = 0;
+                batchData.textureSlotIndex = 1;
                 batchData.quadBufferRef = batchData.quadBuffer;
             }
 
