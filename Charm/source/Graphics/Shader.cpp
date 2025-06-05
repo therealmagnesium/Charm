@@ -15,144 +15,150 @@ namespace Charm
 {
     namespace Graphics
     {
-        static const u32 reservedUniformCount = 10;
+        const static u32 k_ReservedUniformCount = 10;
 
-        Shader::Shader()
+        namespace Shaders
         {
-            m_UniformLocations.reserve(reservedUniformCount);
-        }
+            u32 Compile(u32 type, const char* source);
+            void Link(Shader& shader, u32 vertexShader, u32 fragmentShader);
 
-        Shader::~Shader()
-        {
-            INFO("Unloading shader with an ID of %d", m_ID);
-            glDeleteProgram(m_ID);
-            m_ID = 0;
-        }
-
-        void Shader::Load(const char* vertexPath, const char* fragmentPath)
-        {
-            File vertexFile = IO::ReadFile(vertexPath);
-            File fragmentFile = IO::ReadFile(fragmentPath);
-
-            if (!vertexFile.isValid || !fragmentFile.isValid)
+            Shader Load(const char* vertexPath, const char* fragmentPath)
             {
-                WARN("Failed to load shader with an ID of %d", m_ID);
-                return;
+                Shader shader;
+                shader.id = glCreateProgram();
+                shader.uniformLocations.reserve(k_ReservedUniformCount);
+
+                File vertexFile = IO::ReadFile(vertexPath);
+                File fragmentFile = IO::ReadFile(fragmentPath);
+
+                if (!vertexFile.isValid || !fragmentFile.isValid)
+                {
+                    WARN("Failed to load shader with an ID of %d", shader.id);
+                    return shader;
+                }
+
+                const char* vertexSource = vertexFile.asCString();
+                const char* fragmentSource = fragmentFile.asCString();
+
+                u32 vertexShader = Compile(GL_VERTEX_SHADER, vertexSource);
+                u32 fragmentShader = Compile(GL_FRAGMENT_SHADER, fragmentSource);
+
+                Link(shader, vertexShader, fragmentShader);
+
+                std::string vertexShaderName = Utils::GetFileName(vertexPath);
+                std::string fragmentShaderName = Utils::GetFileName(fragmentPath);
+                INFO("Shader [\"%s\", \"%s\"] was successfully created with an ID of %d",
+                     vertexShaderName.c_str(), fragmentShaderName.c_str(), shader.id);
+
+                return shader;
             }
 
-            const char* vertexSource = vertexFile.asCString();
-            const char* fragmentSource = fragmentFile.asCString();
-
-            u32 vertexShader = Shader::Compile(GL_VERTEX_SHADER, vertexSource);
-            u32 fragmentShader = Shader::Compile(GL_FRAGMENT_SHADER, fragmentSource);
-
-            Shader::Link(vertexShader, fragmentShader);
-
-            std::string vertexShaderName = Utils::GetFileName(vertexPath);
-            std::string fragmentShaderName = Utils::GetFileName(fragmentPath);
-            INFO("Shader [\"%s\", \"%s\"] was successfully created with an ID of %d",
-                 vertexShaderName.c_str(), fragmentShaderName.c_str(), m_ID);
-        }
-
-        void Shader::Bind() const
-        {
-            glUseProgram(m_ID);
-        }
-
-        void Shader::Unbind() const
-        {
-            glUseProgram(0);
-        }
-
-        void Shader::CreateUniform(const char* name)
-        {
-            if (m_UniformLocations.find(name) != m_UniformLocations.end())
+            void Unload(Shader& shader)
             {
-                WARN("Shader with id %d already has uniform \"%s\"", m_ID, name);
-                return;
+                INFO("Unloading shader with an ID of %d...", shader.id);
+                glDeleteProgram(shader.id);
+                shader.id = 0;
             }
 
-            m_UniformLocations[name] = glGetUniformLocation(m_ID, name);
-
-            if (m_UniformLocations[name] == -1)
-                WARN("Shader with id %d could not find uniform \"%s\"", m_ID, name);
-        }
-
-        void Shader::SetUniform(const char* name, u32 value)
-        {
-            if (m_UniformLocations.find(name) != m_UniformLocations.end())
-                glUniform1i(m_UniformLocations[name], value);
-        }
-
-        void Shader::SetUniform(const char* name, float value)
-        {
-            if (m_UniformLocations.find(name) != m_UniformLocations.end())
-                glUniform1f(m_UniformLocations[name], value);
-        }
-
-        void Shader::SetUniform(const char* name, const glm::vec3& value)
-        {
-            if (m_UniformLocations.find(name) != m_UniformLocations.end())
-                glUniform3fv(m_UniformLocations[name], 1, glm::value_ptr(value));
-        }
-
-        void Shader::SetUniform(const char* name, const glm::vec4& value)
-        {
-            if (m_UniformLocations.find(name) != m_UniformLocations.end())
-                glUniform4fv(m_UniformLocations[name], 1, glm::value_ptr(value));
-        }
-
-        void Shader::SetUniform(const char* name, const glm::mat4& value)
-        {
-            if (m_UniformLocations.find(name) != m_UniformLocations.end())
-                glUniformMatrix4fv(m_UniformLocations[name], 1, false, glm::value_ptr(value));
-        }
-
-        void Shader::SetUniform(const char* name, s32* values, u32 count)
-        {
-            if (m_UniformLocations.find(name) != m_UniformLocations.end())
-                glUniform1iv(m_UniformLocations[name], count, values);
-        }
-
-        u32 Shader::Compile(u32 type, const char* source)
-        {
-            u32 shader = glCreateShader(type);
-            glShaderSource(shader, 1, &source, NULL);
-            glCompileShader(shader);
-
-            s32 success = 0;
-            char infoLog[512];
-
-            glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-            if (!success)
+            void Bind(const Shader& shader)
             {
-                glGetShaderInfoLog(shader, 512, NULL, infoLog);
-                ERROR("Failed to compile shader! \n%s", infoLog);
-            };
+                glUseProgram(shader.id);
+            }
 
-            return shader;
-        }
-
-        void Shader::Link(u32 vertexShader, u32 fragmentShader)
-        {
-            m_ID = glCreateProgram();
-            glAttachShader(m_ID, vertexShader);
-            glAttachShader(m_ID, fragmentShader);
-            glLinkProgram(m_ID);
-            glValidateProgram(m_ID);
-
-            s32 success = 0;
-            char infoLog[512];
-
-            glGetProgramiv(m_ID, GL_LINK_STATUS, &success);
-            if (!success)
+            void Unbind()
             {
-                glGetProgramInfoLog(m_ID, 512, NULL, infoLog);
-                ERROR("Failed to link shader! \n%s", infoLog);
-            };
+                glUseProgram(0);
+            }
 
-            glDeleteShader(vertexShader);
-            glDeleteShader(fragmentShader);
+            void CreateUniform(Shader& shader, const char* name)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                {
+                    WARN("Shader with id %d already has uniform \"%s\"", shader.id, name);
+                    return;
+                }
+
+                shader.uniformLocations[name] = glGetUniformLocation(shader.id, name);
+
+                if (shader.uniformLocations[name] == -1)
+                    WARN("Shader with id %d could not find uniform \"%s\"", shader.id, name);
+            }
+
+            void SetUniform(Shader& shader, const char* name, u32 value)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                    glUniform1i(shader.uniformLocations[name], value);
+            }
+
+            void SetUniform(Shader& shader, const char* name, float value)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                    glUniform1f(shader.uniformLocations[name], value);
+            }
+
+            void SetUniform(Shader& shader, const char* name, const glm::vec3& value)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                    glUniform3fv(shader.uniformLocations[name], 1, glm::value_ptr(value));
+            }
+
+            void SetUniform(Shader& shader, const char* name, const glm::vec4& value)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                    glUniform4fv(shader.uniformLocations[name], 1, glm::value_ptr(value));
+            }
+
+            void SetUniform(Shader& shader, const char* name, const glm::mat4& value)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                    glUniformMatrix4fv(shader.uniformLocations[name], 1, false, glm::value_ptr(value));
+            }
+
+            void SetUniform(Shader& shader, const char* name, s32* values, u32 count)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                    glUniform1iv(shader.uniformLocations[name], count, values);
+            }
+
+            u32 Compile(u32 type, const char* source)
+            {
+                u32 shader = glCreateShader(type);
+                glShaderSource(shader, 1, &source, NULL);
+                glCompileShader(shader);
+
+                s32 success = 0;
+                char infoLog[512];
+
+                glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+                if (!success)
+                {
+                    glGetShaderInfoLog(shader, 512, NULL, infoLog);
+                    ERROR("Failed to compile shader! \n%s", infoLog);
+                };
+
+                return shader;
+            }
+
+            void Link(Shader& shader, u32 vertexShader, u32 fragmentShader)
+            {
+                glAttachShader(shader.id, vertexShader);
+                glAttachShader(shader.id, fragmentShader);
+                glLinkProgram(shader.id);
+                glValidateProgram(shader.id);
+
+                s32 success = 0;
+                char infoLog[512];
+
+                glGetProgramiv(shader.id, GL_LINK_STATUS, &success);
+                if (!success)
+                {
+                    glGetProgramInfoLog(shader.id, 512, NULL, infoLog);
+                    ERROR("Failed to link shader! \n%s", infoLog);
+                };
+
+                glDeleteShader(vertexShader);
+                glDeleteShader(fragmentShader);
+            }
         }
     }
 }

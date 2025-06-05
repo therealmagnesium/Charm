@@ -79,10 +79,10 @@ namespace Charm
                 state.viewMatrix = glm::mat4(1.f);
                 state.projectionMatrix = glm::mat4(1.f);
 
-                state.defaultShader.Load("assets/shaders/Default_vs.glsl", "assets/shaders/Default_fs.glsl");
-                state.defaultShader.CreateUniform("viewMatrix");
-                state.defaultShader.CreateUniform("projectionMatrix");
-                state.defaultShader.CreateUniform("textures");
+                state.defaultShader = Shaders::Load("assets/shaders/Default_vs.glsl", "assets/shaders/Default_fs.glsl");
+                Shaders::CreateUniform(state.defaultShader, "viewMatrix");
+                Shaders::CreateUniform(state.defaultShader, "projectionMatrix");
+                Shaders::CreateUniform(state.defaultShader, "textures");
 
                 SetupBatchRendering();
 
@@ -94,6 +94,7 @@ namespace Charm
             {
                 INFO("The renderer is shutting down...");
                 CleanUpBatchRendering();
+                Shaders::Unload(state.defaultShader);
                 Window::Shutdown();
                 SDL_Quit();
             }
@@ -104,9 +105,9 @@ namespace Charm
                 state.viewMatrix = Cameras::GetViewMatrix(camera);
                 state.projectionMatrix = glm::ortho(0.f, (float)config.virtualWidth, (float)config.virtualHeight, 0.f, -1.f, 1.f);
 
-                state.defaultShader.Bind();
-                state.defaultShader.SetUniform("viewMatrix", state.viewMatrix);
-                state.defaultShader.SetUniform("projectionMatrix", state.projectionMatrix);
+                Shaders::Bind(state.defaultShader);
+                Shaders::SetUniform(state.defaultShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.defaultShader, "projectionMatrix", state.projectionMatrix);
 
                 batchData.quadCount = 0;
                 batchData.drawCount = 0;
@@ -302,8 +303,8 @@ namespace Charm
                 for (u32 i = 0; i < k_MaxTextures; i++)
                     samplers[i] = i;
 
-                state.defaultShader.Bind();
-                state.defaultShader.SetUniform("textures", samplers, k_MaxTextures);
+                Shaders::Bind(state.defaultShader);
+                Shaders::SetUniform(state.defaultShader, "textures", samplers, k_MaxTextures);
 
                 batchData.whiteTexture = Textures::LoadDefaultWhite();
                 batchData.textureSlots[0] = batchData.whiteTexture;
