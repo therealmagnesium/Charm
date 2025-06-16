@@ -102,8 +102,8 @@ namespace Charm
             void BeginScene2D(const Camera2D& camera)
             {
                 const ApplicationConfig& config = Application::GetConfig();
-                state.viewMatrix = Cameras::GetViewMatrix(camera);
-                state.projectionMatrix = glm::ortho(0.f, (float)config.virtualWidth, (float)config.virtualHeight, 0.f, -1.f, 1.f);
+                state.viewMatrix = Cameras::GetViewMatrix2D(camera);
+                state.projectionMatrix = Cameras::GetProjectionMatrix2D();
 
                 Shaders::Bind(state.defaultShader);
                 Shaders::SetUniform(state.defaultShader, "viewMatrix", state.viewMatrix);
@@ -215,7 +215,11 @@ namespace Charm
                     dest.height = texture.height; // 64 Default White
                 }
 
-                DrawTexturePro(texture, source, dest, glm::vec2(dest.width / 2.f), rotation, tint);
+                glm::vec2 origin;
+                origin.x = texture.width * scale / 2.f;
+                origin.y = texture.height * scale / 2.f;
+
+                DrawTexturePro(texture, source, dest, origin, rotation, tint);
             }
 
             void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec3& tint)

@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/AssetManager.h"
 #include "Core/Base.h"
 #include <string>
 
@@ -30,6 +31,7 @@ namespace Charm
         {
             bool isRunning = false;
             ApplicationConfig config;
+            AssetCollection assets;
         };
 
         namespace Application

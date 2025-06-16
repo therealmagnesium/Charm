@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <glad/glad.h>
 
+using namespace Charm;
 using namespace Charm::Core;
 using namespace Charm::Graphics;
 
@@ -18,7 +19,8 @@ namespace CharmApp
         const ApplicationConfig& config = Application::GetConfig();
         Renderer::SetClearColor(0.15f, 0.15f, 0.17f);
 
-        state.texture = Textures::Load("assets/textures/small_checker.png");
+        state.textures[0] = AssetManager::Import("assets/textures/small_checker.png", AssetType::Texture);
+        state.textures[1] = AssetManager::Import("assets/textures/texel_checker.png", AssetType::Texture);
 
         state.playerPosition.x = config.virtualWidth / 2.f;
         state.playerPosition.y = config.virtualHeight / 2.f;
@@ -31,6 +33,12 @@ namespace CharmApp
 
         if (Input::IsKeyPressed(KEY_F2))
             state.showDebugUI = !state.showDebugUI;
+
+        if (Input::IsKeyPressed(KEY_1))
+            state.activeTextureSlot = 0;
+
+        if (Input::IsKeyPressed(KEY_2))
+            state.activeTextureSlot = 1;
 
         const float playerSpeed = 650.f;
 
@@ -49,7 +57,10 @@ namespace CharmApp
         Renderer::BeginScene2D(state.camera);
 
         DrawBackground(state.tileSize, state.tileSpacing, state.tileOffset);
-        Renderer::DrawTextureEx(state.texture, state.playerPosition, 45.f, 0.25f, glm::vec3(1.f));
+
+        Texture* texture = AssetManager::GetAsset<Texture>(state.textures[state.activeTextureSlot]);
+        Texture validTexture = (texture != NULL) ? *texture : (Texture){};
+        Renderer::DrawTextureEx(validTexture, state.playerPosition, 45.f, 0.25f, glm::vec3(1.f));
 
         Renderer::EndScene2D();
     }
@@ -71,12 +82,23 @@ namespace CharmApp
             ImGui::DragFloat("Tile spacing", &state.tileSpacing, 1.f, 0.f, 32.f);
             ImGui::DragFloat("Tile offset", &state.tileOffset, 1.f);
             ImGui::End();
+
+            ImGui::Begin("Asset Registry");
+
+            for (auto& [handle, metadata] : AssetManager::GetRegistry())
+            {
+                ImGui::Text("Handle: 0x%lx", handle);
+                ImGui::Text("Path: %s", metadata.path.c_str());
+                ImGui::Text("Type: %s", Utils::AssetTypeToString(metadata.type).c_str()); // TODO: Convert asset type to string
+            }
+
+            ImGui::End();
         }
     }
 
     void OnShutdown()
     {
-        Textures::Unload(state.texture);
+        AssetManager::Clean();
     }
 
     void DrawBackground(float tileSize, float spacing, float offset)

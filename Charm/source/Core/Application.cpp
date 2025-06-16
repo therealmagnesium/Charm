@@ -1,6 +1,8 @@
 #include "Core/Application.h"
+#include "Core/AssetManager.h"
 #include "Core/Input.h"
 #include "Core/Log.h"
+#include "Core/Random.h"
 #include "Core/Time.h"
 
 #include "Graphics/Renderer.h"
@@ -40,10 +42,12 @@ namespace Charm
                 printf("============================================ Core Program Begins "
                        "=============================================\n");
 
+                Random::Init();
                 Input::Initialize();
                 Time::Initialize(60);
                 Renderer::Initialize();
                 UI::SetupContext();
+                AssetManager::Init(&state.assets);
 
                 state.isRunning = true;
                 isInitialized = true;

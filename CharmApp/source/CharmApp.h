@@ -10,7 +10,8 @@ namespace CharmApp
         bool showDebugUI = false;
 
         Camera2D camera;
-        Texture texture;
+        AssetHandle textures[2];
+        u32 activeTextureSlot = 0;
 
         float tileSize = 64.f;
         float tileSpacing = 4.f;

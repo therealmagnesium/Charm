@@ -1,10 +1,14 @@
 #pragma once
+#include "Asset.h"
+
 #include <string>
 #include <filesystem>
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
+
+using namespace Charm::Core;
 
 namespace Charm
 {
@@ -15,6 +19,27 @@ namespace Charm
             std::filesystem::path p(path);
             std::string fileName = (!hasExtension) ? p.stem().string() : p.filename().string();
             return fileName;
+        }
+
+        inline std::string AssetTypeToString(AssetType type)
+        {
+            std::string value = "Invalid";
+
+            switch (type)
+            {
+                case AssetType::Texture:
+                    value = "Texture";
+                    break;
+
+                case AssetType::Shader:
+                    value = "Shader";
+                    break;
+
+                default:
+                    break;
+            }
+
+            return value;
         }
 
         inline glm::mat4 GetTransfomMatrix2D(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin)

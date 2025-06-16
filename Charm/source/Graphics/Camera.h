@@ -15,7 +15,8 @@ namespace Charm
 
         namespace Cameras
         {
-            glm::mat4 GetViewMatrix(const Camera2D& camera);
+            glm::mat4 GetViewMatrix2D(const Camera2D& camera);
+            glm::mat4 GetProjectionMatrix2D();
         }
     }
 }
