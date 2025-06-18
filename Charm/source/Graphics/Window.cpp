@@ -116,6 +116,8 @@ namespace Charm
 
             void* GetHandle() { return state.handle; }
             void* GetContext() { return state.context; }
+            u32 GetWidth() { return state.width; }
+            u32 GetHeight() { return state.height; }
         }
     }
 }

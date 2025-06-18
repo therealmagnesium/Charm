@@ -24,6 +24,8 @@ namespace Charm
 
             void* GetHandle();
             void* GetContext();
+            u32 GetWidth();
+            u32 GetHeight();
         }
     }
 }

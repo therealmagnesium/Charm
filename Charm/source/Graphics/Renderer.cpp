@@ -26,23 +26,33 @@ namespace Charm
 
         struct BatchData
         {
-            u32 vertexArray = 0;
-            u32 vertexBuffer = 0;
+            u32 quadVertexArray = 0;
+            u32 quadVertexBuffer = 0;
+
             u32 indexBuffer = 0;
+
+            u32 circleVertexArray = 0;
+            u32 circleVertexBuffer = 0;
 
             Texture whiteTexture;
 
-            Vertex* quadBuffer = NULL;
-            Vertex* quadBufferRef = NULL;
+            u32 quadIndexCount = 0;
+            QuadVertex* quadBuffer = NULL;
+            QuadVertex* quadBufferRef = NULL;
+
+            u32 circleIndexCount = 0;
+            CircleVertex* circleBuffer = NULL;
+            CircleVertex* circleBufferRef = NULL;
 
             Texture textureSlots[k_MaxTextures];
             u32 textureSlotIndex = 1;
 
             glm::vec4 quadVertexPositions[4];
+            glm::vec4 circleVertexPositions[4];
 
-            u32 indexCount = 0;
             u32 drawCount = 0;
             u32 quadCount = 0;
+            u32 circleCount = 0;
         };
 
         static RenderState state;
@@ -53,9 +63,10 @@ namespace Charm
         {
             void SetupBatchRendering();
             void CleanUpBatchRendering();
-            void CheckForNewBatch();
+            void CheckForNewBatch(BatchMode mode);
             float CheckBatchForTextureIndex(Texture& texture);
             void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, float textureIndex, const glm::vec2& textureSize, const glm::vec3& color);
+            void AddCircleToBatch(const glm::mat4& transform, const glm::vec3& color, float thickness, float fade);
 
             void Initialize()
             {
@@ -76,6 +87,9 @@ namespace Charm
                 INFO("GPU specs: %s", glGetString(GL_RENDERER));
                 INFO("OpenGL version: %s", glGetString(GL_VERSION));
 
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
                 state.viewMatrix = glm::mat4(1.f);
                 state.projectionMatrix = glm::mat4(1.f);
 
@@ -83,6 +97,10 @@ namespace Charm
                 Shaders::CreateUniform(state.defaultShader, "viewMatrix");
                 Shaders::CreateUniform(state.defaultShader, "projectionMatrix");
                 Shaders::CreateUniform(state.defaultShader, "textures");
+
+                state.circleShader = Shaders::Load("assets/shaders/BatchingCircles_vs.glsl", "assets/shaders/BatchingCircles_fs.glsl");
+                Shaders::CreateUniform(state.circleShader, "viewMatrix");
+                Shaders::CreateUniform(state.circleShader, "projectionMatrix");
 
                 SetupBatchRendering();
 
@@ -95,6 +113,7 @@ namespace Charm
                 INFO("The renderer is shutting down...");
                 CleanUpBatchRendering();
                 Shaders::Unload(state.defaultShader);
+                Shaders::Unload(state.circleShader);
                 Window::Shutdown();
                 SDL_Quit();
             }
@@ -109,42 +128,81 @@ namespace Charm
                 Shaders::SetUniform(state.defaultShader, "viewMatrix", state.viewMatrix);
                 Shaders::SetUniform(state.defaultShader, "projectionMatrix", state.projectionMatrix);
 
+                Shaders::Bind(state.circleShader);
+                Shaders::SetUniform(state.circleShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.circleShader, "projectionMatrix", state.projectionMatrix);
+
                 batchData.quadCount = 0;
+                batchData.circleCount = 0;
                 batchData.drawCount = 0;
 
-                BeginBatch();
+                BeginBatchQuad();
+                BeginBatchCircle();
             }
 
             void EndScene2D()
             {
-                EndBatch();
-                Flush();
+                EndBatchQuad();
+                EndBatchCircle();
+
+                Flush(BatchMode::Quads);
+                Flush(BatchMode::Circles);
             }
 
-            void BeginBatch()
+            void BeginBatchQuad()
             {
-                batchData.indexCount = 0;
-                batchData.textureSlotIndex = 1;
+                batchData.quadIndexCount = 0;
                 batchData.quadBufferRef = batchData.quadBuffer;
+
+                batchData.textureSlotIndex = 1;
             }
 
-            void EndBatch()
+            void EndBatchQuad()
             {
                 u64 size = (u8*)batchData.quadBufferRef - (u8*)batchData.quadBuffer;
 
-                glBindBuffer(GL_ARRAY_BUFFER, batchData.vertexBuffer);
+                glBindBuffer(GL_ARRAY_BUFFER, batchData.quadVertexBuffer);
                 glBufferSubData(GL_ARRAY_BUFFER, 0, size, batchData.quadBuffer);
             }
 
-            void Flush()
+            void BeginBatchCircle()
             {
-                for (u32 i = 0; i < batchData.textureSlotIndex; i++)
-                    Textures::Bind(batchData.textureSlots[i], i);
+                batchData.circleIndexCount = 0;
+                batchData.circleBufferRef = batchData.circleBuffer;
+            }
 
-                glBindVertexArray(batchData.vertexArray);
-                glDrawElements(GL_TRIANGLES, batchData.indexCount, GL_UNSIGNED_INT, NULL);
+            void EndBatchCircle()
+            {
+                u64 size = (u8*)batchData.circleBufferRef - (u8*)batchData.circleBuffer;
 
-                batchData.drawCount++;
+                glBindBuffer(GL_ARRAY_BUFFER, batchData.circleVertexBuffer);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, size, batchData.circleBuffer);
+            }
+
+            void Flush(BatchMode mode)
+            {
+                if (batchData.quadIndexCount > 0 && mode == BatchMode::Quads)
+                {
+                    for (u32 i = 0; i < batchData.textureSlotIndex; i++)
+                        Textures::Bind(batchData.textureSlots[i], i);
+
+                    Shaders::Bind(state.defaultShader);
+                    glBindVertexArray(batchData.quadVertexArray);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batchData.indexBuffer);
+                    glDrawElements(GL_TRIANGLES, batchData.quadIndexCount, GL_UNSIGNED_INT, NULL);
+
+                    batchData.drawCount++;
+                }
+
+                if (batchData.circleIndexCount > 0 && mode == BatchMode::Circles)
+                {
+                    Shaders::Bind(state.circleShader);
+                    glBindVertexArray(batchData.circleVertexArray);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batchData.indexBuffer);
+                    glDrawElements(GL_TRIANGLES, batchData.circleIndexCount, GL_UNSIGNED_INT, NULL);
+
+                    batchData.drawCount++;
+                }
             }
 
             void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color)
@@ -165,7 +223,7 @@ namespace Charm
 
             void DrawRectanglePro(const Rectangle& rectangle, const glm::vec2& origin, float rotation, const glm::vec3& color)
             {
-                CheckForNewBatch();
+                CheckForNewBatch(BatchMode::Quads);
 
                 const glm::vec2 position = glm::vec2(rectangle.x, rectangle.y);
                 const glm::vec2 size = glm::vec2(rectangle.width, rectangle.height);
@@ -235,7 +293,7 @@ namespace Charm
 
             void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec3& tint)
             {
-                CheckForNewBatch();
+                CheckForNewBatch(BatchMode::Quads);
 
                 const glm::vec2 position = glm::vec2(dest.x, dest.y);
                 const glm::vec2 size = glm::vec2(dest.width, dest.height);
@@ -246,8 +304,24 @@ namespace Charm
                 AddQuadToBatch(transform, source, textureIndex, textureSize, tint);
             }
 
+            void DrawCircle(const glm::vec2& center, float radius, const glm::vec3& color)
+            {
+                DrawCirclePro(center, radius, 1.f, 0.05f, color);
+            }
+
+            void DrawCirclePro(const glm::vec2& center, float radius, float thickness, float fade, const glm::vec3& color)
+            {
+                CheckForNewBatch(BatchMode::Circles);
+
+                const glm::vec2 size = glm::vec2(64.f * radius);
+                const glm::mat4 transform = Utils::GetTransfomMatrix2D(center, size, 0.f, glm::vec2(0.f));
+
+                AddCircleToBatch(transform, color, thickness, fade);
+            }
+
             glm::vec3& GetClearColor() { return state.clearColor; }
             u32 GetQuadCount() { return batchData.quadCount; }
+            u32 GetCircleCount() { return batchData.circleCount; }
             u32 GetDrawCount() { return batchData.drawCount; }
 
             void SetClearColor(float r, float g, float b)
@@ -259,28 +333,29 @@ namespace Charm
 
             void SetupBatchRendering()
             {
-                batchData.quadBuffer = new Vertex[k_MaxVertexCount];
-
-                glGenVertexArrays(1, &batchData.vertexArray);
-                glGenBuffers(1, &batchData.vertexBuffer);
+                // Rectangles / quads
+                glGenVertexArrays(1, &batchData.quadVertexArray);
+                glGenBuffers(1, &batchData.quadVertexBuffer);
                 glGenBuffers(1, &batchData.indexBuffer);
 
-                glBindVertexArray(batchData.vertexArray);
+                glBindVertexArray(batchData.quadVertexArray);
 
-                glBindBuffer(GL_ARRAY_BUFFER, batchData.vertexBuffer);
-                glBufferData(GL_ARRAY_BUFFER, k_MaxVertexCount * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, batchData.quadVertexBuffer);
+                glBufferData(GL_ARRAY_BUFFER, k_MaxVertexCount * sizeof(QuadVertex), NULL, GL_DYNAMIC_DRAW);
 
                 glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, position));
 
                 glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color));
+                glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, color));
 
                 glEnableVertexAttribArray(2);
-                glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+                glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texCoord));
 
                 glEnableVertexAttribArray(3);
-                glVertexAttribPointer(3, 1, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texIndex));
+                glVertexAttribPointer(3, 1, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texIndex));
+
+                batchData.quadBuffer = new QuadVertex[k_MaxVertexCount];
 
                 u32* indices = new u32[k_MaxIndexCount];
                 u32 offset = 0;
@@ -303,6 +378,33 @@ namespace Charm
 
                 delete[] indices;
 
+                // Circles
+                glGenVertexArrays(1, &batchData.circleVertexArray);
+                glGenBuffers(1, &batchData.circleVertexBuffer);
+
+                glBindVertexArray(batchData.circleVertexArray);
+
+                glBindBuffer(GL_ARRAY_BUFFER, batchData.circleVertexBuffer);
+                glBufferData(GL_ARRAY_BUFFER, k_MaxVertexCount * sizeof(CircleVertex), NULL, GL_DYNAMIC_DRAW);
+
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, worldPosition));
+
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, localPosition));
+
+                glEnableVertexAttribArray(2);
+                glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, color));
+
+                glEnableVertexAttribArray(3);
+                glVertexAttribPointer(3, 1, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, thickness));
+
+                glEnableVertexAttribArray(4);
+                glVertexAttribPointer(4, 1, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, fade));
+
+                batchData.circleBuffer = new CircleVertex[k_MaxVertexCount];
+
+                // All
                 s32 samplers[k_MaxTextures];
                 for (u32 i = 0; i < k_MaxTextures; i++)
                     samplers[i] = i;
@@ -317,24 +419,43 @@ namespace Charm
                 batchData.quadVertexPositions[1] = glm::vec4(1.f, 0.f, 0.f, 1.f);
                 batchData.quadVertexPositions[2] = glm::vec4(1.f, 1.f, 0.f, 1.f);
                 batchData.quadVertexPositions[3] = glm::vec4(0.f, 1.f, 0.f, 1.f);
+
+                batchData.circleVertexPositions[0] = glm::vec4(-0.5f, -0.5f, 0.f, 1.f);
+                batchData.circleVertexPositions[1] = glm::vec4(0.5f, -0.5f, 0.f, 1.f);
+                batchData.circleVertexPositions[2] = glm::vec4(0.5f, 0.5f, 0.f, 1.f);
+                batchData.circleVertexPositions[3] = glm::vec4(-0.5f, 0.5f, 0.f, 1.f);
             }
 
             void CleanUpBatchRendering()
             {
                 delete[] batchData.quadBuffer;
-                glDeleteVertexArrays(1, &batchData.vertexArray);
-                glDeleteBuffers(1, &batchData.vertexBuffer);
+                delete[] batchData.circleBuffer;
+
+                glDeleteVertexArrays(1, &batchData.quadVertexArray);
+                glDeleteBuffers(1, &batchData.quadVertexBuffer);
+
+                glDeleteVertexArrays(1, &batchData.circleVertexArray);
+                glDeleteBuffers(1, &batchData.circleVertexBuffer);
+
                 glDeleteBuffers(1, &batchData.indexBuffer);
+
                 Textures::Unload(batchData.whiteTexture);
             }
 
-            void CheckForNewBatch()
+            void CheckForNewBatch(BatchMode mode)
             {
-                if (batchData.indexCount >= k_MaxIndexCount)
+                if (mode == BatchMode::Quads && batchData.quadIndexCount >= k_MaxIndexCount)
                 {
-                    EndBatch();
-                    Flush();
-                    BeginBatch();
+                    EndBatchQuad();
+                    Flush(mode);
+                    BeginBatchQuad();
+                }
+
+                if (mode == BatchMode::Circles && batchData.circleIndexCount >= k_MaxIndexCount)
+                {
+                    EndBatchCircle();
+                    Flush(mode);
+                    BeginBatchCircle();
                 }
             }
 
@@ -366,32 +487,39 @@ namespace Charm
 
             void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, float textureIndex, const glm::vec2& textureSize, const glm::vec3& color)
             {
-                batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[0];
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(source.x / textureSize.x, source.y / textureSize.y);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
+                glm::vec2 textureCoords[4];
+                textureCoords[0] = glm::vec2(source.x / textureSize.x, source.y / textureSize.y);
+                textureCoords[1] = glm::vec2((source.x + source.width) / textureSize.x, source.y / textureSize.y);
+                textureCoords[2] = glm::vec2((source.x + source.width) / textureSize.x, (source.y + source.height) / textureSize.y);
+                textureCoords[3] = glm::vec2(source.x / textureSize.x, (source.y + source.height) / textureSize.y);
 
-                batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[1];
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2((source.x + source.width) / textureSize.x, source.y / textureSize.y);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
+                for (u8 i = 0; i < 4; i++)
+                {
+                    batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[i];
+                    batchData.quadBufferRef->color = color;
+                    batchData.quadBufferRef->texCoord = textureCoords[i];
+                    batchData.quadBufferRef->texIndex = textureIndex;
+                    batchData.quadBufferRef++;
+                }
 
-                batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[2];
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2((source.x + source.width) / textureSize.x, (source.y + source.height) / textureSize.y);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[3];
-                batchData.quadBufferRef->color = color;
-                batchData.quadBufferRef->texCoord = glm::vec2(source.x / textureSize.x, (source.y + source.height) / textureSize.y);
-                batchData.quadBufferRef->texIndex = textureIndex;
-                batchData.quadBufferRef++;
-
-                batchData.indexCount += 6;
+                batchData.quadIndexCount += 6;
                 batchData.quadCount++;
+            }
+
+            void AddCircleToBatch(const glm::mat4& transform, const glm::vec3& color, float thickness, float fade)
+            {
+                for (u8 i = 0; i < 4; i++)
+                {
+                    batchData.circleBufferRef->worldPosition = transform * batchData.circleVertexPositions[i];
+                    batchData.circleBufferRef->localPosition = batchData.circleVertexPositions[i] * 2.f;
+                    batchData.circleBufferRef->color = color;
+                    batchData.circleBufferRef->thickness = thickness;
+                    batchData.circleBufferRef->fade = fade;
+                    batchData.circleBufferRef++;
+                }
+
+                batchData.circleIndexCount += 6;
+                batchData.circleCount++;
             }
         }
     }

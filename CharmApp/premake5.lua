@@ -32,6 +32,7 @@ links({
 
 postbuildcommands({
 	"{COPYDIR} assets/ %{cfg.buildtarget.directory}",
+	"{COPY} ../imgui.ini %{cfg.buildtarget.directory}",
 })
 
 filter("system:windows")

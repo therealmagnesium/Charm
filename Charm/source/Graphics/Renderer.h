@@ -10,12 +10,27 @@ namespace Charm
 {
     namespace Graphics
     {
-        struct Vertex
+        enum class BatchMode : u8
+        {
+            Quads = 0,
+            Circles,
+        };
+
+        struct QuadVertex
         {
             glm::vec3 position;
             glm::vec3 color;
             glm::vec2 texCoord;
             float texIndex;
+        };
+
+        struct CircleVertex
+        {
+            glm::vec3 worldPosition;
+            glm::vec3 localPosition;
+            glm::vec3 color;
+            float thickness;
+            float fade;
         };
 
         struct RenderState
@@ -24,6 +39,7 @@ namespace Charm
             glm::mat4 viewMatrix;
             glm::mat4 projectionMatrix;
             Shader defaultShader;
+            Shader circleShader;
         };
 
         namespace Renderer
@@ -34,9 +50,13 @@ namespace Charm
             void BeginScene2D(const Camera2D& camera);
             void EndScene2D();
 
-            void BeginBatch();
-            void EndBatch();
-            void Flush();
+            void BeginBatchQuad();
+            void EndBatchQuad();
+
+            void BeginBatchCircle();
+            void EndBatchCircle();
+
+            void Flush(BatchMode mode);
 
             void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color);
             void DrawRectangleRec(const Rectangle& rectangle, const glm::vec3& color);
@@ -47,8 +67,12 @@ namespace Charm
             void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec3& tint);
             void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec3& tint);
 
+            void DrawCircle(const glm::vec2& center, float radius, const glm::vec3& color);
+            void DrawCirclePro(const glm::vec2& center, float radius, float thickness, float fade, const glm::vec3& color);
+
             glm::vec3& GetClearColor();
             u32 GetQuadCount();
+            u32 GetCircleCount();
             u32 GetDrawCount();
 
             void SetClearColor(float r, float g, float b);

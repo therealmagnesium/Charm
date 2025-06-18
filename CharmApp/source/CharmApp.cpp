@@ -54,6 +54,9 @@ namespace CharmApp
 
     void OnRender()
     {
+        if (!state.showDebugUI)
+            RenderCommand::HideCursor();
+
         Renderer::BeginScene2D(state.camera);
 
         DrawBackground(state.tileSize, state.tileSpacing, state.tileOffset);
@@ -61,6 +64,9 @@ namespace CharmApp
         Texture* texture = AssetManager::GetAsset<Texture>(state.textures[state.activeTextureSlot]);
         Texture validTexture = (texture != NULL) ? *texture : (Texture){};
         Renderer::DrawTextureEx(validTexture, state.playerPosition, 45.f, 0.25f, glm::vec3(1.f));
+
+        const glm::vec2 virtualMousePosition = Utils::ScreenToVirtual(Input::GetMousePosition());
+        Renderer::DrawCirclePro(virtualMousePosition, 0.7f, 1.f, 0.5f, glm::vec3(0.8f, 0.72f, 0.2f));
 
         Renderer::EndScene2D();
     }
@@ -72,9 +78,10 @@ namespace CharmApp
             ImGui::Begin("Debug Stats");
             ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));
             ImGui::Text("MS per frame: %.7f", Time::GetDelta());
-            ImGui::Text("Player position: " V2_FMT, V2_OPEN(state.playerPosition));
             ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());
+            ImGui::Text("Number of circles: %d", Renderer::GetCircleCount());
             ImGui::Text("Number of draw calls: %d", Renderer::GetDrawCount());
+            ImGui::Text("Player position: " V2_FMT, V2_OPEN(state.playerPosition));
             ImGui::End();
 
             ImGui::Begin("Controls");

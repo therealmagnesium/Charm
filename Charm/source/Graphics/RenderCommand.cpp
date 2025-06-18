@@ -1,0 +1,30 @@
+#include "Graphics/RenderCommand.h"
+#include "Graphics/Renderer.h"
+#include "Core/Base.h"
+
+#include <SDL3/SDL_mouse.h>
+#include <glad/glad.h>
+
+namespace Charm
+{
+    namespace Graphics
+    {
+        namespace RenderCommand
+        {
+            void Clear()
+            {
+                const glm::vec3& clearColor = Renderer::GetClearColor();
+                glClearColor(V3_OPEN(clearColor), 1.f);
+                glClear(GL_COLOR_BUFFER_BIT);
+            }
+
+            void SetViewport(u32 x, u32 y, u32 width, u32 height)
+            {
+                glViewport(x, y, width, height);
+            }
+
+            void ShowCursor() { SDL_ShowCursor(); }
+            void HideCursor() { SDL_HideCursor(); }
+        }
+    }
+}

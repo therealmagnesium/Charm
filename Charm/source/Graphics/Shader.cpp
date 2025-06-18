@@ -25,7 +25,6 @@ namespace Charm
             Shader Load(const char* vertexPath, const char* fragmentPath)
             {
                 Shader shader;
-                shader.id = glCreateProgram();
                 shader.uniformLocations.reserve(k_ReservedUniformCount);
 
                 File vertexFile = IO::ReadFile(vertexPath);
@@ -33,9 +32,11 @@ namespace Charm
 
                 if (!vertexFile.isValid || !fragmentFile.isValid)
                 {
-                    WARN("Failed to load shader with an ID of %d", shader.id);
+                    WARN("Failed to load shader \"%s\"", Utils::GetFileName(vertexPath).c_str());
                     return shader;
                 }
+
+                shader.id = glCreateProgram();
 
                 const char* vertexSource = vertexFile.asCString();
                 const char* fragmentSource = fragmentFile.asCString();
