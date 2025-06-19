@@ -16,6 +16,7 @@ files({
 includedirs({
 	"../Charm/source",
 	IncludeDir.SDL3,
+	IncludeDir.entt,
 	IncludeDir.glad,
 	IncludeDir.glm,
 	IncludeDir.imgui,

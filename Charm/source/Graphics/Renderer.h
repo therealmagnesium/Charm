@@ -63,7 +63,7 @@ namespace Charm
             void DrawRectanglePro(const Rectangle& rectangle, const glm::vec2& origin, float rotation, const glm::vec3& color);
 
             void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec3& tint);
-            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, float scale, const glm::vec3& tint);
+            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, const glm::vec2& scale, const glm::vec3& tint);
             void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec3& tint);
             void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec3& tint);
 

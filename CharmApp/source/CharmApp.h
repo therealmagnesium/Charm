@@ -1,7 +1,9 @@
 #pragma once
 #include <Charm.h>
 
+using namespace Charm::Core;
 using namespace Charm::Graphics;
+using namespace Charm::ECS;
 
 namespace CharmApp
 {
@@ -12,6 +14,9 @@ namespace CharmApp
         Camera2D camera;
         AssetHandle textures[2];
         u32 activeTextureSlot = 0;
+
+        Scene scene;
+        Entity entity;
 
         float tileSize = 64.f;
         float tileSpacing = 4.f;

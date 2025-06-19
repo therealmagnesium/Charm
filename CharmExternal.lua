@@ -1,5 +1,6 @@
 IncludeDir = {}
 IncludeDir["SDL3"] = "../vendor/SDL3/include"
+IncludeDir["entt"] = "../vendor/entt"
 IncludeDir["glad"] = "../vendor/glad/include"
 IncludeDir["glm"] = "../vendor/glm"
 IncludeDir["imgui"] = "../vendor/imgui/include"

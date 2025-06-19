@@ -7,6 +7,7 @@
 using namespace Charm;
 using namespace Charm::Core;
 using namespace Charm::Graphics;
+using namespace Charm::ECS;
 
 namespace CharmApp
 {
@@ -24,6 +25,10 @@ namespace CharmApp
 
         state.playerPosition.x = config.virtualWidth / 2.f;
         state.playerPosition.y = config.virtualHeight / 2.f;
+
+        state.scene = Scenes::Create();
+        state.entity = Scenes::CreateEntity(state.scene);
+        state.entity.AddComponent<SpriteRendererComponent>(state.textures[0]);
     }
 
     void OnUpdate()
@@ -40,6 +45,8 @@ namespace CharmApp
         if (Input::IsKeyPressed(KEY_2))
             state.activeTextureSlot = 1;
 
+        Scenes::Update(state.scene);
+
         const float playerSpeed = 650.f;
 
         state.playerDirection.x = Input::GetInputAxisAlt(InputAxis::Horizontal);
@@ -50,6 +57,11 @@ namespace CharmApp
 
         state.playerPosition.x += state.playerDirection.x * playerSpeed * Time::GetDelta();
         state.playerPosition.y += state.playerDirection.y * playerSpeed * Time::GetDelta();
+
+        auto& entityTransform = state.entity.GetComponent<TransformComponent>();
+        entityTransform.scale.x = 0.25f;
+        entityTransform.scale.y = 0.25f;
+        entityTransform.position = glm::vec3(state.playerPosition, 0.f);
     }
 
     void OnRender()
@@ -59,11 +71,7 @@ namespace CharmApp
 
         Renderer::BeginScene2D(state.camera);
 
-        DrawBackground(state.tileSize, state.tileSpacing, state.tileOffset);
-
-        Texture* texture = AssetManager::GetAsset<Texture>(state.textures[state.activeTextureSlot]);
-        Texture validTexture = (texture != NULL) ? *texture : (Texture){};
-        Renderer::DrawTextureEx(validTexture, state.playerPosition, 45.f, 0.25f, glm::vec3(1.f));
+        Scenes::Render(state.scene);
 
         const glm::vec2 virtualMousePosition = Utils::ScreenToVirtual(Input::GetMousePosition());
         Renderer::DrawCirclePro(virtualMousePosition, 0.7f, 1.f, 0.5f, glm::vec3(0.8f, 0.72f, 0.2f));
@@ -96,7 +104,7 @@ namespace CharmApp
             {
                 ImGui::Text("Handle: 0x%lx", handle);
                 ImGui::Text("Path: %s", metadata.path.c_str());
-                ImGui::Text("Type: %s", Utils::AssetTypeToString(metadata.type).c_str()); // TODO: Convert asset type to string
+                ImGui::Text("Type: %s", Utils::AssetTypeToString(metadata.type).c_str());
             }
 
             ImGui::End();

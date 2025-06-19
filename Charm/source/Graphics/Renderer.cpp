@@ -252,7 +252,7 @@ namespace Charm
                 DrawTexturePro(texture, source, dest, glm::vec2(0.f), 0.f, tint);
             }
 
-            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, float scale, const glm::vec3& tint)
+            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, const glm::vec2& scale, const glm::vec3& tint)
             {
                 Rectangle source;
                 source.width = texture.width;
@@ -264,8 +264,8 @@ namespace Charm
 
                 if (texture.id != 0)
                 {
-                    dest.width = texture.width * scale;
-                    dest.height = texture.height * scale;
+                    dest.width = texture.width * scale.x;
+                    dest.height = texture.height * scale.y;
                 }
                 else
                 {
@@ -274,8 +274,8 @@ namespace Charm
                 }
 
                 glm::vec2 origin;
-                origin.x = texture.width * scale / 2.f;
-                origin.y = texture.height * scale / 2.f;
+                origin.x = texture.width * scale.x / 2.f;
+                origin.y = texture.height * scale.y / 2.f;
 
                 DrawTexturePro(texture, source, dest, origin, rotation, tint);
             }

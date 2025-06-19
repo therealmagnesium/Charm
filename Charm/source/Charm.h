@@ -10,6 +10,10 @@
 #include "Core/Time.h"
 #include "Core/Utils.h"
 
+#include "ECS/Components.h"
+#include "ECS/Entity.h"
+#include "ECS/Scene.h"
+
 #include "Graphics/Camera.h"
 #include "Graphics/RenderCommand.h"
 #include "Graphics/Renderer.h"
