@@ -9,14 +9,14 @@ namespace CharmApp
 {
     struct CharmState
     {
-        bool showDebugUI = false;
+        Framebuffer framebuffer;
 
         Camera2D camera;
         AssetHandle textures[2];
-        u32 activeTextureSlot = 0;
 
         Scene scene;
         Entity entity;
+        Entity circle;
 
         float tileSize = 64.f;
         float tileSpacing = 4.f;

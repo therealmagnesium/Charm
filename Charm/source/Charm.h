@@ -15,6 +15,7 @@
 #include "ECS/Scene.h"
 
 #include "Graphics/Camera.h"
+#include "Graphics/Framebuffer.h"
 #include "Graphics/RenderCommand.h"
 #include "Graphics/Renderer.h"
 #include "Graphics/Shader.h"

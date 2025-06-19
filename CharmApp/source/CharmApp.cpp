@@ -1,4 +1,5 @@
 #include "CharmApp.h"
+#include "Panels/SceneViewport.h"
 
 #include <Charm.h>
 #include <imgui.h>
@@ -20,6 +21,12 @@ namespace CharmApp
         const ApplicationConfig& config = Application::GetConfig();
         Renderer::SetClearColor(0.15f, 0.15f, 0.17f);
 
+        FramebufferSpecification framebufferSpec;
+        framebufferSpec.width = config.virtualWidth;
+        framebufferSpec.height = config.virtualHeight;
+        framebufferSpec.numAttachments = 2;
+        state.framebuffer = Framebuffers::Create(framebufferSpec);
+
         state.textures[0] = AssetManager::Import("assets/textures/small_checker.png", AssetType::Texture);
         state.textures[1] = AssetManager::Import("assets/textures/texel_checker.png", AssetType::Texture);
 
@@ -27,23 +34,18 @@ namespace CharmApp
         state.playerPosition.y = config.virtualHeight / 2.f;
 
         state.scene = Scenes::Create();
+
         state.entity = Scenes::CreateEntity(state.scene);
         state.entity.AddComponent<SpriteRendererComponent>(state.textures[0]);
+
+        state.circle = Scenes::CreateEntity(state.scene, "Circle");
+        state.circle.AddComponent<CircleRendererComponent>(0.7f, 1.f, 0.5f, glm::vec3(0.8f, 0.72f, 0.2f));
     }
 
     void OnUpdate()
     {
         if (Input::IsKeyPressed(KEY_ESCAPE))
             Application::Quit();
-
-        if (Input::IsKeyPressed(KEY_F2))
-            state.showDebugUI = !state.showDebugUI;
-
-        if (Input::IsKeyPressed(KEY_1))
-            state.activeTextureSlot = 0;
-
-        if (Input::IsKeyPressed(KEY_2))
-            state.activeTextureSlot = 1;
 
         Scenes::Update(state.scene);
 
@@ -62,58 +64,78 @@ namespace CharmApp
         entityTransform.scale.x = 0.25f;
         entityTransform.scale.y = 0.25f;
         entityTransform.position = glm::vec3(state.playerPosition, 0.f);
+
+        if (SceneViewportPanel::IsFocused())
+        {
+            const glm::vec2 virtualMousePosition = Utils::ScreenToVirtual(Input::GetMousePosition());
+            const glm::vec2 viewportMousePosition = Utils::ScreenToViewport(Input::GetMousePosition(), SceneViewportPanel::GetPosition(), SceneViewportPanel::GetSize());
+            auto& circleTransform = state.circle.GetComponent<TransformComponent>();
+            circleTransform.position = glm::vec3(viewportMousePosition, 0.f);
+        }
+
+        state.circle.isActive = SceneViewportPanel::IsFocused();
     }
 
     void OnRender()
     {
-        if (!state.showDebugUI)
-            RenderCommand::HideCursor();
+        Framebuffers::Bind(state.framebuffer);
+        RenderCommand::Clear();
 
         Renderer::BeginScene2D(state.camera);
 
         Scenes::Render(state.scene);
 
-        const glm::vec2 virtualMousePosition = Utils::ScreenToVirtual(Input::GetMousePosition());
-        Renderer::DrawCirclePro(virtualMousePosition, 0.7f, 1.f, 0.5f, glm::vec3(0.8f, 0.72f, 0.2f));
-
         Renderer::EndScene2D();
+        Framebuffers::Unbind();
     }
 
     void OnRenderUI()
     {
-        if (state.showDebugUI)
+        const ApplicationConfig& config = Application::GetConfig();
+        const glm::vec2 virtualMousePosition = Utils::ScreenToVirtual(Input::GetMousePosition());
+        const glm::vec2 viewportMousePosition = Utils::ScreenToViewport(Input::GetMousePosition(), SceneViewportPanel::GetPosition(), SceneViewportPanel::GetSize());
+
+        ImGui::DockSpaceOverViewport();
+
+        SceneViewportPanel::Display(state.framebuffer);
+
+        if (SceneViewportPanel::IsFocused())
+            RenderCommand::HideCursor();
+
+        ImGui::Begin("Debug Stats");
+        ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));
+        ImGui::Text("MS per frame: %.7f", Time::GetDelta());
+        ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());
+        ImGui::Text("Number of circles: %d", Renderer::GetCircleCount());
+        ImGui::Text("Number of draw calls: %d", Renderer::GetDrawCount());
+        ImGui::Text("Virtual mouse position: " V2_FMT, V2_OPEN(virtualMousePosition));
+        ImGui::Text("Viewport mouse position: " V2_FMT, V2_OPEN(viewportMousePosition));
+        ImGui::Text("Is viewport hovered?: %s", Utils::BoolToCString(SceneViewportPanel::IsHovered()));
+        ImGui::Text("Is viewport focused?: %s", Utils::BoolToCString(SceneViewportPanel::IsFocused()));
+        ImGui::End();
+
+        ImGui::Begin("Controls");
+        ImGui::DragFloat("Tile size", &state.tileSize, 1.f, 4.f, 128.f);
+        ImGui::DragFloat("Tile spacing", &state.tileSpacing, 1.f, 0.f, 32.f);
+        ImGui::DragFloat("Tile offset", &state.tileOffset, 1.f);
+        ImGui::End();
+
+        ImGui::Begin("Asset Registry");
+
+        for (auto& [handle, metadata] : AssetManager::GetRegistry())
         {
-            ImGui::Begin("Debug Stats");
-            ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));
-            ImGui::Text("MS per frame: %.7f", Time::GetDelta());
-            ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());
-            ImGui::Text("Number of circles: %d", Renderer::GetCircleCount());
-            ImGui::Text("Number of draw calls: %d", Renderer::GetDrawCount());
-            ImGui::Text("Player position: " V2_FMT, V2_OPEN(state.playerPosition));
-            ImGui::End();
-
-            ImGui::Begin("Controls");
-            ImGui::DragFloat("Tile size", &state.tileSize, 1.f, 4.f, 128.f);
-            ImGui::DragFloat("Tile spacing", &state.tileSpacing, 1.f, 0.f, 32.f);
-            ImGui::DragFloat("Tile offset", &state.tileOffset, 1.f);
-            ImGui::End();
-
-            ImGui::Begin("Asset Registry");
-
-            for (auto& [handle, metadata] : AssetManager::GetRegistry())
-            {
-                ImGui::Text("Handle: 0x%lx", handle);
-                ImGui::Text("Path: %s", metadata.path.c_str());
-                ImGui::Text("Type: %s", Utils::AssetTypeToString(metadata.type).c_str());
-            }
-
-            ImGui::End();
+            ImGui::Text("Handle: 0x%lx", handle);
+            ImGui::Text("Path: %s", metadata.path.c_str());
+            ImGui::Text("Type: %s", Utils::AssetTypeToString(metadata.type).c_str());
         }
+
+        ImGui::End();
     }
 
     void OnShutdown()
     {
         AssetManager::Clean();
+        Framebuffers::Destroy(state.framebuffer);
     }
 
     void DrawBackground(float tileSize, float spacing, float offset)

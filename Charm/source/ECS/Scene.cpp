@@ -42,17 +42,26 @@ namespace Charm
 
             void Render(Scene& scene)
             {
-                auto sprites = scene.registry.group<TransformComponent, SpriteRendererComponent>();
+                auto circles = scene.registry.group<CircleRendererComponent>(entt::get<TransformComponent>);
+                auto sprites = scene.registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
+
+                for (auto entity : circles)
+                {
+                    auto [transform, circleRenderer] = circles.get<TransformComponent, CircleRendererComponent>(entity);
+
+                    Renderer::DrawCirclePro(transform.position, circleRenderer.radius, circleRenderer.thickness,
+                                            circleRenderer.fade, circleRenderer.color);
+                }
 
                 for (auto entity : sprites)
                 {
-                    auto& transform = sprites.get<TransformComponent>(entity);
-                    auto& spriteRenderer = sprites.get<SpriteRendererComponent>(entity);
+                    auto [transform, spriteRenderer] = sprites.get<TransformComponent, SpriteRendererComponent>(entity);
 
                     Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
                     Texture validTexture = (texture != NULL) ? *texture : (Texture){};
 
-                    Renderer::DrawTextureEx(validTexture, transform.position, transform.rotation.z, transform.scale, spriteRenderer.tint);
+                    Renderer::DrawTextureEx(validTexture, transform.position, transform.rotation.z,
+                                            transform.scale, spriteRenderer.tint);
                 }
             }
         }

@@ -15,9 +15,10 @@ namespace Charm
         struct Entity
         {
             UUID id = 0;
+            bool isActive = false;
+            std::string tag = "Entity";
             Scene* context = NULL;
             entt::entity handle = entt::null;
-            std::string tag = "Entity";
 
             template <typename T>
             inline bool HasComponent()

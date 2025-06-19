@@ -17,6 +17,12 @@ namespace Charm
 {
     namespace Utils
     {
+        const char* BoolToCString(bool value)
+        {
+            const char* x = value ? "true" : "false";
+            return x;
+        }
+
         std::string GetFileName(const char* path, bool hasExtension)
         {
             std::filesystem::path p(path);
@@ -60,6 +66,26 @@ namespace Charm
             virtualPosition.y = screenPosition.y * scale.y;
 
             return virtualPosition;
+        }
+
+        glm::vec2 ScreenToViewport(const glm::vec2& screenPosition, const glm::vec2& viewportPosition, const glm::vec2& viewportSize)
+        {
+            const ApplicationConfig& config = Application::GetConfig();
+
+            glm::vec2 scale;
+            scale.x = viewportSize.x / (float)config.virtualWidth;
+            scale.y = viewportSize.y / (float)config.virtualHeight;
+
+            glm::vec2 position;
+            position.x = (screenPosition.x - viewportPosition.x);
+            position.y = (screenPosition.y - viewportPosition.y);
+
+            position.x = glm::clamp(position.x, 0.f, viewportSize.x);
+            position.y = glm::clamp(position.y, 0.f, viewportSize.y);
+
+            position /= scale;
+
+            return position;
         }
 
         glm::mat4 GetTransfomMatrix2D(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec2& origin)

@@ -38,5 +38,23 @@ namespace Charm
                 this->sprite = sprite;
             }
         };
+
+        struct CircleRendererComponent
+        {
+            float radius = 1.f;
+            float thickness = 1.f;
+            float fade = 0.05f;
+            glm::vec3 color = glm::vec3(1.f);
+
+            CircleRendererComponent() = default;
+            CircleRendererComponent(const CircleRendererComponent&) = default;
+            CircleRendererComponent(float radius, float thickness, float fade, const glm::vec3& color = glm::vec3(1.f))
+            {
+                this->radius = radius;
+                this->thickness = thickness;
+                this->fade = fade;
+                this->color = color;
+            }
+        };
     }
 }

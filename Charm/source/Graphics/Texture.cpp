@@ -55,6 +55,49 @@ namespace Charm
                 return texture;
             }
 
+            Texture LoadEmpty(u32 width, u32 height, TextureFormat format)
+            {
+                Texture texture;
+                texture.width = width;
+                texture.height = height;
+
+                u32 formatSize = 0;
+
+                switch (format)
+                {
+                    case TextureFormat::RGBA:
+                        texture.internalFormat = GL_RGBA8;
+                        texture.dataFormat = GL_RGBA;
+                        texture.channelCount = 4;
+                        formatSize = GL_UNSIGNED_BYTE;
+                        break;
+
+                    case TextureFormat::DepthStencil:
+                        texture.internalFormat = GL_DEPTH24_STENCIL8;
+                        texture.dataFormat = GL_DEPTH_STENCIL;
+                        texture.channelCount = 4;
+                        formatSize = GL_UNSIGNED_INT_24_8;
+                        break;
+
+                    default:
+                        break;
+                }
+
+                glGenTextures(1, &texture.id);
+                glBindTexture(GL_TEXTURE_2D, texture.id);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+                glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
+                             texture.height, 0, texture.dataFormat, formatSize, NULL);
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                INFO("Empty texture loaded successfully with an ID of %d", texture.id);
+                return texture;
+            }
+
             Texture LoadDefaultWhite()
             {
                 Texture texture;

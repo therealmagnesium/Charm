@@ -20,6 +20,7 @@ namespace Charm
                 entity.context = context;
                 entity.tag = tag;
                 entity.id = Random::GenerateUUID();
+                entity.isActive = true;
 
                 return entity;
             }

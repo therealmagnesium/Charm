@@ -8,6 +8,14 @@ namespace Charm
 {
     namespace Graphics
     {
+        enum class TextureFormat : u8
+        {
+            RGB = 0,
+            RGBA,
+            Depth,
+            DepthStencil
+        };
+
         struct Texture : public Asset
         {
             u32 id = 0;
@@ -24,6 +32,7 @@ namespace Charm
         namespace Textures
         {
             Texture Load(const char* path);
+            Texture LoadEmpty(u32 width, u32 height, TextureFormat format);
             Texture LoadDefaultWhite();
             void Unload(Texture& texture);
             void Bind(const Texture& texture, u8 slot);
