@@ -1,4 +1,5 @@
 #include "CharmApp.h"
+#include "Panels/SceneHeirarchyPanel.h"
 #include "Panels/SceneViewport.h"
 
 #include <Charm.h>
@@ -34,9 +35,13 @@ namespace CharmApp
         state.playerPosition.y = config.virtualHeight / 2.f;
 
         state.scene = Scenes::Create();
+        SceneHeirarchyPanel::SetContext(&state.scene);
 
         state.entity = Scenes::CreateEntity(state.scene);
         state.entity.AddComponent<SpriteRendererComponent>(state.textures[0]);
+        auto& entityTransform = state.entity.GetComponent<TransformComponent>();
+        entityTransform.position = glm::vec3(state.playerPosition, 0.f);
+        entityTransform.scale = glm::vec3(0.25f, 0.25f, 0.f);
 
         state.circle = Scenes::CreateEntity(state.scene, "Circle");
         state.circle.AddComponent<CircleRendererComponent>(0.7f, 1.f, 0.5f, glm::vec3(0.8f, 0.72f, 0.2f));
@@ -44,36 +49,40 @@ namespace CharmApp
 
     void OnUpdate()
     {
+        if (SceneViewportPanel::IsFocused())
+            Input::Capture(true);
+        else
+            Input::Capture(false);
+
         if (Input::IsKeyPressed(KEY_ESCAPE))
             Application::Quit();
 
         Scenes::Update(state.scene);
 
-        const float playerSpeed = 650.f;
+        /*
+            const float playerSpeed = 650.f;
 
-        state.playerDirection.x = Input::GetInputAxisAlt(InputAxis::Horizontal);
-        state.playerDirection.y = Input::GetInputAxisAlt(InputAxis::Vertical);
+            state.playerDirection.x = Input::GetInputAxisAlt(InputAxis::Horizontal);
+            state.playerDirection.y = Input::GetInputAxisAlt(InputAxis::Vertical);
 
-        if (state.playerDirection.x != 0.f && state.playerDirection.y != 0.f)
-            state.playerDirection = glm::normalize(state.playerDirection);
+            if (state.playerDirection.x != 0.f && state.playerDirection.y != 0.f)
+                state.playerDirection = glm::normalize(state.playerDirection);
 
-        state.playerPosition.x += state.playerDirection.x * playerSpeed * Time::GetDelta();
-        state.playerPosition.y += state.playerDirection.y * playerSpeed * Time::GetDelta();
+            state.playerPosition.x += state.playerDirection.x * playerSpeed * Time::GetDelta();
+            state.playerPosition.y += state.playerDirection.y * playerSpeed * Time::GetDelta();
 
-        auto& entityTransform = state.entity.GetComponent<TransformComponent>();
-        entityTransform.scale.x = 0.25f;
-        entityTransform.scale.y = 0.25f;
-        entityTransform.position = glm::vec3(state.playerPosition, 0.f);
+            auto& entityTransform = state.entity.GetComponent<TransformComponent>();
+            entityTransform.scale.x = 0.25f;
+            entityTransform.scale.y = 0.25f;
+            entityTransform.position = glm::vec3(state.playerPosition, 0.f);
 
-        if (SceneViewportPanel::IsFocused())
-        {
-            const glm::vec2 virtualMousePosition = Utils::ScreenToVirtual(Input::GetMousePosition());
-            const glm::vec2 viewportMousePosition = Utils::ScreenToViewport(Input::GetMousePosition(), SceneViewportPanel::GetPosition(), SceneViewportPanel::GetSize());
-            auto& circleTransform = state.circle.GetComponent<TransformComponent>();
-            circleTransform.position = glm::vec3(viewportMousePosition, 0.f);
-        }
-
-        state.circle.isActive = SceneViewportPanel::IsFocused();
+            if (SceneViewportPanel::IsFocused())
+            {
+                const glm::vec2 virtualMousePosition = Utils::ScreenToVirtual(Input::GetMousePosition());
+                const glm::vec2 viewportMousePosition = Utils::ScreenToViewport(Input::GetMousePosition(), SceneViewportPanel::GetPosition(), SceneViewportPanel::GetSize());
+                auto& circleTransform = state.circle.GetComponent<TransformComponent>();
+                circleTransform.position = glm::vec3(viewportMousePosition, 0.f);
+            }*/
     }
 
     void OnRender()
@@ -97,10 +106,15 @@ namespace CharmApp
 
         ImGui::DockSpaceOverViewport();
 
+        SceneHeirarchyPanel::Display();
         SceneViewportPanel::Display(state.framebuffer);
 
         if (SceneViewportPanel::IsFocused())
+        {
             RenderCommand::HideCursor();
+            if (!SceneViewportPanel::IsHovered())
+                RenderCommand::ShowCursor();
+        }
 
         ImGui::Begin("Debug Stats");
         ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));

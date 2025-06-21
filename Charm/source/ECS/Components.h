@@ -1,6 +1,9 @@
 #pragma once
 #include "Core/Asset.h"
+#include "Core/Random.h"
+
 #include <glm/glm.hpp>
+#include <string>
 
 using namespace Charm::Core;
 
@@ -8,11 +11,33 @@ namespace Charm
 {
     namespace ECS
     {
+        struct InternalComponent
+        {
+            UUID id = 0;
+            bool isActive = false;
+            std::string tag = "Entity";
+
+            InternalComponent()
+            {
+                id = Random::GenerateUUID();
+                isActive = true;
+            }
+
+            InternalComponent(const InternalComponent&) = default;
+
+            InternalComponent(UUID id, const char* tag)
+            {
+                this->id = id;
+                this->tag = tag;
+                this->isActive = true;
+            }
+        };
+
         struct TransformComponent
         {
-            glm::vec3 position;
-            glm::vec3 rotation;
-            glm::vec3 scale;
+            glm::vec3 position = glm::vec3(0.f);
+            glm::vec3 rotation = glm::vec3(0.f);
+            glm::vec3 scale = glm::vec3(1.f);
 
             TransformComponent() = default;
             TransformComponent(const TransformComponent&) = default;

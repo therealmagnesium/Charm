@@ -74,36 +74,64 @@ namespace Charm
                             break;
 
                         case SDL_EVENT_KEY_DOWN:
-                            _Input->keyboard.keysPressed[event.key.scancode] = !_Input->keyboard.keysHeld[event.key.scancode];
-                            _Input->keyboard.keysHeld[event.key.scancode] = true;
+                        {
+                            if (_Input->shouldCapture)
+                            {
+                                _Input->keyboard.keysPressed[event.key.scancode] = !_Input->keyboard.keysHeld[event.key.scancode];
+                                _Input->keyboard.keysHeld[event.key.scancode] = true;
+                            }
                             break;
+                        }
 
                         case SDL_EVENT_KEY_UP:
-                            _Input->keyboard.keysPressed[event.key.scancode] = false;
-                            _Input->keyboard.keysHeld[event.key.scancode] = false;
+                        {
+                            if (_Input->shouldCapture)
+                            {
+                                _Input->keyboard.keysPressed[event.key.scancode] = false;
+                                _Input->keyboard.keysHeld[event.key.scancode] = false;
+                            }
                             break;
+                        }
 
                         case SDL_EVENT_MOUSE_MOTION:
-                            _Input->mouse.position.x = event.motion.x;
-                            _Input->mouse.position.y = event.motion.y;
-                            _Input->mouse.relative.x = event.motion.xrel;
-                            _Input->mouse.relative.y = event.motion.yrel;
+                        {
+                            if (_Input->shouldCapture)
+                            {
+                                _Input->mouse.position.x = event.motion.x;
+                                _Input->mouse.position.y = event.motion.y;
+                                _Input->mouse.relative.x = event.motion.xrel;
+                                _Input->mouse.relative.y = event.motion.yrel;
+                            }
                             break;
+                        }
 
                         case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                            _Input->mouse.buttonsClicked[event.button.button] = !_Input->mouse.buttonsHeld[event.button.button];
-                            _Input->mouse.buttonsHeld[event.button.button] = true;
+                        {
+                            if (_Input->shouldCapture)
+                            {
+                                _Input->mouse.buttonsClicked[event.button.button] = !_Input->mouse.buttonsHeld[event.button.button];
+                                _Input->mouse.buttonsHeld[event.button.button] = true;
+                            }
                             break;
+                        }
 
                         case SDL_EVENT_MOUSE_BUTTON_UP:
-                            _Input->mouse.buttonsClicked[event.button.button] = false;
-                            _Input->mouse.buttonsHeld[event.button.button] = false;
+                        {
+                            if (_Input->shouldCapture)
+                            {
+                                _Input->mouse.buttonsClicked[event.button.button] = false;
+                                _Input->mouse.buttonsHeld[event.button.button] = false;
+                            }
                             break;
+                        }
 
                         case SDL_EVENT_WINDOW_RESIZED:
                             state.width = event.window.data1;
                             state.height = event.window.data2;
                             RenderCommand::SetViewport(0, 0, state.width, state.height);
+                            break;
+
+                        default:
                             break;
                     }
                 }

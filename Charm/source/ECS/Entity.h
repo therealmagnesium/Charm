@@ -14,9 +14,6 @@ namespace Charm
     {
         struct Entity
         {
-            UUID id = 0;
-            bool isActive = false;
-            std::string tag = "Entity";
             Scene* context = NULL;
             entt::entity handle = entt::null;
 
@@ -43,11 +40,15 @@ namespace Charm
             {
                 context->registry.remove<T>(handle);
             }
+
+            inline operator bool() const { return handle != entt::null; }
+            inline bool operator==(const Entity& other) { return handle == other.handle && context == other.context; }
+            inline bool operator!=(const Entity& other) { return handle != other.handle || context != other.context; }
         };
 
         namespace Entities
         {
-            Entity Create(entt::entity handle, Scene* context, const char* tag = "Entity");
+            Entity Create(entt::entity handle, Scene* context);
         }
     }
 }

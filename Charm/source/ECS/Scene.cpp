@@ -32,36 +32,54 @@ namespace Charm
 
             Entity CreateEntity(Scene& scene, const char* tag)
             {
-                Entity entity = Entities::Create(scene.registry.create(), &scene, tag);
+                Entity entity = Entities::Create(scene.registry.create(), &scene);
+                entity.AddComponent<InternalComponent>(Random::GenerateUUID(), tag);
                 entity.AddComponent<TransformComponent>();
 
                 return entity;
+            }
+
+            void DestroyEntity(Scene& scene, Entity& entity)
+            {
+                scene.registry.destroy(entity.handle);
             }
 
             void Update(Scene& scene) {}
 
             void Render(Scene& scene)
             {
-                auto circles = scene.registry.group<CircleRendererComponent>(entt::get<TransformComponent>);
-                auto sprites = scene.registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
+                auto circles = scene.registry.group<CircleRendererComponent>(entt::get<TransformComponent, InternalComponent>);
+                auto sprites = scene.registry.group<SpriteRendererComponent>(entt::get<TransformComponent, InternalComponent>);
 
-                for (auto entity : circles)
+                for (auto entityID : circles)
                 {
-                    auto [transform, circleRenderer] = circles.get<TransformComponent, CircleRendererComponent>(entity);
+                    auto& internal = circles.get<InternalComponent>(entityID);
 
-                    Renderer::DrawCirclePro(transform.position, circleRenderer.radius, circleRenderer.thickness,
-                                            circleRenderer.fade, circleRenderer.color);
+                    if (internal.isActive)
+                    {
+                        auto& transform = circles.get<TransformComponent>(entityID);
+                        auto& circleRenderer = circles.get<CircleRendererComponent>(entityID);
+
+                        Renderer::DrawCirclePro(transform.position, circleRenderer.radius, circleRenderer.thickness,
+                                                circleRenderer.fade, circleRenderer.color);
+                    }
                 }
 
-                for (auto entity : sprites)
+                for (auto entityID : sprites)
                 {
-                    auto [transform, spriteRenderer] = sprites.get<TransformComponent, SpriteRendererComponent>(entity);
+                    auto& internal = sprites.get<InternalComponent>(entityID);
 
-                    Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
-                    Texture validTexture = (texture != NULL) ? *texture : (Texture){};
+                    if (internal.isActive)
+                    {
+                        auto& transform = sprites.get<TransformComponent>(entityID);
+                        auto& spriteRenderer = sprites.get<SpriteRendererComponent>(entityID);
 
-                    Renderer::DrawTextureEx(validTexture, transform.position, transform.rotation.z,
-                                            transform.scale, spriteRenderer.tint);
+                        Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
+                        Texture validTexture = (texture != NULL) ? *texture : (Texture){};
+
+                        Renderer::DrawTextureEx(validTexture, transform.position, transform.rotation.z,
+                                                transform.scale, spriteRenderer.tint);
+                    }
                 }
             }
         }

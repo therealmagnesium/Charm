@@ -20,6 +20,7 @@ namespace Charm
         {
             Scene Create();
             Entity CreateEntity(Scene& scene, const char* tag = "Entity");
+            void DestroyEntity(Scene& scene, Entity& entity);
             void Update(Scene& scene);
             void Render(Scene& scene);
         }

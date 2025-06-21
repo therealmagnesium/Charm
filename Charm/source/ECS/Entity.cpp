@@ -13,14 +13,11 @@ namespace Charm
     {
         namespace Entities
         {
-            Entity Create(entt::entity handle, Scene* context, const char* tag)
+            Entity Create(entt::entity handle, Scene* context)
             {
                 Entity entity;
                 entity.handle = handle;
                 entity.context = context;
-                entity.tag = tag;
-                entity.id = Random::GenerateUUID();
-                entity.isActive = true;
 
                 return entity;
             }

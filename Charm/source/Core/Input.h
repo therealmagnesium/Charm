@@ -29,6 +29,7 @@ namespace Charm
 
         struct InputState
         {
+            bool shouldCapture = true;
             InputMouseState mouse;
             InputKeyboardState keyboard;
         };
@@ -39,6 +40,7 @@ namespace Charm
         {
             void Initialize();
             void Reset();
+            void Capture(bool shouldCapture);
 
             bool IsMouseDown(MouseButton button);
             bool IsMouseClicked(MouseButton button);
