@@ -36,27 +36,33 @@ namespace CharmApp
 
     void OnUpdate()
     {
-        if (SceneViewportPanel::IsFocused())
-            Input::Capture(true);
-        else
-            Input::Capture(false);
+        Input::Capture(SceneViewportPanel::IsFocused());
+        Scenes::Update(state.scene);
+
+        Input::Capture(true);
 
         if (Input::IsKeyPressed(KEY_ESCAPE))
             Application::Quit();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_S))
         {
-            SceneSerializer::Serialize("assets/scenes/Untitled.charm");
-            INFO("Saved scene to assets/scenes/Untitled.charm");
+            if (FileDialogs::Save())
+            {
+                const std::string& path = FileDialogs::GetSelectedPath();
+                SceneSerializer::Serialize(path.c_str());
+                INFO("Saved scene to %s", path.c_str());
+            }
         }
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_O))
         {
-            SceneSerializer::Deserialize("assets/scenes/Untitled.charm");
-            INFO("Loaded scene assets/scenes/Untitled.charm");
+            if (FileDialogs::Open())
+            {
+                const std::string& path = FileDialogs::GetSelectedPath();
+                SceneSerializer::Deserialize(path.c_str());
+                INFO("Loaded scene %s", path.c_str());
+            }
         }
-
-        Scenes::Update(state.scene);
     }
 
     void OnRender()
@@ -79,13 +85,6 @@ namespace CharmApp
 
         SceneHeirarchyPanel::Display();
         SceneViewportPanel::Display(state.framebuffer);
-
-        if (SceneViewportPanel::IsFocused())
-        {
-            RenderCommand::HideCursor();
-            if (!SceneViewportPanel::IsHovered())
-                RenderCommand::ShowCursor();
-        }
 
         ImGui::Begin("Debug Stats");
         ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));

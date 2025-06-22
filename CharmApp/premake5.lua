@@ -38,7 +38,7 @@ libdirs({})
 
 filter("system:linux")
 defines({ "CH_PLATFORM_LINUX" })
-libdirs({})
+links({ "gtk-3" })
 
 filter("configurations:Debug")
 defines({ "CH_DEBUG" })

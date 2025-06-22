@@ -1,7 +1,9 @@
 #pragma once
 #include "Core/Application.h"
+#include "Core/Asset.h"
 #include "Core/AssetManager.h"
 #include "Core/Base.h"
+#include "Core/FileDialogs.h"
 #include "Core/IO.h"
 #include "Core/Input.h"
 #include "Core/KeyCodes.h"

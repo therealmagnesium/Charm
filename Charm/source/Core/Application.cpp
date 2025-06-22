@@ -1,5 +1,6 @@
 #include "Core/Application.h"
 #include "Core/AssetManager.h"
+#include "Core/FileDialogs.h"
 #include "Core/Input.h"
 #include "Core/Log.h"
 #include "Core/Random.h"
@@ -46,6 +47,7 @@ namespace Charm
                 Input::Initialize();
                 Time::Initialize(60);
                 Renderer::Initialize();
+                FileDialogs::Init();
                 UI::SetupContext();
                 AssetManager::Init(&state.assets);
 
@@ -59,8 +61,9 @@ namespace Charm
             void Shutdown()
             {
                 INFO("Application \"%s\" is shutting down...", state.config.name.c_str());
-                Renderer::Shutdown();
+                FileDialogs::Shutdown();
                 UI::DestroyContext();
+                Renderer::Shutdown();
             }
 
             void Run()
