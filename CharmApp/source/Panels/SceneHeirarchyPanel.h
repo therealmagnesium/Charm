@@ -14,6 +14,6 @@ namespace Charm
     namespace SceneHeirarchyPanel
     {
         void Display();
-        void SetContext(Scene* context);
+        void SetContext(Scene& context);
     }
 }

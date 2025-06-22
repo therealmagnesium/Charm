@@ -13,6 +13,7 @@
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
 #include "ECS/Scene.h"
+#include "ECS/SceneSerializer.h"
 
 #include "Graphics/Camera.h"
 #include "Graphics/Framebuffer.h"

@@ -51,6 +51,7 @@ namespace Charm
                 auto circles = scene.registry.group<CircleRendererComponent>(entt::get<TransformComponent, InternalComponent>);
                 auto sprites = scene.registry.group<SpriteRendererComponent>(entt::get<TransformComponent, InternalComponent>);
 
+                Renderer::BeginScene2D(scene.editorCamera2D);
                 for (auto entityID : circles)
                 {
                     auto& internal = circles.get<InternalComponent>(entityID);
@@ -74,13 +75,19 @@ namespace Charm
                         auto& transform = sprites.get<TransformComponent>(entityID);
                         auto& spriteRenderer = sprites.get<SpriteRendererComponent>(entityID);
 
+                        Texture defaultTexture;
+                        defaultTexture.id = 0;
+                        defaultTexture.width = 64;
+                        defaultTexture.height = 64;
+
                         Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
-                        Texture validTexture = (texture != NULL) ? *texture : (Texture){};
+                        Texture validTexture = (texture != NULL) ? *texture : defaultTexture;
 
                         Renderer::DrawTextureEx(validTexture, transform.position, transform.rotation.z,
                                                 transform.scale, spriteRenderer.tint);
                     }
                 }
+                Renderer::EndScene2D();
             }
         }
     }

@@ -13,7 +13,9 @@ namespace Charm
     {
         void DrawEntityNode(Entity& entity);
         void DrawComponents(Entity& entity);
-        void DrawVec3Control(const char* label, glm::vec3& v, float resetValue = 0.f, float columnWidth = 80.f);
+        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth = 80.f);
+        void DrawVec3Control(const char* label, glm::vec3& v, float resetValue = 0.f, float columnWidth = 70.f);
+        void DrawColorControl(const char* label, glm::vec3& v, float columnWidth = 50.f);
 
         template <typename T, typename UIFunction>
         void DrawComponent(const char* name, Entity entity, UIFunction callback);
@@ -51,7 +53,7 @@ namespace Charm
             ImGui::End();
         }
 
-        void SetContext(Scene* context) { state.context = context; }
+        void SetContext(Scene& context) { state.context = &context; }
 
         void DrawEntityNode(Entity& entity)
         {
@@ -72,7 +74,6 @@ namespace Charm
 
                 ImGui::EndPopup();
             }
-
             if (isOpen)
                 ImGui::TreePop();
 
@@ -109,19 +110,58 @@ namespace Charm
                     state.selectionContext.AddComponent<TransformComponent>();
                     ImGui::CloseCurrentPopup();
                 }
+
+                if (ImGui::MenuItem("Circle Renderer"))
+                {
+                    state.selectionContext.AddComponent<CircleRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Sprite Renderer"))
+                {
+                    state.selectionContext.AddComponent<SpriteRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
                 ImGui::EndPopup();
             }
 
             DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component) {
-                /*
-                        ImGui::DragFloat3("Position", glm::value_ptr(component.position));
-                        ImGui::DragFloat3("Rotation", glm::value_ptr(component.rotation));
-                        ImGui::DragFloat3("Scale", glm::value_ptr(component.scale));*/
-
                 DrawVec3Control("Position", component.position);
                 DrawVec3Control("Rotation", component.rotation);
                 DrawVec3Control("Scale", component.scale, 1.f);
             });
+
+            DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
+                DrawFloatControl("Radius", &component.radius, 0.f, 100.f);
+                DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f);
+                DrawFloatControl("Fade", &component.fade, 0.f, 1.f);
+                DrawColorControl("Color", component.color, 80.f);
+            });
+
+            DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
+                ImGui::PushID("Texture Handle");
+                ImGui::Text("Texture");
+                ImGui::SameLine();
+                ImGui::Button("Placeholder");
+                DrawColorControl("Tint", component.tint);
+                ImGui::PopID();
+            });
+        }
+
+        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth)
+        {
+            ImGui::PushID(label);
+
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 80.f);
+            ImGui::Text("%s", label);
+
+            ImGui::NextColumn();
+            ImGui::DragFloat("##", v, 0.01f, min, max);
+
+            ImGui::Columns(1);
+            ImGui::PopID();
         }
 
         void DrawVec3Control(const char* label, glm::vec3& v, float resetValue, float columnWidth)
@@ -173,6 +213,20 @@ namespace Charm
             ImGui::PopItemWidth();
 
             ImGui::PopStyleVar();
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        void DrawColorControl(const char* label, glm::vec3& v, float columnWidth)
+        {
+            ImGui::PushID(label);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+
+            ImGui::NextColumn();
+            ImGui::ColorEdit3("##", glm::value_ptr(v));
+
             ImGui::Columns(1);
             ImGui::PopID();
         }

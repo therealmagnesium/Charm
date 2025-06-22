@@ -269,8 +269,8 @@ namespace Charm
                 }
                 else
                 {
-                    dest.width = texture.width;   // 64 Default White
-                    dest.height = texture.height; // 64 Default White
+                    dest.width = texture.width * scale.x;   // 64 Default White
+                    dest.height = texture.height * scale.y; // 64 Default White
                 }
 
                 glm::vec2 origin;

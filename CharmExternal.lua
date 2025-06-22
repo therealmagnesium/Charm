@@ -5,18 +5,14 @@ IncludeDir["glad"] = "../vendor/glad/include"
 IncludeDir["glm"] = "../vendor/glm"
 IncludeDir["imgui"] = "../vendor/imgui/include"
 IncludeDir["stb_image"] = "../vendor/stb_image/include"
-
-LibraryDir = {}
-LibraryDir["SDL3_Linux"] = "../vendor/SDL3/lib/Linux"
-LibraryDir["SDL3_Windows"] = "../vendor/SDL3/lib/Windows"
-LibraryDir["glad_Linux"] = "../vendor/glad/lib/Linux"
-LibraryDir["glad_Windows"] = "../vendor/glad/lib/Windows"
-LibraryDir["imgui_Linux"] = "../vendor/imgui/lib/Linux"
-LibraryDir["imgui_Windows"] = "../vendor/imgui/lib/Windows"
-LibraryDir["stb_image_Linux"] = "../vendor/stb_image/lib/Linux"
-LibraryDir["stb_image_Windows"] = "../vendor/stb_image/lib/Windows"
+IncludeDir["yaml_cpp"] = "../vendor/yaml-cpp/include"
 
 group("Dependencies")
 --include("vendor/imgui")
---include("vendor/glfw")
+--include("vendor/glad")
+--include("vendor/SDL3")
+include("vendor/glad")
+include("vendor/imgui")
+include("vendor/stb_image")
+include("vendor/yaml-cpp")
 group("")

@@ -41,7 +41,7 @@ namespace Charm
                 context->registry.remove<T>(handle);
             }
 
-            inline operator bool() const { return handle != entt::null; }
+            inline operator bool() const { return handle != entt::null && context != NULL; }
             inline bool operator==(const Entity& other) { return handle == other.handle && context == other.context; }
             inline bool operator!=(const Entity& other) { return handle != other.handle || context != other.context; }
         };

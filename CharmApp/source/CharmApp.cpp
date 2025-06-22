@@ -15,8 +15,6 @@ namespace CharmApp
 {
     static CharmState state;
 
-    void DrawBackground(float tileSize, float spacing, float offset);
-
     void OnCreate()
     {
         const ApplicationConfig& config = Application::GetConfig();
@@ -31,20 +29,9 @@ namespace CharmApp
         state.textures[0] = AssetManager::Import("assets/textures/small_checker.png", AssetType::Texture);
         state.textures[1] = AssetManager::Import("assets/textures/texel_checker.png", AssetType::Texture);
 
-        state.playerPosition.x = config.virtualWidth / 2.f;
-        state.playerPosition.y = config.virtualHeight / 2.f;
-
         state.scene = Scenes::Create();
-        SceneHeirarchyPanel::SetContext(&state.scene);
-
-        state.entity = Scenes::CreateEntity(state.scene);
-        state.entity.AddComponent<SpriteRendererComponent>(state.textures[0]);
-        auto& entityTransform = state.entity.GetComponent<TransformComponent>();
-        entityTransform.position = glm::vec3(state.playerPosition, 0.f);
-        entityTransform.scale = glm::vec3(0.25f, 0.25f, 0.f);
-
-        state.circle = Scenes::CreateEntity(state.scene, "Circle");
-        state.circle.AddComponent<CircleRendererComponent>(0.7f, 1.f, 0.5f, glm::vec3(0.8f, 0.72f, 0.2f));
+        SceneSerializer::SetContext(state.scene);
+        SceneHeirarchyPanel::SetContext(state.scene);
     }
 
     void OnUpdate()
@@ -57,32 +44,19 @@ namespace CharmApp
         if (Input::IsKeyPressed(KEY_ESCAPE))
             Application::Quit();
 
+        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_S))
+        {
+            SceneSerializer::Serialize("assets/scenes/Untitled.charm");
+            INFO("Saved scene to assets/scenes/Untitled.charm");
+        }
+
+        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_O))
+        {
+            SceneSerializer::Deserialize("assets/scenes/Untitled.charm");
+            INFO("Loaded scene assets/scenes/Untitled.charm");
+        }
+
         Scenes::Update(state.scene);
-
-        /*
-            const float playerSpeed = 650.f;
-
-            state.playerDirection.x = Input::GetInputAxisAlt(InputAxis::Horizontal);
-            state.playerDirection.y = Input::GetInputAxisAlt(InputAxis::Vertical);
-
-            if (state.playerDirection.x != 0.f && state.playerDirection.y != 0.f)
-                state.playerDirection = glm::normalize(state.playerDirection);
-
-            state.playerPosition.x += state.playerDirection.x * playerSpeed * Time::GetDelta();
-            state.playerPosition.y += state.playerDirection.y * playerSpeed * Time::GetDelta();
-
-            auto& entityTransform = state.entity.GetComponent<TransformComponent>();
-            entityTransform.scale.x = 0.25f;
-            entityTransform.scale.y = 0.25f;
-            entityTransform.position = glm::vec3(state.playerPosition, 0.f);
-
-            if (SceneViewportPanel::IsFocused())
-            {
-                const glm::vec2 virtualMousePosition = Utils::ScreenToVirtual(Input::GetMousePosition());
-                const glm::vec2 viewportMousePosition = Utils::ScreenToViewport(Input::GetMousePosition(), SceneViewportPanel::GetPosition(), SceneViewportPanel::GetSize());
-                auto& circleTransform = state.circle.GetComponent<TransformComponent>();
-                circleTransform.position = glm::vec3(viewportMousePosition, 0.f);
-            }*/
     }
 
     void OnRender()
@@ -90,11 +64,8 @@ namespace CharmApp
         Framebuffers::Bind(state.framebuffer);
         RenderCommand::Clear();
 
-        Renderer::BeginScene2D(state.camera);
-
         Scenes::Render(state.scene);
 
-        Renderer::EndScene2D();
         Framebuffers::Unbind();
     }
 
@@ -128,12 +99,6 @@ namespace CharmApp
         ImGui::Text("Is viewport focused?: %s", Utils::BoolToCString(SceneViewportPanel::IsFocused()));
         ImGui::End();
 
-        ImGui::Begin("Controls");
-        ImGui::DragFloat("Tile size", &state.tileSize, 1.f, 4.f, 128.f);
-        ImGui::DragFloat("Tile spacing", &state.tileSpacing, 1.f, 0.f, 32.f);
-        ImGui::DragFloat("Tile offset", &state.tileOffset, 1.f);
-        ImGui::End();
-
         ImGui::Begin("Asset Registry");
 
         for (auto& [handle, metadata] : AssetManager::GetRegistry())
@@ -150,30 +115,5 @@ namespace CharmApp
     {
         AssetManager::Clean();
         Framebuffers::Destroy(state.framebuffer);
-    }
-
-    void DrawBackground(float tileSize, float spacing, float offset)
-    {
-        const ApplicationConfig& config = Application::GetConfig();
-
-        glm::vec3 color = glm::vec3(1.f);
-        Rectangle rectangle;
-
-        for (s32 i = (s32)tileSize / 2; i <= config.virtualHeight + tileSize; i += tileSize + spacing)
-        {
-            for (s32 j = (s32)tileSize / 2; j <= config.virtualWidth; j += tileSize + spacing)
-            {
-                rectangle.x = j + offset;
-                rectangle.y = i + offset;
-                rectangle.width = tileSize;
-                rectangle.height = tileSize;
-
-                color.r = 0.5f;
-                color.g = ((float)j / 8.f) / 255.f;
-                color.b = ((float)i / 8.f) / 255.f;
-
-                Renderer::DrawRectanglePro(rectangle, glm::vec2(tileSize / 2.f), 0.f, color);
-            }
-        }
     }
 }

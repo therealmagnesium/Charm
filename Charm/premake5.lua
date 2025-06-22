@@ -1,27 +1,29 @@
 project("Charm")
-kind("StaticLib")
+kind("SharedLib")
 language("C++")
 cppdialect("C++17")
-staticruntime("off")
 systemversion("latest")
+pic("on")
 
 files({ "source/**.h", "source/**.cpp" })
 
 includedirs({
-	"source",
-	IncludeDir.SDL3,
-	IncludeDir.entt,
-	IncludeDir.glad,
-	IncludeDir.glm,
-	IncludeDir.imgui,
-	IncludeDir.stb_image,
+    "source",
+    --IncludeDir.SDL3,
+    IncludeDir.entt,
+    IncludeDir.glad,
+    IncludeDir.glm,
+    IncludeDir.imgui,
+    IncludeDir.stb_image,
+    IncludeDir.yaml_cpp,
 })
 
 links({
-	"SDL3",
-	"glad",
-	"imgui",
-	"stb_image",
+    "SDL3",
+    "glad",
+    "imgui",
+    "stb_image",
+    "yaml-cpp",
 })
 
 targetdir("../bin/" .. outputdir .. "/%{prj.name}")
@@ -29,21 +31,11 @@ objdir("../build/" .. outputdir .. "/%{prj.name}")
 
 filter("system:windows")
 defines({ "CH_PLATFORM_WINDOWS" })
-libdirs({
-	LibraryDir.SDL3_Windows,
-	LibraryDir.glad_Windows,
-	LibraryDir.imgui_Windows,
-	LibraryDir.stb_image_Windows,
-})
+libdirs({})
 
 filter("system:linux")
 defines({ "CH_PLATFORM_LINUX", "SDL_STATIC_LIB" })
-libdirs({
-	LibraryDir.SDL3_Linux,
-	LibraryDir.glad_Linux,
-	LibraryDir.imgui_Linux,
-	LibraryDir.stb_image_Linux,
-})
+libdirs({})
 
 filter("configurations:Debug")
 defines({ "CH_DEBUG" })
