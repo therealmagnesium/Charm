@@ -16,6 +16,10 @@ namespace Charm
 
             void Reset()
             {
+                state.mouse.position = glm::vec2(0.f);
+                state.mouse.relative = glm::vec2(0.f);
+                state.mouse.scroll = glm::vec2(0.f);
+
                 for (u32 i = 0; i < KEY_COUNT; i++)
                     state.keyboard.keysPressed[i] = false;
 
@@ -25,13 +29,14 @@ namespace Charm
 
             void Capture(bool shouldCapture) { state.shouldCapture = shouldCapture; }
 
-            bool IsMouseDown(MouseButton button) { return state.mouse.buttonsHeld[button]; }
-            bool IsMouseClicked(MouseButton button) { return state.mouse.buttonsClicked[button]; }
-            glm::vec2& GetMousePosition() { return state.mouse.position; }
-            glm::vec2& GetMouseRelative() { return state.mouse.relative; }
+            bool IsMouseDown(MouseButton button) { return (state.shouldCapture) ? state.mouse.buttonsHeld[button] : false; }
+            bool IsMouseClicked(MouseButton button) { return (state.shouldCapture) ? state.mouse.buttonsClicked[button] : false; }
+            glm::vec2 GetMousePosition() { return (state.shouldCapture) ? state.mouse.position : glm::vec2(0.f); }
+            glm::vec2 GetMouseRelative() { return (state.shouldCapture) ? state.mouse.relative : glm::vec2(0.f); }
+            glm::vec2 GetMouseScroll() { return (state.shouldCapture) ? state.mouse.scroll : glm::vec2(0.f); }
 
-            bool IsKeyDown(u32 scancode) { return state.keyboard.keysHeld[scancode]; }
-            bool IsKeyPressed(u32 scancode) { return state.keyboard.keysPressed[scancode]; }
+            bool IsKeyDown(u32 scancode) { return (state.shouldCapture) ? state.keyboard.keysHeld[scancode] : false; }
+            bool IsKeyPressed(u32 scancode) { return (state.shouldCapture) ? state.keyboard.keysPressed[scancode] : false; }
 
             float GetInputAxis(InputAxis axis)
             {

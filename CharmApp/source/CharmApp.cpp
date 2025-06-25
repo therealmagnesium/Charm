@@ -36,13 +36,12 @@ namespace CharmApp
 
     void OnUpdate()
     {
-        Input::Capture(SceneViewportPanel::IsFocused());
-        Scenes::Update(state.scene);
-
         Input::Capture(true);
-
         if (Input::IsKeyPressed(KEY_ESCAPE))
             Application::Quit();
+
+        if (Input::IsKeyPressed(KEY_F2))
+            state.isEditorMode = !state.isEditorMode;
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_S))
         {
@@ -63,6 +62,15 @@ namespace CharmApp
                 INFO("Loaded scene %s", path.c_str());
             }
         }
+
+        Input::Capture(SceneViewportPanel::IsFocused());
+        Application::SetViewportPosition(SceneViewportPanel::GetPosition());
+        Application::SetViewportSize(SceneViewportPanel::GetSize());
+
+        if (state.isEditorMode)
+            Scenes::UpdateEditor(state.scene);
+        else
+            Scenes::UpdateRuntime(state.scene);
     }
 
     void OnRender()
@@ -70,7 +78,10 @@ namespace CharmApp
         Framebuffers::Bind(state.framebuffer);
         RenderCommand::Clear();
 
-        Scenes::Render(state.scene);
+        if (state.isEditorMode)
+            Scenes::RenderEditor(state.scene);
+        else
+            Scenes::RenderRuntime(state.scene);
 
         Framebuffers::Unbind();
     }

@@ -1,0 +1,77 @@
+Scene: Untitled
+Entities:
+  - Entity: 11792544000708966228
+    Internal Component:
+      Tag: Yellow Circle
+      Is Active?: true
+    Transform Component:
+      Position: [10, 5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Circle Renderer Component:
+      Radius: 12
+      Thickness: 1
+      Fade: 1
+      Color: [0.7794118, 0.62366426, 0.19103232]
+  - Entity: 6327319351527655227
+    Internal Component:
+      Tag: Blue Circle
+      Is Active?: true
+    Transform Component:
+      Position: [-9, 5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Circle Renderer Component:
+      Radius: 12
+      Thickness: 1
+      Fade: 1
+      Color: [0.11461936, 0.23373364, 0.51960784]
+  - Entity: 13593707619028290158
+    Internal Component:
+      Tag: Green Circle
+      Is Active?: true
+    Transform Component:
+      Position: [0, 5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Circle Renderer Component:
+      Radius: 12
+      Thickness: 1
+      Fade: 1
+      Color: [0.13432334, 0.6372549, 0.26745218]
+  - Entity: 12103849474609697175
+    Internal Component:
+      Tag: Main Camera
+      Is Active?: true
+    Transform Component:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Camera2D Component:
+      Is Primary?: true
+      Target: [0, 0]
+      Offset: [640, 360]
+      Rotation: 0
+      Zoom: 1
+  - Entity: 17327925099248547969
+    Internal Component:
+      Tag: Ground
+      Is Active?: true
+    Transform Component:
+      Position: [0, -5.2, 0]
+      Rotation: [0, 0, 0]
+      Scale: [20, 1, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Tint: [0.0414504, 0.053376675, 0.122549]
+  - Entity: 6596107990146269218
+    Internal Component:
+      Tag: Player
+      Is Active?: true
+    Transform Component:
+      Position: [0, -4, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Tint: [0.3480392, 0.054594383, 0.054594383]

@@ -17,6 +17,7 @@ namespace Charm
         {
             glm::vec2 position;
             glm::vec2 relative;
+            glm::vec2 scroll;
             bool buttonsHeld[MOUSE_BUTTON_COUNT];
             bool buttonsClicked[MOUSE_BUTTON_COUNT];
         };
@@ -44,8 +45,9 @@ namespace Charm
 
             bool IsMouseDown(MouseButton button);
             bool IsMouseClicked(MouseButton button);
-            glm::vec2& GetMousePosition();
-            glm::vec2& GetMouseRelative();
+            glm::vec2 GetMousePosition();
+            glm::vec2 GetMouseRelative();
+            glm::vec2 GetMouseScroll();
 
             bool IsKeyDown(u32 scancode);
             bool IsKeyPressed(u32 scancode);

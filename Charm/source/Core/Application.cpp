@@ -78,11 +78,11 @@ namespace Charm
 
                     RenderCommand::Clear();
 
+                    state.config.funcs.OnRender();
+
                     UI::BeginFrome();
                     state.config.funcs.OnRenderUI();
                     UI::EndFrame();
-
-                    state.config.funcs.OnRender();
 
                     UI::Display();
                     Window::Display();
@@ -103,7 +103,12 @@ namespace Charm
             }
 
             bool IsRunning() { return state.isRunning; }
-            ApplicationConfig& GetConfig() { return state.config; }
+            const ApplicationConfig& GetConfig() { return state.config; }
+            const glm::vec2& GetViewportPosition() { return state.viewportPosition; }
+            const glm::vec2& GetViewportSize() { return state.viewportSize; }
+
+            void SetViewportPosition(const glm::vec2& position) { state.viewportPosition = position; }
+            void SetViewportSize(const glm::vec2& size) { state.viewportSize = size; }
         }
     }
 }

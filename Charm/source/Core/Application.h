@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/AssetManager.h"
 #include "Core/Base.h"
+
+#include <glm/glm.hpp>
 #include <string>
 
 namespace Charm
@@ -30,6 +32,8 @@ namespace Charm
         struct ApplicationState
         {
             bool isRunning = false;
+            glm::vec2 viewportPosition;
+            glm::vec2 viewportSize;
             ApplicationConfig config;
             AssetCollection assets;
         };
@@ -42,7 +46,12 @@ namespace Charm
             void Quit();
 
             bool IsRunning();
-            ApplicationConfig& GetConfig();
+            const ApplicationConfig& GetConfig();
+            const glm::vec2& GetViewportPosition();
+            const glm::vec2& GetViewportSize();
+
+            void SetViewportPosition(const glm::vec2& position);
+            void SetViewportSize(const glm::vec2& size);
         }
     }
 }

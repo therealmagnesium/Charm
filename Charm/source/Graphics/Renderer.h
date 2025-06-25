@@ -21,7 +21,7 @@ namespace Charm
             glm::vec3 position;
             glm::vec3 color;
             glm::vec2 texCoord;
-            float texIndex;
+            u32 texIndex;
         };
 
         struct CircleVertex
@@ -48,6 +48,7 @@ namespace Charm
             void Shutdown();
 
             void BeginScene2D(const Camera2D& camera);
+            void BeginScene2D(const Camera3D& camera);
             void EndScene2D();
 
             void BeginBatchQuad();

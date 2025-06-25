@@ -2,10 +2,13 @@
 #include "Core/Asset.h"
 #include "Core/Random.h"
 
+#include "Graphics/Camera.h"
+
 #include <glm/glm.hpp>
 #include <string>
 
 using namespace Charm::Core;
+using namespace Charm::Graphics;
 
 namespace Charm
 {
@@ -81,5 +84,20 @@ namespace Charm
                 this->color = color;
             }
         };
+
+        struct Camera2DComponent
+        {
+            bool isPrimary = false;
+            Camera2D camera;
+
+            Camera2DComponent() = default;
+            Camera2DComponent(const Camera2DComponent&) = default;
+        };
+
+        /*  TODO: Implement later
+            struct Camera3DComponent
+            {
+            };
+        */
     }
 }

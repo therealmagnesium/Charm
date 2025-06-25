@@ -1,8 +1,13 @@
 #include "Graphics/Camera.h"
+
 #include "Core/Application.h"
+#include "Core/Input.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 using namespace Charm::Core;
 
@@ -12,6 +17,60 @@ namespace Charm
     {
         namespace Cameras
         {
+            void UpdateEditor(Camera3D& camera)
+            {
+                const ApplicationConfig& config = Application::GetConfig();
+
+                const auto& MousePan = [&](const glm::vec2& delta) {
+                    const float panSpeed = 2.f * camera.distance;
+                    camera.target += -GetRightVector(camera) * delta.x * panSpeed;
+                    camera.target += GetUpVector(camera) * delta.y * panSpeed;
+                };
+
+                const auto& MouseRotate = [&](const glm::vec2& delta) {
+                    const float rotationSpeed = 15.f;
+                    float yawSign = GetUpVector(camera).y < 0 ? -1.0f : 1.0f;
+                    camera.yaw -= yawSign * delta.x * rotationSpeed;
+                    camera.pitch -= delta.y * rotationSpeed;
+                };
+
+                const auto& CalculateZoomSpeed = [&]() {
+                    float distance = camera.distance * 0.1f;
+                    distance = std::max(distance, 0.0f);
+                    float speed = distance * distance;
+                    speed = std::min(speed, 10.0f);
+
+                    return speed;
+                };
+
+                const auto& MouseZoom = [&](float delta) {
+                    camera.distance -= delta * CalculateZoomSpeed();
+                    if (camera.distance < 1.0f)
+                    {
+                        camera.target += GetForwardVector(camera);
+                        camera.distance = 1.0f;
+                    }
+                };
+
+                if (Input::IsKeyDown(KEY_LEFT_ALT))
+                {
+                    glm::vec2 mouseDelta = Input::GetMouseRelative() * 0.003f;
+
+                    if (Input::IsMouseDown(MOUSE_BUTTON_LEFT))
+                        MousePan(mouseDelta);
+
+                    if (Input::IsMouseDown(MOUSE_BUTTON_RIGHT))
+                        MouseRotate(mouseDelta);
+
+                    if (Input::IsMouseDown(MOUSE_BUTTON_MIDDLE))
+                        MouseZoom(mouseDelta.y);
+                }
+
+                MouseZoom(Input::GetMouseScroll().y);
+            }
+
+            void UpdateRuntime(Camera3D& camera) {}
+
             glm::mat4 GetViewMatrix2D(const Camera2D& camera)
             {
                 glm::mat4 transform = glm::mat4(1.f);
@@ -31,6 +90,36 @@ namespace Charm
 
                 return projectionMatrix;
             }
+
+            glm::mat4 GetViewMatrix3D(const Camera3D& camera)
+            {
+                // viewMatrix = glm::lookAt(camera.position, camera.target, camera.up);
+
+                glm::mat4 viewMatrix = glm::mat4(1.f);
+                glm::quat orientation = GetOrientation(camera);
+                glm::vec3 position = CalculatePosition(camera);
+                viewMatrix = glm::translate(viewMatrix, position) * glm::toMat4(orientation);
+                viewMatrix = glm::inverse(viewMatrix);
+
+                return viewMatrix;
+            }
+
+            glm::mat4 GetProjectionMatrix3D(const Camera3D& camera)
+            {
+                const ApplicationConfig& config = Application::GetConfig();
+                float aspectRatio = (float)config.virtualWidth / (float)config.virtualHeight;
+
+                glm::mat4 projectionMatrix = glm::mat4(1.f);
+                projectionMatrix = glm::perspective(glm::radians(camera.fov), aspectRatio, camera.nearClip, camera.farClip);
+
+                return projectionMatrix;
+            }
+
+            glm::vec3 GetRightVector(const Camera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(1.f, 0.f, 0.f)); }
+            glm::vec3 GetUpVector(const Camera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(0.f, 1.f, 0.f)); }
+            glm::vec3 GetForwardVector(const Camera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(0.f, 0.f, -1.f)); }
+            glm::vec3 CalculatePosition(const Camera3D& camera) { return camera.target - GetForwardVector(camera) * camera.distance; }
+            glm::quat GetOrientation(const Camera3D& camera) { return glm::quat(glm::vec3(-camera.pitch, -camera.yaw, 0.f)); }
         }
     }
 }

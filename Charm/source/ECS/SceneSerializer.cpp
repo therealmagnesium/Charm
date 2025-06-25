@@ -12,6 +12,30 @@
 namespace YAML
 {
     template <>
+    struct convert<glm::vec2>
+    {
+        static Node encode(const glm::vec2& v)
+        {
+            Node node;
+            node.push_back(v.x);
+            node.push_back(v.y);
+
+            return node;
+        }
+
+        static bool decode(const Node& node, glm::vec2& v)
+        {
+            if (!node.IsSequence() || node.size() != 2)
+                return false;
+
+            v.x = node[0].as<float>();
+            v.y = node[1].as<float>();
+
+            return true;
+        }
+    };
+
+    template <>
     struct convert<glm::vec3>
     {
         static Node encode(const glm::vec3& v)
@@ -43,6 +67,13 @@ namespace Charm
     namespace ECS
     {
         static Scene* context = NULL;
+
+        YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec2& v)
+        {
+            out << YAML::Flow;
+            out << YAML::BeginSeq << v.x << v.y << YAML::EndSeq;
+            return out;
+        }
 
         YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec3& v)
         {
@@ -150,6 +181,17 @@ namespace Charm
                             spriteRenderer.sprite = spriteRendererNode["Texture Asset Handle"].as<float>();
                             spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec3>();
                         }
+
+                        auto camera2DNode = entity["Camera2D Component"];
+                        if (camera2DNode)
+                        {
+                            auto& cameraComponent = deserializedEntity.AddComponent<Camera2DComponent>();
+                            cameraComponent.isPrimary = camera2DNode["Is Primary?"].as<bool>();
+                            cameraComponent.camera.target = camera2DNode["Target"].as<glm::vec2>();
+                            cameraComponent.camera.offset = camera2DNode["Offset"].as<glm::vec2>();
+                            cameraComponent.camera.rotation = camera2DNode["Rotation"].as<float>();
+                            cameraComponent.camera.zoom = camera2DNode["Zoom"].as<float>();
+                        }
                     }
                 }
             }
@@ -193,6 +235,18 @@ namespace Charm
                     out << YAML::Key << "Thickness" << YAML::Value << circleRenderer.thickness;
                     out << YAML::Key << "Fade" << YAML::Value << circleRenderer.fade;
                     out << YAML::Key << "Color" << YAML::Value << circleRenderer.color;
+                    out << YAML::EndMap;
+                }
+
+                if (entity.HasComponent<Camera2DComponent>())
+                {
+                    auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
+                    out << YAML::Key << "Camera2D Component" << YAML::Value << YAML::BeginMap;
+                    out << YAML::Key << "Is Primary?" << YAML::Value << cameraComponent.isPrimary;
+                    out << YAML::Key << "Target" << YAML::Value << cameraComponent.camera.target;
+                    out << YAML::Key << "Offset" << YAML::Value << cameraComponent.camera.offset;
+                    out << YAML::Key << "Rotation" << YAML::Value << cameraComponent.camera.rotation;
+                    out << YAML::Key << "Zoom" << YAML::Value << cameraComponent.camera.zoom;
                     out << YAML::EndMap;
                 }
 

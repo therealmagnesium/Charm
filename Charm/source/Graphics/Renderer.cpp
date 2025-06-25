@@ -123,6 +123,9 @@ namespace Charm
                 const ApplicationConfig& config = Application::GetConfig();
                 state.viewMatrix = Cameras::GetViewMatrix2D(camera);
                 state.projectionMatrix = Cameras::GetProjectionMatrix2D();
+                batchData.quadCount = 0;
+                batchData.circleCount = 0;
+                batchData.drawCount = 0;
 
                 Shaders::Bind(state.defaultShader);
                 Shaders::SetUniform(state.defaultShader, "viewMatrix", state.viewMatrix);
@@ -132,9 +135,26 @@ namespace Charm
                 Shaders::SetUniform(state.circleShader, "viewMatrix", state.viewMatrix);
                 Shaders::SetUniform(state.circleShader, "projectionMatrix", state.projectionMatrix);
 
+                BeginBatchQuad();
+                BeginBatchCircle();
+            }
+
+            void BeginScene2D(const Camera3D& camera)
+            {
+                const ApplicationConfig& config = Application::GetConfig();
+                state.viewMatrix = Cameras::GetViewMatrix3D(camera);
+                state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
                 batchData.quadCount = 0;
                 batchData.circleCount = 0;
                 batchData.drawCount = 0;
+
+                Shaders::Bind(state.defaultShader);
+                Shaders::SetUniform(state.defaultShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.defaultShader, "projectionMatrix", state.projectionMatrix);
+
+                Shaders::Bind(state.circleShader);
+                Shaders::SetUniform(state.circleShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.circleShader, "projectionMatrix", state.projectionMatrix);
 
                 BeginBatchQuad();
                 BeginBatchCircle();
@@ -269,8 +289,8 @@ namespace Charm
                 }
                 else
                 {
-                    dest.width = texture.width * scale.x;   // 64 Default White
-                    dest.height = texture.height * scale.y; // 64 Default White
+                    dest.width = texture.width * scale.x;
+                    dest.height = texture.height * scale.y;
                 }
 
                 glm::vec2 origin;
@@ -313,7 +333,7 @@ namespace Charm
             {
                 CheckForNewBatch(BatchMode::Circles);
 
-                const glm::vec2 size = glm::vec2(64.f * radius);
+                const glm::vec2 size = glm::vec2(radius);
                 const glm::mat4 transform = Utils::GetTransfomMatrix2D(center, size, 0.f, glm::vec2(0.f));
 
                 AddCircleToBatch(transform, color, thickness, fade);
@@ -353,7 +373,7 @@ namespace Charm
                 glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texCoord));
 
                 glEnableVertexAttribArray(3);
-                glVertexAttribPointer(3, 1, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texIndex));
+                glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texIndex));
 
                 batchData.quadBuffer = new QuadVertex[k_MaxVertexCount];
 

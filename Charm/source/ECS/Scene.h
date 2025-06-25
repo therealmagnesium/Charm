@@ -14,15 +14,21 @@ namespace Charm
         {
             entt::registry registry;
             Camera2D editorCamera2D;
+            Camera3D editorCamera3D;
         };
 
         namespace Scenes
         {
             Scene Create();
+
             Entity CreateEntity(Scene& scene, const char* tag = "Entity");
             void DestroyEntity(Scene& scene, Entity& entity);
-            void Update(Scene& scene);
-            void Render(Scene& scene);
+
+            void UpdateEditor(Scene& scene);
+            void RenderEditor(Scene& scene);
+
+            void UpdateRuntime(Scene& scene);
+            void RenderRuntime(Scene& scene);
         }
     }
 }

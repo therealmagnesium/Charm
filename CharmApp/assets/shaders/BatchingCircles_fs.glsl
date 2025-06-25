@@ -1,14 +1,15 @@
 #version 450 core
 
-in VERTEX_DATA
+struct VertexData
 {
     vec3 localPosition;
     vec3 color;
     float thickness;
     float fade;
-} data;
+};
 
-out vec4 finalColor;
+layout (location = 0) in VertexData data;
+layout (location = 0) out vec4 finalColor;
 
 void main()
 {
