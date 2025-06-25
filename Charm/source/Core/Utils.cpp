@@ -23,6 +23,26 @@ namespace Charm
             return x;
         }
 
+        bool IsDepthFormat(TextureFormat format)
+        {
+            bool value = false;
+
+            switch (format)
+            {
+                case TextureFormat::Depth:
+                    value = true;
+                    break;
+                case TextureFormat::DepthStencil:
+                    value = true;
+                    break;
+
+                default:
+                    break;
+            }
+
+            return value;
+        }
+
         std::string GetFileName(const char* path, bool hasExtension)
         {
             std::filesystem::path p(path);

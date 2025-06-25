@@ -10,7 +10,8 @@ namespace Charm
     {
         enum class TextureFormat : u8
         {
-            RGB = 0,
+            None = 0,
+            RGB,
             RGBA,
             Depth,
             DepthStencil

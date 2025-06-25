@@ -2,6 +2,7 @@
 #include "Graphics/RenderCommand.h"
 
 #include "Core/Log.h"
+#include "Core/Utils.h"
 
 #include <glad/glad.h>
 
@@ -14,38 +15,68 @@ namespace Charm
             Framebuffer Create(const FramebufferSpecification& spec)
             {
                 Framebuffer framebuffer;
-                framebuffer.attachments.resize(spec.numAttachments);
                 framebuffer.specification = spec;
+                framebuffer.colorAttachments.reserve(framebuffer.colorAttachmentSpecifications.size());
+
+                for (FramebufferTextureSpecification& spec : framebuffer.specification.attachments.attachments)
+                {
+                    if (!Utils::IsDepthFormat(spec.format))
+                        framebuffer.colorAttachmentSpecifications.emplace_back(spec);
+                    else
+                        framebuffer.depthAttachmentSpecification = spec;
+                }
 
                 glGenFramebuffers(1, &framebuffer.id);
+                glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
                 Invalidate(framebuffer);
 
+                INFO("Framebuffer was created successfully with an ID of %d", framebuffer.id);
                 return framebuffer;
             }
 
             void Invalidate(Framebuffer& framebuffer)
             {
-                glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
-
-                framebuffer.attachments[0] = Textures::LoadEmpty(framebuffer.specification.width,
-                                                                 framebuffer.specification.height,
-                                                                 TextureFormat::RGBA);
-                Textures::Bind(framebuffer.attachments[0], 0);
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.attachments[0].id, 0);
-
-                if (framebuffer.specification.numAttachments > 1)
+                if (framebuffer.colorAttachmentSpecifications.size() > 0)
                 {
-                    framebuffer.attachments[1] = Textures::LoadEmpty(framebuffer.specification.width,
-                                                                     framebuffer.specification.height,
-                                                                     TextureFormat::DepthStencil);
-                    Textures::Bind(framebuffer.attachments[1], 0);
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, framebuffer.attachments[1].id, 0);
+                    for (auto& spec : framebuffer.colorAttachmentSpecifications)
+                    {
+                        Texture blank = Textures::LoadEmpty(framebuffer.specification.width,
+                                                            framebuffer.specification.height,
+                                                            spec.format);
+
+                        glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                               GL_COLOR_ATTACHMENT0 + framebuffer.colorAttachments.size(),
+                                               GL_TEXTURE_2D, blank.id, 0);
+
+                        framebuffer.colorAttachments.emplace_back(blank);
+                    }
                 }
+
+                if (framebuffer.depthAttachmentSpecification.format != TextureFormat::None)
+                {
+                    framebuffer.depthAttachment = Textures::LoadEmpty(framebuffer.specification.width,
+                                                                      framebuffer.specification.height,
+                                                                      framebuffer.depthAttachmentSpecification.format);
+
+                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
+                                           GL_TEXTURE_2D, framebuffer.depthAttachment.id, 0);
+                }
+
+                if (framebuffer.colorAttachments.size() > 0)
+                {
+                    ASSERT(framebuffer.colorAttachments.size() <= 4, "Framebuffers::Invalidate - Framebuffers currently support only 4 color attachments!");
+
+                    u32 buffers[4];
+                    for (u32 i = 0; i < LEN(buffers); i++)
+                        buffers[i] = GL_COLOR_ATTACHMENT0 + i;
+
+                    glDrawBuffers(framebuffer.colorAttachments.size(), buffers);
+                }
+                else
+                    glDrawBuffer(GL_NONE);
 
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
                     ERROR("Failed to validate framebuffer with an ID of %d!", framebuffer.id);
-
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
             }
 
             void Bind(Framebuffer& framebuffer)
@@ -65,10 +96,14 @@ namespace Charm
                 {
                     INFO("Unloading framebuffer with an ID of %d...", framebuffer.id);
 
-                    for (Texture& attachment : framebuffer.attachments)
+                    for (Texture& attachment : framebuffer.colorAttachments)
                         Textures::Unload(attachment);
 
-                    framebuffer.attachments.clear();
+                    Textures::Unload(framebuffer.depthAttachment);
+
+                    framebuffer.colorAttachments.clear();
+                    framebuffer.colorAttachmentSpecifications.clear();
+
                     glDeleteFramebuffers(1, &framebuffer.id);
                 }
             }

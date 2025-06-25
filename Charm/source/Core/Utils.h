@@ -1,16 +1,19 @@
 #pragma once
 #include "Core/Asset.h"
+#include "Graphics/Texture.h"
 
 #include <string>
 #include <glm/glm.hpp>
 
 using namespace Charm::Core;
+using namespace Charm::Graphics;
 
 namespace Charm
 {
     namespace Utils
     {
         const char* BoolToCString(bool value);
+        bool IsDepthFormat(TextureFormat format);
         std::string GetFileName(const char* path, bool hasExtension = false);
         std::string AssetTypeToString(AssetType type);
         glm::vec2 ScreenToVirtual(const glm::vec2& screenPosition);

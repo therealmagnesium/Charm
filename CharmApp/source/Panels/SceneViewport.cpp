@@ -14,7 +14,7 @@ namespace Charm
         ImVec2 GetLargestViewportSize();
         ImVec2 GetCenteredViewportPosition(ImVec2& aspectSize);
 
-        void Display(Framebuffer& framebuffer)
+        void Display(Texture& displayTexture)
         {
             ImGui::Begin("Scene Viewport", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
@@ -23,7 +23,7 @@ namespace Charm
 
             ImVec2 aspectSize = GetLargestViewportSize();
             ImVec2 windowPosition = GetCenteredViewportPosition(aspectSize);
-            ImTextureID textureID = framebuffer.attachments[0].id;
+            ImTextureID textureID = displayTexture.id;
 
             state.position = glm::vec2(ImGui::GetWindowPos().x + windowPosition.x, ImGui::GetWindowPos().y + windowPosition.y);
             state.size = *(glm::vec2*)&aspectSize;

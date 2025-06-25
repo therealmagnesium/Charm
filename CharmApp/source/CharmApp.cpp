@@ -23,7 +23,7 @@ namespace CharmApp
         FramebufferSpecification framebufferSpec;
         framebufferSpec.width = config.virtualWidth;
         framebufferSpec.height = config.virtualHeight;
-        framebufferSpec.numAttachments = 2;
+        framebufferSpec.attachments = {TextureFormat::RGBA, TextureFormat::RGBA, TextureFormat::DepthStencil};
         state.framebuffer = Framebuffers::Create(framebufferSpec);
 
         state.textures[0] = AssetManager::Import("assets/textures/small_checker.png", AssetType::Texture);
@@ -95,7 +95,7 @@ namespace CharmApp
         ImGui::DockSpaceOverViewport();
 
         SceneHeirarchyPanel::Display();
-        SceneViewportPanel::Display(state.framebuffer);
+        SceneViewportPanel::Display(state.framebuffer.colorAttachments[0]);
 
         ImGui::Begin("Debug Stats");
         ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));
@@ -103,6 +103,7 @@ namespace CharmApp
         ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());
         ImGui::Text("Number of circles: %d", Renderer::GetCircleCount());
         ImGui::Text("Number of draw calls: %d", Renderer::GetDrawCount());
+        ImGui::Text("Editor camera distance: %.2f", state.scene.editorCamera3D.distance);
         ImGui::Text("Virtual mouse position: " V2_FMT, V2_OPEN(virtualMousePosition));
         ImGui::Text("Viewport mouse position: " V2_FMT, V2_OPEN(viewportMousePosition));
         ImGui::Text("Is viewport hovered?: %s", Utils::BoolToCString(SceneViewportPanel::IsHovered()));

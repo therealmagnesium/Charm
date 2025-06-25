@@ -31,7 +31,8 @@ namespace Charm
                 scene.editorCamera2D.offset.x = (float)config.virtualWidth / 2.f;
                 scene.editorCamera2D.offset.y = (float)config.virtualHeight / 2.f;
 
-                scene.editorCamera3D.distance = 25.f;
+                scene.editorCamera3D.target = glm::vec3(0.f);
+                scene.editorCamera3D.distance = 15.f;
 
                 return scene;
             }

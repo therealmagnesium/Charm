@@ -8,20 +8,41 @@ namespace Charm
 {
     namespace Graphics
     {
+        struct FramebufferTextureSpecification
+        {
+            TextureFormat format = TextureFormat::None;
+
+            FramebufferTextureSpecification() = default;
+            FramebufferTextureSpecification(TextureFormat format) : format(format) {}
+        };
+
+        struct FramebufferAttachmentSpecification
+        {
+            std::vector<FramebufferTextureSpecification> attachments;
+
+            FramebufferAttachmentSpecification() = default;
+            FramebufferAttachmentSpecification(std::initializer_list<FramebufferTextureSpecification> attachments) : attachments(attachments) {};
+        };
+
         struct FramebufferSpecification
         {
             u32 width = 0;
             u32 height = 0;
             u32 numSamples = 1;
-            u32 numAttachments = 1;
             bool swapChainTarget = false;
+            FramebufferAttachmentSpecification attachments;
         };
 
         struct Framebuffer
         {
             u32 id = 0;
-            std::vector<Texture> attachments;
             FramebufferSpecification specification;
+
+            std::vector<FramebufferTextureSpecification> colorAttachmentSpecifications;
+            FramebufferTextureSpecification depthAttachmentSpecification;
+
+            std::vector<Texture> colorAttachments;
+            Texture depthAttachment;
         };
 
         namespace Framebuffers

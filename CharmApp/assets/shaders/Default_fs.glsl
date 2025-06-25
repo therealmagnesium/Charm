@@ -9,13 +9,16 @@ struct VertexData
 
 layout (location = 0) in VertexData data;
 layout (location = 3) in flat uint v_texIndex;
+
 layout (location = 0) out vec4 finalColor;
+layout (location = 1) out vec4 otherColor;
 
 uniform sampler2D textures[32];
 
 void main()
 {
     vec3 result = texture(textures[v_texIndex], data.texCoord).xyz * data.color;
+    otherColor = vec4(result, 1.f);
 
     result = pow(result, vec3(1.f / 2.2f));
     finalColor = vec4(result, 1.f);

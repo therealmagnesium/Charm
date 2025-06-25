@@ -47,7 +47,6 @@ namespace Charm
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
                              texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, data);
-                glBindTexture(GL_TEXTURE_2D, 0);
 
                 stbi_image_free(data);
 
@@ -92,7 +91,6 @@ namespace Charm
 
                 glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
                              texture.height, 0, texture.dataFormat, formatSize, NULL);
-                glBindTexture(GL_TEXTURE_2D, 0);
 
                 INFO("Empty texture loaded successfully with an ID of %d", texture.id);
                 return texture;
@@ -117,7 +115,6 @@ namespace Charm
                 u32 color = 0xFFFFFFFF;
                 glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
                              texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, &color);
-                glBindTexture(GL_TEXTURE_2D, 0);
 
                 INFO("Default white texture was loaded successfully with an ID of %d", texture.id);
                 return texture;
