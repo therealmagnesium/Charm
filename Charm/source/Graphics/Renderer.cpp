@@ -65,8 +65,10 @@ namespace Charm
             void CleanUpBatchRendering();
             void CheckForNewBatch(BatchMode mode);
             float CheckBatchForTextureIndex(Texture& texture);
-            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, float textureIndex, const glm::vec2& textureSize, const glm::vec3& color);
+            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, u32 textureIndex, const glm::vec2& textureSize, const glm::vec3& color);
             void AddCircleToBatch(const glm::mat4& transform, const glm::vec3& color, float thickness, float fade);
+            void AddEntityToBatch(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);
+            void AddEntityToBatch(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
 
             void Initialize()
             {
@@ -245,10 +247,10 @@ namespace Charm
             {
                 CheckForNewBatch(BatchMode::Quads);
 
-                const glm::vec2 position = glm::vec2(rectangle.x, rectangle.y);
+                const glm::vec3 position = glm::vec3(rectangle.x, rectangle.y, 0.f);
                 const glm::vec2 size = glm::vec2(rectangle.width, rectangle.height);
                 const glm::mat4 transform = Utils::GetTransfomMatrix2D(position, size, rotation, origin);
-                const float textureIndex = 0.f;
+                const u32 textureIndex = 0;
 
                 Rectangle source;
                 source.width = 1.f;
@@ -315,10 +317,10 @@ namespace Charm
             {
                 CheckForNewBatch(BatchMode::Quads);
 
-                const glm::vec2 position = glm::vec2(dest.x, dest.y);
+                const glm::vec3 position = glm::vec3(dest.x, dest.y, 0.f);
                 const glm::vec2 size = glm::vec2(dest.width, dest.height);
                 const glm::vec2 textureSize = glm::vec2(texture.width, texture.height);
-                const float textureIndex = CheckBatchForTextureIndex(texture);
+                const u32 textureIndex = CheckBatchForTextureIndex(texture);
                 const glm::mat4 transform = Utils::GetTransfomMatrix2D(position, size, rotation, origin);
 
                 AddQuadToBatch(transform, source, textureIndex, textureSize, tint);
@@ -334,9 +336,21 @@ namespace Charm
                 CheckForNewBatch(BatchMode::Circles);
 
                 const glm::vec2 size = glm::vec2(radius);
-                const glm::mat4 transform = Utils::GetTransfomMatrix2D(center, size, 0.f, glm::vec2(0.f));
+                const glm::mat4 transform = Utils::GetTransfomMatrix2D(glm::vec3(center, 0.f), size, 0.f, glm::vec2(0.f));
 
                 AddCircleToBatch(transform, color, thickness, fade);
+            }
+
+            void DrawEntity(const glm::mat4& transform, SpriteRendererComponent& spriteRenderer, s32 entityID)
+            {
+                CheckForNewBatch(BatchMode::Quads);
+                AddEntityToBatch(transform, spriteRenderer, entityID);
+            }
+
+            void DrawEntity(const glm::mat4& transform, CircleRendererComponent& circleRenderer, s32 entityID)
+            {
+                CheckForNewBatch(BatchMode::Circles);
+                AddEntityToBatch(transform, circleRenderer, entityID);
             }
 
             glm::vec3& GetClearColor() { return state.clearColor; }
@@ -374,6 +388,9 @@ namespace Charm
 
                 glEnableVertexAttribArray(3);
                 glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texIndex));
+
+                glEnableVertexAttribArray(4);
+                glVertexAttribIPointer(4, 1, GL_INT, sizeof(QuadVertex), (void*)offsetof(QuadVertex, entityID));
 
                 batchData.quadBuffer = new QuadVertex[k_MaxVertexCount];
 
@@ -421,6 +438,9 @@ namespace Charm
 
                 glEnableVertexAttribArray(4);
                 glVertexAttribPointer(4, 1, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, fade));
+
+                glEnableVertexAttribArray(5);
+                glVertexAttribIPointer(5, 1, GL_INT, sizeof(CircleVertex), (void*)offsetof(CircleVertex, entityID));
 
                 batchData.circleBuffer = new CircleVertex[k_MaxVertexCount];
 
@@ -505,7 +525,7 @@ namespace Charm
                 return textureIndex;
             }
 
-            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, float textureIndex, const glm::vec2& textureSize, const glm::vec3& color)
+            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, u32 textureIndex, const glm::vec2& textureSize, const glm::vec3& color)
             {
                 glm::vec2 textureCoords[4];
                 textureCoords[0] = glm::vec2(source.x / textureSize.x, source.y / textureSize.y);
@@ -519,6 +539,7 @@ namespace Charm
                     batchData.quadBufferRef->color = color;
                     batchData.quadBufferRef->texCoord = textureCoords[i];
                     batchData.quadBufferRef->texIndex = textureIndex;
+                    batchData.quadBufferRef->entityID = -1;
                     batchData.quadBufferRef++;
                 }
 
@@ -535,6 +556,56 @@ namespace Charm
                     batchData.circleBufferRef->color = color;
                     batchData.circleBufferRef->thickness = thickness;
                     batchData.circleBufferRef->fade = fade;
+                    batchData.circleBufferRef->entityID = -1;
+                    batchData.circleBufferRef++;
+                }
+
+                batchData.circleIndexCount += 6;
+                batchData.circleCount++;
+            }
+
+            void AddEntityToBatch(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID)
+            {
+                Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
+                glm::vec2 textureSize = glm::vec2(1.f);
+                u32 textureIndex = 0;
+
+                if (texture != NULL)
+                {
+                    textureSize = glm::vec2(texture->width, texture->height);
+                    textureIndex = CheckBatchForTextureIndex(*texture);
+                }
+
+                glm::vec2 textureCoords[4];
+                textureCoords[0] = glm::vec2(spriteRenderer.crop.x / textureSize.x, spriteRenderer.crop.y / textureSize.y);
+                textureCoords[1] = glm::vec2((spriteRenderer.crop.x + spriteRenderer.crop.width) / textureSize.x, spriteRenderer.crop.y / textureSize.y);
+                textureCoords[2] = glm::vec2((spriteRenderer.crop.x + spriteRenderer.crop.width) / textureSize.x, (spriteRenderer.crop.y + spriteRenderer.crop.height) / textureSize.y);
+                textureCoords[3] = glm::vec2(spriteRenderer.crop.x / textureSize.x, (spriteRenderer.crop.y + spriteRenderer.crop.height) / textureSize.y);
+
+                for (u8 i = 0; i < 4; i++)
+                {
+                    batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[i];
+                    batchData.quadBufferRef->color = spriteRenderer.tint;
+                    batchData.quadBufferRef->texCoord = textureCoords[i];
+                    batchData.quadBufferRef->texIndex = textureIndex;
+                    batchData.quadBufferRef->entityID = entityID;
+                    batchData.quadBufferRef++;
+                }
+
+                batchData.quadIndexCount += 6;
+                batchData.quadCount++;
+            }
+
+            void AddEntityToBatch(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID)
+            {
+                for (u8 i = 0; i < 4; i++)
+                {
+                    batchData.circleBufferRef->worldPosition = transform * batchData.circleVertexPositions[i];
+                    batchData.circleBufferRef->localPosition = batchData.circleVertexPositions[i] * 2.f;
+                    batchData.circleBufferRef->color = circleRenderer.color;
+                    batchData.circleBufferRef->thickness = circleRenderer.thickness;
+                    batchData.circleBufferRef->fade = circleRenderer.fade;
+                    batchData.circleBufferRef->entityID = entityID;
                     batchData.circleBufferRef++;
                 }
 

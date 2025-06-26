@@ -9,7 +9,10 @@ struct VertexData
 };
 
 layout (location = 0) in VertexData data;
+layout (location = 4) in flat int v_entityID;
+
 layout (location = 0) out vec4 finalColor;
+layout (location = 1) out int entityID;
 
 void main()
 {
@@ -25,5 +28,7 @@ void main()
 
     finalColor = vec4(result, 1.f);
     finalColor.a *= alpha;
+
+    entityID = v_entityID;
 }
 

@@ -51,6 +51,8 @@ namespace Charm
             void Bind(Framebuffer& framebuffer);
             void Unbind();
             void Invalidate(Framebuffer& framebuffer);
+            s32 ReadPixel(Framebuffer& framebuffer, u32 attachmentIndex, u32 x, u32 y);
+            void ClearAttachment(Framebuffer& framebuffer, u32 attachmentIndex, int value);
             void Destroy(Framebuffer& framebuffer);
         }
     }

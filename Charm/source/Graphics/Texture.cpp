@@ -78,6 +78,13 @@ namespace Charm
                         formatSize = GL_UNSIGNED_INT_24_8;
                         break;
 
+                    case TextureFormat::RedInteger:
+                        texture.internalFormat = GL_R32I;
+                        texture.dataFormat = GL_RED_INTEGER;
+                        texture.channelCount = 1;
+                        formatSize = GL_UNSIGNED_BYTE;
+                        break;
+
                     default:
                         break;
                 }

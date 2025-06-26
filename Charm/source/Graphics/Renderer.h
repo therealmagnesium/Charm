@@ -4,7 +4,11 @@
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 
+#include "ECS/Components.h"
+
 #include <glm/glm.hpp>
+
+using namespace Charm::ECS;
 
 namespace Charm
 {
@@ -21,7 +25,8 @@ namespace Charm
             glm::vec3 position;
             glm::vec3 color;
             glm::vec2 texCoord;
-            u32 texIndex;
+            u32 texIndex = 0;
+            s32 entityID = -1;
         };
 
         struct CircleVertex
@@ -31,6 +36,7 @@ namespace Charm
             glm::vec3 color;
             float thickness;
             float fade;
+            s32 entityID = -1;
         };
 
         struct RenderState
@@ -70,6 +76,9 @@ namespace Charm
 
             void DrawCircle(const glm::vec2& center, float radius, const glm::vec3& color);
             void DrawCirclePro(const glm::vec2& center, float radius, float thickness, float fade, const glm::vec3& color);
+
+            void DrawEntity(const glm::mat4& transform, SpriteRendererComponent& spriteRenderer, s32 entityID);
+            void DrawEntity(const glm::mat4& transform, CircleRendererComponent& circleRenderer, s32 entityID);
 
             glm::vec3& GetClearColor();
             u32 GetQuadCount();

@@ -9,27 +9,28 @@ targetdir("../bin/" .. outputdir .. "/%{prj.name}")
 objdir("../build/" .. outputdir .. "/%{prj.name}")
 
 files({
-    "source/**.h",
-    "source/**.cpp",
+	"source/**.h",
+	"source/**.cpp",
 })
 
 includedirs({
-    "../Charm/source",
-    IncludeDir.SDL3,
-    IncludeDir.entt,
-    IncludeDir.glad,
-    IncludeDir.glm,
-    IncludeDir.imgui,
-    IncludeDir.stb_image,
+	"../Charm/source",
+	IncludeDir.SDL3,
+	IncludeDir.entt,
+	IncludeDir.glad,
+	IncludeDir.glm,
+	IncludeDir.imgui,
+	IncludeDir.stb_image,
 })
 
 links({
-    "Charm",
+	"Charm",
+	"imgui",
 })
 
 postbuildcommands({
-    "{COPYDIR} assets/ %{cfg.buildtarget.directory}",
-    "{COPY} ../imgui.ini %{cfg.buildtarget.directory}",
+	"{COPYDIR} assets/ %{cfg.buildtarget.directory}",
+	"{COPY} ../imgui.ini %{cfg.buildtarget.directory}",
 })
 
 filter("system:windows")

@@ -1,6 +1,7 @@
 #include "SceneHeirarchyPanel.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
 
 using namespace Charm::ECS;
@@ -25,6 +26,7 @@ namespace Charm
         {
             ASSERT(state.context != NULL, "The scene heirarchy must have a context to display!");
 
+            ImGui::ShowDemoWindow();
             ImGui::Begin("Scene Heirarchy");
 
             for (auto entityID : state.context->registry.view<entt::entity>())
@@ -54,7 +56,15 @@ namespace Charm
             ImGui::End();
         }
 
-        void SetContext(Scene& context) { state.context = &context; }
+        Scene* GetContext() { return state.context; }
+
+        void SetContext(Scene& context)
+        {
+            state.context = &context;
+            state.selectionContext = (Entity){};
+        }
+
+        void SetSelectedEntity(const Entity& entity) { state.selectionContext = entity; }
 
         void DrawEntityNode(Entity& entity)
         {
@@ -134,9 +144,9 @@ namespace Charm
             }
 
             DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component) {
-                DrawVec3Control("Position", component.position, 0.1f);
-                DrawVec3Control("Rotation", component.rotation, 0.1f);
-                DrawVec3Control("Scale", component.scale, 0.1f, 1.f);
+                DrawVec3Control("Position", component.position, 0.1f, 0.f, 80.f);
+                DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, 80.f);
+                DrawVec3Control("Scale", component.scale, 0.1f, 1.f, 80.f);
             });
 
             DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
@@ -148,18 +158,43 @@ namespace Charm
 
             DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
                 ImGui::PushID("Texture Handle");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, 80.f);
                 ImGui::Text("Texture");
-                ImGui::SameLine();
-                ImGui::Button("Placeholder");
+                ImGui::NextColumn();
+
+                ImGui::Button("Placeholder", ImVec2(ImGui::GetContentRegionAvail().x, 0.f));
+                ImGui::Columns(1);
                 ImGui::PopID();
 
-                DrawColorControl("Tint", component.tint);
+                ImGui::PushID("Crop");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0.f, 80.f);
+                ImGui::Text("Crop");
+                ImGui::NextColumn();
+
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                ImGui::DragFloat4("##Crop", &component.crop.x);
+                ImGui::Columns(1);
+                ImGui::PopID();
+
+                DrawVec2Control("Origin", component.origin, 1.f, 0.f, 80.f);
+                DrawColorControl("Tint", component.tint, 80.f);
             });
 
             DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {
-                DrawVec2Control("Offset", component.camera.offset, 0.f, 0.f, 70.f);
-                DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, 70.f);
-                ImGui::Checkbox("Is Primary?", &component.isPrimary);
+                DrawVec2Control("Offset", component.camera.offset, 0.f, 0.f, 100.f);
+                DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, 100.f);
+
+                ImGui::PushID("Is Primary?");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, 100.f);
+                ImGui::Text("Is Primary?");
+                ImGui::NextColumn();
+
+                ImGui::Checkbox("##", &component.isPrimary);
+                ImGui::Columns(1);
+                ImGui::PopID();
             });
         }
 
@@ -170,8 +205,9 @@ namespace Charm
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, columnWidth);
             ImGui::Text("%s", label);
-
             ImGui::NextColumn();
+
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
             ImGui::DragFloat("##", v, 0.01f, min, max);
 
             ImGui::Columns(1);
@@ -181,16 +217,17 @@ namespace Charm
         void DrawVec2Control(const char* label, glm::vec2& v, float speed, float resetValue, float columnWidth)
         {
             ImGui::PushID(label);
+
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, columnWidth);
             ImGui::Text("%s", label);
             ImGui::NextColumn();
 
-            ImGui::PushItemWidth(100.f);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, 0.f));
-
             float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImVec2 buttonSize = ImVec2(lineHeight + 3.f, lineHeight);
+
+            ImGui::PushMultiItemsWidths(2, ImGui::GetContentRegionAvail().x - buttonSize.x * 2.f);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 4.f));
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.f, 0.05f, 1.f));
@@ -201,37 +238,40 @@ namespace Charm
 
             ImGui::SameLine();
             ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f, "%.2f");
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.1f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.6f, 0.f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.5f, 0.f, 1.f));
-            ImGui::SameLine();
             if (ImGui::Button("Y", buttonSize))
                 v.y = resetValue;
             ImGui::PopStyleColor(3);
 
             ImGui::SameLine();
             ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f, "%.2f");
-
             ImGui::PopItemWidth();
+
             ImGui::PopStyleVar();
             ImGui::Columns(1);
+
             ImGui::PopID();
         }
 
         void DrawVec3Control(const char* label, glm::vec3& v, float speed, float resetValue, float columnWidth)
         {
             ImGui::PushID(label);
+
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, columnWidth);
             ImGui::Text("%s", label);
             ImGui::NextColumn();
 
-            ImGui::PushItemWidth(100.f);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, 0.f));
-
             float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImVec2 buttonSize = ImVec2(lineHeight + 3.f, lineHeight);
+
+            ImGui::PushMultiItemsWidths(3, ImGui::GetContentRegionAvail().x - buttonSize.x * 3.f);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 4.f));
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.f, 0.05f, 1.f));
@@ -242,44 +282,48 @@ namespace Charm
 
             ImGui::SameLine();
             ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f, "%.2f");
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.1f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.6f, 0.f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.5f, 0.f, 1.f));
-            ImGui::SameLine();
             if (ImGui::Button("Y", buttonSize))
                 v.y = resetValue;
             ImGui::PopStyleColor(3);
 
             ImGui::SameLine();
             ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f, "%.2f");
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.8f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.05f, 0.7f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.6f, 1.f));
-            ImGui::SameLine();
             if (ImGui::Button("Z", buttonSize))
                 v.z = resetValue;
             ImGui::PopStyleColor(3);
 
             ImGui::SameLine();
             ImGui::DragFloat("##Z", &v.z, speed, 0.f, 0.f, "%.2f");
-
             ImGui::PopItemWidth();
 
             ImGui::PopStyleVar();
             ImGui::Columns(1);
+
             ImGui::PopID();
         }
 
         void DrawColorControl(const char* label, glm::vec3& v, float columnWidth)
         {
             ImGui::PushID(label);
+
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, columnWidth);
             ImGui::Text("%s", label);
-
             ImGui::NextColumn();
+
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
             ImGui::ColorEdit3("##", glm::value_ptr(v));
 
             ImGui::Columns(1);

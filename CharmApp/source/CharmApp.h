@@ -12,6 +12,7 @@ namespace CharmApp
         Framebuffer framebuffer;
         AssetHandle textures[2];
         Scene scene;
+        s32 pixelData = -1;
         bool isEditorMode = true;
     };
 

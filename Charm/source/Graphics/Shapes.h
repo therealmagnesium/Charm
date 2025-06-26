@@ -6,10 +6,10 @@ namespace Charm
     {
         struct Rectangle
         {
-            float x;
-            float y;
-            float width;
-            float height;
+            float x = 0.f;
+            float y = 0.f;
+            float width = 0.f;
+            float height = 0.f;
         };
     }
 }

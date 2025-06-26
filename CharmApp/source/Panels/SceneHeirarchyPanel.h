@@ -15,5 +15,8 @@ namespace Charm
     {
         void Display();
         void SetContext(Scene& context);
+        void SetSelectedEntity(const Entity& entity);
+
+        Scene* GetContext();
     }
 }

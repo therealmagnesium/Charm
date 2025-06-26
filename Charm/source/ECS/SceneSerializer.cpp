@@ -60,6 +60,34 @@ namespace YAML
             return true;
         }
     };
+
+    template <>
+    struct convert<Rectangle>
+    {
+        static Node encode(const Rectangle& r)
+        {
+            Node node;
+            node.push_back(r.x);
+            node.push_back(r.y);
+            node.push_back(r.width);
+            node.push_back(r.height);
+
+            return node;
+        }
+
+        static bool decode(const Node& node, Rectangle& r)
+        {
+            if (!node.IsSequence() || node.size() != 4)
+                return false;
+
+            r.x = node[0].as<float>();
+            r.y = node[1].as<float>();
+            r.width = node[2].as<float>();
+            r.height = node[3].as<float>();
+
+            return true;
+        }
+    };
 }
 
 namespace Charm
@@ -86,6 +114,13 @@ namespace Charm
         {
             out << YAML::Flow;
             out << YAML::BeginSeq << v.x << v.y << v.z << v.w << YAML::EndSeq;
+            return out;
+        }
+
+        YAML::Emitter& operator<<(YAML::Emitter& out, const Rectangle& r)
+        {
+            out << YAML::Flow;
+            out << YAML::BeginSeq << r.x << r.y << r.width << r.height << YAML::EndSeq;
             return out;
         }
 
@@ -150,13 +185,12 @@ namespace Charm
                     for (auto entity : entities)
                     {
                         UUID uuid = entity["Entity"].as<UUID>();
-                        Entity deserializedEntity = Scenes::CreateEntity(*context);
+                        Entity deserializedEntity = Scenes::CreateEntity(*context, uuid);
 
                         auto internalNode = entity["Internal Component"];
                         auto& internal = deserializedEntity.GetComponent<InternalComponent>();
                         internal.tag = internalNode["Tag"].as<std::string>();
                         internal.isActive = internalNode["Is Active?"].as<bool>();
-                        internal.id = uuid;
 
                         auto transformNode = entity["Transform Component"];
                         auto& transform = deserializedEntity.GetComponent<TransformComponent>();
@@ -179,6 +213,8 @@ namespace Charm
                         {
                             auto& spriteRenderer = deserializedEntity.AddComponent<SpriteRendererComponent>();
                             spriteRenderer.sprite = spriteRendererNode["Texture Asset Handle"].as<float>();
+                            spriteRenderer.origin = spriteRendererNode["Origin"].as<glm::vec2>();
+                            spriteRenderer.crop = spriteRendererNode["Crop"].as<Rectangle>();
                             spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec3>();
                         }
 
@@ -223,6 +259,8 @@ namespace Charm
                     auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
                     out << YAML::Key << "Sprite Renderer Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Texture Asset Handle" << YAML::Value << spriteRenderer.sprite;
+                    out << YAML::Key << "Origin" << YAML::Value << spriteRenderer.origin;
+                    out << YAML::Key << "Crop" << YAML::Value << spriteRenderer.crop;
                     out << YAML::Key << "Tint" << YAML::Value << spriteRenderer.tint;
                     out << YAML::EndMap;
                 }

@@ -1,7 +1,10 @@
 #pragma once
+#include "Core/Random.h"
 #include "Graphics/Camera.h"
+
 #include <entt/entt.hpp>
 
+using namespace Charm::Core;
 using namespace Charm::Graphics;
 
 namespace Charm
@@ -22,6 +25,7 @@ namespace Charm
             Scene Create();
 
             Entity CreateEntity(Scene& scene, const char* tag = "Entity");
+            Entity CreateEntity(Scene& scene, UUID id);
             void DestroyEntity(Scene& scene, Entity& entity);
 
             void UpdateEditor(Scene& scene);
@@ -29,6 +33,8 @@ namespace Charm
 
             void UpdateRuntime(Scene& scene);
             void RenderRuntime(Scene& scene);
+
+            void ResetEditorCameras(Scene& scene);
         }
     }
 }

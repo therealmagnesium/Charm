@@ -34,6 +34,17 @@ namespace Charm
                 return framebuffer;
             }
 
+            void Bind(Framebuffer& framebuffer)
+            {
+                glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
+                RenderCommand::SetViewport(0, 0, framebuffer.specification.width, framebuffer.specification.height);
+            }
+
+            void Unbind()
+            {
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            }
+
             void Invalidate(Framebuffer& framebuffer)
             {
                 if (framebuffer.colorAttachmentSpecifications.size() > 0)
@@ -79,15 +90,23 @@ namespace Charm
                     ERROR("Failed to validate framebuffer with an ID of %d!", framebuffer.id);
             }
 
-            void Bind(Framebuffer& framebuffer)
+            s32 ReadPixel(Framebuffer& framebuffer, u32 attachmentIndex, u32 x, u32 y)
             {
-                glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
-                RenderCommand::SetViewport(0, 0, framebuffer.specification.width, framebuffer.specification.height);
+                ASSERT(attachmentIndex < framebuffer.colorAttachments.size(), "Framebuffers::ReadPixel - Invalid attachment index!");
+
+                s32 pixelData = -1;
+                glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
+                glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+
+                return pixelData;
             }
 
-            void Unbind()
+            void ClearAttachment(Framebuffer& framebuffer, u32 attachmentIndex, int value)
             {
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                ASSERT(attachmentIndex < framebuffer.colorAttachments.size(), "Framebuffers::ClearAttachment - Invalid attachment index!");
+
+                Texture& attachment = framebuffer.colorAttachments[attachmentIndex];
+                glClearTexImage(attachment.id, 0, attachment.dataFormat, GL_INT, &value);
             }
 
             void Destroy(Framebuffer& framebuffer)

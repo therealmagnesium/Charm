@@ -3,6 +3,7 @@
 #include "ECS/Entity.h"
 
 #include "Core/Application.h"
+#include "Core/Utils.h"
 
 #include "Graphics/Renderer.h"
 #include "Graphics/Texture.h"
@@ -24,15 +25,8 @@ namespace Charm
 
             Scene Create()
             {
-                const ApplicationConfig& config = Application::GetConfig();
-
                 Scene scene;
-                scene.editorCamera2D.target = glm::vec2(0.f);
-                scene.editorCamera2D.offset.x = (float)config.virtualWidth / 2.f;
-                scene.editorCamera2D.offset.y = (float)config.virtualHeight / 2.f;
-
-                scene.editorCamera3D.target = glm::vec3(0.f);
-                scene.editorCamera3D.distance = 15.f;
+                ResetEditorCameras(scene);
 
                 return scene;
             }
@@ -41,6 +35,15 @@ namespace Charm
             {
                 Entity entity = Entities::Create(scene.registry.create(), &scene);
                 entity.AddComponent<InternalComponent>(Random::GenerateUUID(), tag);
+                entity.AddComponent<TransformComponent>();
+
+                return entity;
+            }
+
+            Entity CreateEntity(Scene& scene, UUID id)
+            {
+                Entity entity = Entities::Create(scene.registry.create(), &scene);
+                entity.AddComponent<InternalComponent>(id, "Entity");
                 entity.AddComponent<TransformComponent>();
 
                 return entity;
@@ -69,6 +72,7 @@ namespace Charm
             {
                 activeCamera2D = NULL;
                 auto cameras = scene.registry.group<Camera2DComponent>(entt::get<TransformComponent>);
+                auto sprites = scene.registry.group<SpriteRendererComponent>(entt::get<TransformComponent, InternalComponent>);
 
                 for (auto entityID : cameras)
                 {
@@ -93,6 +97,23 @@ namespace Charm
                 }
             }
 
+            void ResetEditorCameras(Scene& scene)
+            {
+                const ApplicationConfig& config = Application::GetConfig();
+
+                scene.editorCamera2D.target = glm::vec2(0.f);
+                scene.editorCamera2D.offset.x = (float)config.virtualWidth / 2.f;
+                scene.editorCamera2D.offset.y = (float)config.virtualHeight / 2.f;
+                scene.editorCamera2D.rotation = 0.f;
+                scene.editorCamera2D.zoom = 0.f;
+
+                scene.editorCamera3D.target = glm::vec3(0.f);
+                scene.editorCamera3D.distance = 15.f;
+                scene.editorCamera3D.yaw = 0.f;
+                scene.editorCamera3D.pitch = 0.f;
+                scene.editorCamera3D.fov = 45.f;
+            }
+
             void DrawAllCircles(Scene& scene, bool isEditor)
             {
                 auto circles = scene.registry.group<CircleRendererComponent>(entt::get<TransformComponent, InternalComponent>);
@@ -101,24 +122,26 @@ namespace Charm
                 {
                     auto& internal = circles.get<InternalComponent>(entityID);
 
-                    if (internal.isActive)
+                    if (!internal.isActive)
+                        continue;
+
+                    auto& transform = circles.get<TransformComponent>(entityID);
+                    auto& circleRenderer = circles.get<CircleRendererComponent>(entityID);
+
+                    // Runtime position and scaling of circles
+                    glm::vec3 renderPosition = transform.position;
+                    glm::vec2 renderSize = glm::vec2(circleRenderer.radius);
+
+                    if (!isEditor)
                     {
-                        auto& transform = circles.get<TransformComponent>(entityID);
-                        auto& circleRenderer = circles.get<CircleRendererComponent>(entityID);
-
-                        glm::vec2 position = transform.position;
-                        float radius = circleRenderer.radius;
-
-                        if (!isEditor)
-                        {
-                            position.x *= 64.f;
-                            position.y *= -64.f;
-                            radius *= 64.f;
-                        }
-
-                        Renderer::DrawCirclePro(position, radius, circleRenderer.thickness,
-                                                circleRenderer.fade, circleRenderer.color);
+                        renderPosition.x *= 64.f;
+                        renderPosition.y *= -64.f;
+                        renderSize.x *= 64.f;
+                        renderSize.y *= 64.f;
                     }
+
+                    const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(renderPosition, renderSize, transform.rotation.z, glm::vec2(0.f));
+                    Renderer::DrawEntity(transformMatrix, circleRenderer, (s32)entityID);
                 }
             }
 
@@ -130,31 +153,43 @@ namespace Charm
                 {
                     auto& internal = sprites.get<InternalComponent>(entityID);
 
-                    if (internal.isActive)
+                    if (!internal.isActive)
+                        continue;
+
+                    auto& transform = sprites.get<TransformComponent>(entityID);
+                    auto& spriteRenderer = sprites.get<SpriteRendererComponent>(entityID);
+
+                    // Runtime position and scaling of sprites
+                    glm::vec3 renderPosition = transform.position;
+                    glm::vec2 renderSize = transform.scale;
+                    glm::vec2 renderOrigin = spriteRenderer.origin;
+
+                    if (!isEditor)
                     {
-                        auto& transform = sprites.get<TransformComponent>(entityID);
-                        auto& spriteRenderer = sprites.get<SpriteRendererComponent>(entityID);
-
-                        Texture defaultTexture;
-                        defaultTexture.id = 0;
-                        defaultTexture.width = 1.f;
-                        defaultTexture.height = 1.f;
-
-                        glm::vec2 position = transform.position;
-                        if (!isEditor)
-                        {
-                            defaultTexture.width *= 64.f;
-                            defaultTexture.height *= 64.f;
-                            position.x *= 64.f;
-                            position.y *= -64.f;
-                        }
-
                         Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
-                        Texture validTexture = (texture != NULL) ? *texture : defaultTexture;
 
-                        Renderer::DrawTextureEx(validTexture, position, transform.rotation.z,
-                                                transform.scale, spriteRenderer.tint);
+                        if (texture != NULL)
+                        {
+                            renderPosition.x *= texture->width;
+                            renderPosition.y *= texture->height;
+                            renderSize.x *= texture->width;
+                            renderSize.y *= texture->height;
+                            renderOrigin.x *= texture->width;
+                            renderOrigin.y *= texture->height;
+                        }
+                        else
+                        {
+                            renderPosition.x *= 64.f;
+                            renderPosition.y *= -64.f;
+                            renderSize.x *= 64.f;
+                            renderSize.y *= 64.f;
+                            renderOrigin.x *= 64.f;
+                            renderOrigin.y *= 64.f;
+                        }
                     }
+
+                    const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(renderPosition, renderSize, transform.rotation.z, renderOrigin);
+                    Renderer::DrawEntity(transformMatrix, spriteRenderer, (s32)entityID);
                 }
             }
         }

@@ -16,7 +16,6 @@ namespace Charm
 
             void Reset()
             {
-                state.mouse.position = glm::vec2(0.f);
                 state.mouse.relative = glm::vec2(0.f);
                 state.mouse.scroll = glm::vec2(0.f);
 

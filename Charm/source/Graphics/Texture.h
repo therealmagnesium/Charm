@@ -14,7 +14,8 @@ namespace Charm
             RGB,
             RGBA,
             Depth,
-            DepthStencil
+            DepthStencil,
+            RedInteger
         };
 
         struct Texture : public Asset
