@@ -6,7 +6,6 @@
 #include "Core/Utils.h"
 
 #include "Graphics/Renderer.h"
-#include "Graphics/Texture.h"
 
 using namespace Charm::Core;
 using namespace Charm::Graphics;
@@ -15,17 +14,18 @@ namespace Charm
 {
     namespace ECS
     {
-        static Camera2D* activeCamera2D = NULL;
-        static Camera3D* activeCamera3D = NULL;
+        static Camera2D* activeCamera2D = NULL; // Active 2D runtime camera
+        static Camera3D* activeCamera3D = NULL; // Active 3D runtime camera
 
         namespace Scenes
         {
-            void DrawAllCircles(Scene& scene, bool isEditor);
-            void DrawAllSprites(Scene& scene, bool isEditor);
+            void DrawAllCircles(Scene& scene);
+            void DrawAllSprites(Scene& scene);
 
             Scene Create()
             {
                 Scene scene;
+                scene.state = SceneState::Editor;
                 ResetEditorCameras(scene);
 
                 return scene;
@@ -40,10 +40,10 @@ namespace Charm
                 return entity;
             }
 
-            Entity CreateEntity(Scene& scene, UUID id)
+            Entity CreateEntity(Scene& scene, UUID id, const char* tag)
             {
                 Entity entity = Entities::Create(scene.registry.create(), &scene);
-                entity.AddComponent<InternalComponent>(id, "Entity");
+                entity.AddComponent<InternalComponent>(id, tag);
                 entity.AddComponent<TransformComponent>();
 
                 return entity;
@@ -57,20 +57,23 @@ namespace Charm
 
             void UpdateEditor(Scene& scene)
             {
+                activeCamera2D = NULL;
+                activeCamera3D = NULL;
                 Cameras::UpdateEditor(scene.editorCamera3D);
             }
 
             void RenderEditor(Scene& scene)
             {
                 Renderer::BeginScene2D(scene.editorCamera3D);
-                DrawAllCircles(scene, true);
-                DrawAllSprites(scene, true);
+                DrawAllCircles(scene);
+                DrawAllSprites(scene);
                 Renderer::EndScene2D();
             }
 
             void UpdateRuntime(Scene& scene)
             {
                 activeCamera2D = NULL;
+                activeCamera3D = NULL;
                 auto cameras = scene.registry.group<Camera2DComponent>(entt::get<TransformComponent>);
                 auto sprites = scene.registry.group<SpriteRendererComponent>(entt::get<TransformComponent, InternalComponent>);
 
@@ -91,8 +94,8 @@ namespace Charm
                 if (activeCamera2D != NULL)
                 {
                     Renderer::BeginScene2D(*activeCamera2D);
-                    DrawAllCircles(scene, false);
-                    DrawAllSprites(scene, false);
+                    DrawAllCircles(scene);
+                    DrawAllSprites(scene);
                     Renderer::EndScene2D();
                 }
             }
@@ -114,7 +117,7 @@ namespace Charm
                 scene.editorCamera3D.fov = 45.f;
             }
 
-            void DrawAllCircles(Scene& scene, bool isEditor)
+            void DrawAllCircles(Scene& scene)
             {
                 auto circles = scene.registry.group<CircleRendererComponent>(entt::get<TransformComponent, InternalComponent>);
 
@@ -128,24 +131,13 @@ namespace Charm
                     auto& transform = circles.get<TransformComponent>(entityID);
                     auto& circleRenderer = circles.get<CircleRendererComponent>(entityID);
 
-                    // Runtime position and scaling of circles
-                    glm::vec3 renderPosition = transform.position;
-                    glm::vec2 renderSize = glm::vec2(circleRenderer.radius);
-
-                    if (!isEditor)
-                    {
-                        renderPosition.x *= 64.f;
-                        renderPosition.y *= -64.f;
-                        renderSize.x *= 64.f;
-                        renderSize.y *= 64.f;
-                    }
-
-                    const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(renderPosition, renderSize, transform.rotation.z, glm::vec2(0.f));
+                    const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, glm::vec2(circleRenderer.radius),
+                                                                                 transform.rotation.z, glm::vec2(0.f));
                     Renderer::DrawEntity(transformMatrix, circleRenderer, (s32)entityID);
                 }
             }
 
-            void DrawAllSprites(Scene& scene, bool isEditor)
+            void DrawAllSprites(Scene& scene)
             {
                 auto sprites = scene.registry.group<SpriteRendererComponent>(entt::get<TransformComponent, InternalComponent>);
 
@@ -159,36 +151,8 @@ namespace Charm
                     auto& transform = sprites.get<TransformComponent>(entityID);
                     auto& spriteRenderer = sprites.get<SpriteRendererComponent>(entityID);
 
-                    // Runtime position and scaling of sprites
-                    glm::vec3 renderPosition = transform.position;
-                    glm::vec2 renderSize = transform.scale;
-                    glm::vec2 renderOrigin = spriteRenderer.origin;
-
-                    if (!isEditor)
-                    {
-                        Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
-
-                        if (texture != NULL)
-                        {
-                            renderPosition.x *= texture->width;
-                            renderPosition.y *= texture->height;
-                            renderSize.x *= texture->width;
-                            renderSize.y *= texture->height;
-                            renderOrigin.x *= texture->width;
-                            renderOrigin.y *= texture->height;
-                        }
-                        else
-                        {
-                            renderPosition.x *= 64.f;
-                            renderPosition.y *= -64.f;
-                            renderSize.x *= 64.f;
-                            renderSize.y *= 64.f;
-                            renderOrigin.x *= 64.f;
-                            renderOrigin.y *= 64.f;
-                        }
-                    }
-
-                    const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(renderPosition, renderSize, transform.rotation.z, renderOrigin);
+                    const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale,
+                                                                                 transform.rotation.z, spriteRenderer.origin);
                     Renderer::DrawEntity(transformMatrix, spriteRenderer, (s32)entityID);
                 }
             }

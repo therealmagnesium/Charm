@@ -9,10 +9,10 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     Sprite Renderer Component:
-      Texture Asset Handle: 0
+      Texture Asset Handle: 14403522116308112981
       Origin: [0.5, 0.5]
-      Crop: [0, 0, 0, 0]
-      Tint: [0.3480392, 0.054594383, 0.054594383]
+      Crop: [0, 0, 256, 256]
+      Tint: [1, 1, 1]
   - Entity: 17327925099248547969
     Internal Component:
       Tag: Ground
@@ -37,7 +37,7 @@ Entities:
     Camera2D Component:
       Is Primary?: true
       Target: [0, 0]
-      Offset: [640, 360]
+      Offset: [10, 5.7]
       Rotation: 0
       Zoom: 1
   - Entity: 13593707619028290158

@@ -10,10 +10,10 @@ namespace CharmApp
     struct CharmState
     {
         Framebuffer framebuffer;
-        AssetHandle textures[2];
         Scene scene;
+        Texture iconPlay;
+        Texture iconStop;
         s32 pixelData = -1;
-        bool isEditorMode = true;
     };
 
     void OnCreate();

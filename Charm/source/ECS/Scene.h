@@ -13,11 +13,18 @@ namespace Charm
     {
         struct Entity;
 
+        enum class SceneState : u8
+        {
+            Editor = 0,
+            Runtime
+        };
+
         struct Scene
         {
             entt::registry registry;
             Camera2D editorCamera2D;
             Camera3D editorCamera3D;
+            SceneState state;
         };
 
         namespace Scenes
@@ -25,7 +32,7 @@ namespace Charm
             Scene Create();
 
             Entity CreateEntity(Scene& scene, const char* tag = "Entity");
-            Entity CreateEntity(Scene& scene, UUID id);
+            Entity CreateEntity(Scene& scene, UUID id, const char* tag = "Entity");
             void DestroyEntity(Scene& scene, Entity& entity);
 
             void UpdateEditor(Scene& scene);

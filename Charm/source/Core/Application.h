@@ -32,6 +32,7 @@ namespace Charm
         struct ApplicationState
         {
             bool isRunning = false;
+            u32 pixelsPerUnit = 64;
             glm::vec2 viewportPosition;
             glm::vec2 viewportSize;
             ApplicationConfig config;
@@ -46,12 +47,14 @@ namespace Charm
             void Quit();
 
             bool IsRunning();
+            u32 GetPixelsPerUnit();
             const ApplicationConfig& GetConfig();
             const glm::vec2& GetViewportPosition();
             const glm::vec2& GetViewportSize();
 
             void SetViewportPosition(const glm::vec2& position);
             void SetViewportSize(const glm::vec2& size);
+            void SetPixelsPerUnit(u32 pixelsPerUnit);
         }
     }
 }

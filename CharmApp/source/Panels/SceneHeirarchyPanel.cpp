@@ -105,6 +105,11 @@ namespace Charm
             memset(tagBuffer, 0, sizeof(tagBuffer));
             strncpy(tagBuffer, internal.tag.c_str(), internal.tag.size());
 
+            ImGui::PushID("Is Active?");
+            ImGui::Checkbox("##IsActive?", &internal.isActive);
+            ImGui::PopID();
+
+            ImGui::SameLine();
             if (ImGui::InputText("##Tag", tagBuffer, sizeof(tagBuffer)))
                 internal.tag = std::string(tagBuffer);
 
@@ -157,13 +162,27 @@ namespace Charm
             });
 
             DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
-                ImGui::PushID("Texture Handle");
+                ImGui::PushID("Texture");
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0, 80.f);
                 ImGui::Text("Texture");
                 ImGui::NextColumn();
 
-                ImGui::Button("Placeholder", ImVec2(ImGui::GetContentRegionAvail().x, 0.f));
+                const AssetRegistry& registry = AssetManager::GetRegistry();
+                std::string placeholder = (AssetManager::GetAsset<Texture>(component.sprite) != NULL) ? registry.at(component.sprite).path.c_str() : "Select texture";
+                if (ImGui::BeginCombo("##Texture", placeholder.c_str()))
+                {
+                    if (ImGui::Selectable("None", component.sprite == 0))
+                        component.sprite = 0;
+
+                    for (auto& [handle, metadata] : registry)
+                    {
+                        const bool isSelected = (component.sprite == handle);
+                        if (ImGui::Selectable(metadata.path.c_str(), isSelected))
+                            component.sprite = handle;
+                    }
+                    ImGui::EndCombo();
+                }
                 ImGui::Columns(1);
                 ImGui::PopID();
 

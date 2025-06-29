@@ -86,7 +86,8 @@ namespace Charm
                 const ApplicationConfig& config = Application::GetConfig();
 
                 glm::mat4 projectionMatrix = glm::mat4(1.f);
-                projectionMatrix = glm::ortho(0.f, (float)config.virtualWidth, (float)config.virtualHeight, 0.f, -1.f, 1.f);
+                projectionMatrix = glm::ortho(0.f, (float)config.virtualWidth / (float)Application::GetPixelsPerUnit(),
+                                              0.f, (float)config.virtualHeight / (float)Application::GetPixelsPerUnit(), -50.f, 50.f);
 
                 return projectionMatrix;
             }

@@ -15,6 +15,9 @@ namespace CharmApp
 {
     static CharmState state;
 
+    void OnScenePlay();
+    void OnSceneStop();
+
     void OnCreate()
     {
         const ApplicationConfig& config = Application::GetConfig();
@@ -26,8 +29,11 @@ namespace CharmApp
         framebufferSpec.attachments = {TextureFormat::RGBA, TextureFormat::RedInteger, TextureFormat::DepthStencil};
         state.framebuffer = Framebuffers::Create(framebufferSpec);
 
-        state.textures[0] = AssetManager::Import("assets/textures/small_checker.png", AssetType::Texture);
-        state.textures[1] = AssetManager::Import("assets/textures/texel_checker.png", AssetType::Texture);
+        state.iconPlay = Textures::Load("assets/textures/charm/play_button.png");
+        state.iconStop = Textures::Load("assets/textures/charm/stop_button.png");
+
+        AssetManager::Import("assets/textures/small_checker.png", AssetType::Texture);
+        AssetManager::Import("assets/textures/texel_checker.png", AssetType::Texture);
 
         state.scene = Scenes::Create();
         SceneSerializer::SetContext(state.scene);
@@ -42,9 +48,6 @@ namespace CharmApp
             Application::Quit();
 
         if (Input::IsKeyPressed(KEY_F2))
-            state.isEditorMode = !state.isEditorMode;
-
-        if (Input::IsKeyPressed(KEY_F3))
             Scenes::ResetEditorCameras(state.scene);
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_S))
@@ -71,7 +74,7 @@ namespace CharmApp
         Application::SetViewportPosition(SceneViewportPanel::GetPosition());
         Application::SetViewportSize(SceneViewportPanel::GetSize());
 
-        if (state.isEditorMode)
+        if (state.scene.state == SceneState::Editor)
         {
             if (Input::IsMouseClicked(MOUSE_BUTTON_LEFT) && !Input::IsKeyDown(KEY_LEFT_ALT))
             {
@@ -103,7 +106,7 @@ namespace CharmApp
         RenderCommand::Clear();
         Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
 
-        if (state.isEditorMode)
+        if (state.scene.state == SceneState::Editor)
         {
             Scenes::RenderEditor(state.scene);
         }
@@ -156,11 +159,50 @@ namespace CharmApp
         }
 
         ImGui::End();
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 2.f));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0.f, 0.f));
+
+        const auto& colors = ImGui::GetStyle().Colors;
+        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(V3_OPEN(buttonHovered), 0.5f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(V3_OPEN(buttonActive), 0.5f));
+        ImGui::Begin("##Toolbar", NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        float iconSize = ImGui::GetWindowHeight() - 12.f;
+        ImTextureID icon = (state.scene.state == SceneState::Editor) ? state.iconPlay.id : state.iconStop.id;
+        ImGui::SetCursorPosX((ImGui::GetContentRegionMax().x * 0.5f) - (iconSize * 0.5f));
+        if (ImGui::ImageButton("##PlayButton", icon, ImVec2(iconSize, iconSize), ImVec2(0.f, 1.f), ImVec2(1.f, 0.f)))
+        {
+            if (state.scene.state == SceneState::Editor)
+                OnScenePlay();
+            else
+                OnSceneStop();
+        }
+
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(3);
+        ImGui::End();
     }
 
     void OnShutdown()
     {
+        Textures::Unload(state.iconPlay);
+        Textures::Unload(state.iconStop);
+
         AssetManager::Clean();
         Framebuffers::Destroy(state.framebuffer);
+    }
+
+    void OnScenePlay()
+    {
+        state.scene.state = SceneState::Runtime;
+    }
+
+    void OnSceneStop()
+    {
+        state.scene.state = SceneState::Editor;
     }
 }

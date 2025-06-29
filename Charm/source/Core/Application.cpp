@@ -103,12 +103,14 @@ namespace Charm
             }
 
             bool IsRunning() { return state.isRunning; }
+            u32 GetPixelsPerUnit() { return state.pixelsPerUnit; }
             const ApplicationConfig& GetConfig() { return state.config; }
             const glm::vec2& GetViewportPosition() { return state.viewportPosition; }
             const glm::vec2& GetViewportSize() { return state.viewportSize; }
 
             void SetViewportPosition(const glm::vec2& position) { state.viewportPosition = position; }
             void SetViewportSize(const glm::vec2& size) { state.viewportSize = size; }
+            void SetPixelsPerUnit(u32 pixelsPerUnit) { state.pixelsPerUnit = pixelsPerUnit; }
         }
     }
 }
