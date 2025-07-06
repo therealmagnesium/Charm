@@ -7,7 +7,7 @@ IncludeDir["glm"] = "../vendor/glm"
 IncludeDir["imgui"] = "../vendor/imgui/include"
 IncludeDir["nfd"] = "../vendor/nfd/include"
 IncludeDir["stb_image"] = "../vendor/stb_image/include"
-IncludeDir["yaml_cpp"] = "../vendor/yaml-cpp/include"
+IncludeDir["yaml_cpp"] = "../vendor/yaml_cpp/include"
 
 group("Dependencies")
 include("vendor/box2d")
@@ -15,5 +15,5 @@ include("vendor/imgui")
 include("vendor/glad")
 include("vendor/nfd")
 include("vendor/stb_image")
-include("vendor/yaml-cpp")
+include("vendor/yaml_cpp")
 group("")
