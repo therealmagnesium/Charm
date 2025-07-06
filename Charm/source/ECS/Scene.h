@@ -2,6 +2,7 @@
 #include "Core/Random.h"
 #include "Graphics/Camera.h"
 
+#include <box2d/types.h>
 #include <entt/entt.hpp>
 
 using namespace Charm::Core;
@@ -24,16 +25,24 @@ namespace Charm
             entt::registry registry;
             Camera2D editorCamera2D;
             Camera3D editorCamera3D;
-            SceneState state;
+            b2WorldDef physicsWorld;
+            b2WorldId physicsWorldID;
         };
 
         namespace Scenes
         {
             Scene Create();
+            Scene Copy(Scene& scene);
 
             Entity CreateEntity(Scene& scene, const char* tag = "Entity");
             Entity CreateEntity(Scene& scene, UUID id, const char* tag = "Entity");
+            Entity DuplicateEntity(Scene& scene, Entity& entity);
+
             void DestroyEntity(Scene& scene, Entity& entity);
+            void ClearRegistry(Scene& scene);
+
+            void OnRuntimeStart(Scene& scene);
+            void OnRuntimeStop(Scene& scene);
 
             void UpdateEditor(Scene& scene);
             void RenderEditor(Scene& scene);

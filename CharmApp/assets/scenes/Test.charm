@@ -1,31 +1,44 @@
 Scene: Untitled
 Entities:
-  - Entity: 6596107990146269218
+  - Entity: 11792544000708966228
     Internal Component:
-      Tag: Player
+      Tag: Yellow Circle
       Is Active?: true
     Transform Component:
-      Position: [0, -4, 0]
+      Position: [10, 5, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    Sprite Renderer Component:
-      Texture Asset Handle: 14403522116308112981
-      Origin: [0.5, 0.5]
-      Crop: [0, 0, 256, 256]
-      Tint: [1, 1, 1]
-  - Entity: 17327925099248547969
+    Circle Renderer Component:
+      Radius: 12
+      Thickness: 1
+      Fade: 1
+      Color: [0.7794118, 0.62366426, 0.19103232]
+  - Entity: 6327319351527655227
     Internal Component:
-      Tag: Ground
+      Tag: Blue Circle
       Is Active?: true
     Transform Component:
-      Position: [0, -5.2, 0]
+      Position: [-9, 5, 0]
       Rotation: [0, 0, 0]
-      Scale: [20, 1, 1]
-    Sprite Renderer Component:
-      Texture Asset Handle: 0
-      Origin: [10, 0.5]
-      Crop: [0, 0, 0, 0]
-      Tint: [0.0414504, 0.053376675, 0.122549]
+      Scale: [1, 1, 1]
+    Circle Renderer Component:
+      Radius: 12
+      Thickness: 1
+      Fade: 1
+      Color: [0.11461936, 0.23373364, 0.51960784]
+  - Entity: 13593707619028290158
+    Internal Component:
+      Tag: Green Circle
+      Is Active?: true
+    Transform Component:
+      Position: [0, 5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Circle Renderer Component:
+      Radius: 12
+      Thickness: 1
+      Fade: 1
+      Color: [0.13432334, 0.6372549, 0.26745218]
   - Entity: 12103849474609697175
     Internal Component:
       Tag: Main Camera
@@ -40,42 +53,54 @@ Entities:
       Offset: [10, 5.7]
       Rotation: 0
       Zoom: 1
-  - Entity: 13593707619028290158
+  - Entity: 17327925099248547969
     Internal Component:
-      Tag: Green Circle
+      Tag: Ground
       Is Active?: true
     Transform Component:
-      Position: [0, 5, 0]
+      Position: [0, -5.2, 0]
       Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    Circle Renderer Component:
-      Radius: 12
-      Thickness: 1
-      Fade: 1
-      Color: [0.13432334, 0.6372549, 0.26745218]
-  - Entity: 6327319351527655227
+      Scale: [20, 1, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Origin: [10, 0.5]
+      Crop: [0, 0, 0, 0]
+      Tint: [0.0414504, 0.053376675, 0.122549]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [10, 0.5]
+      Density: 1
+      Friction: 0.5
+      Restitution: 0
+  - Entity: 6596107990146269218
     Internal Component:
-      Tag: Blue Circle
+      Tag: Player
       Is Active?: true
     Transform Component:
-      Position: [-9, 5, 0]
+      Position: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    Circle Renderer Component:
-      Radius: 12
-      Thickness: 1
-      Fade: 1
-      Color: [0.11461936, 0.23373364, 0.51960784]
-  - Entity: 11792544000708966228
-    Internal Component:
-      Tag: Yellow Circle
-      Is Active?: true
-    Transform Component:
-      Position: [10, 5, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    Circle Renderer Component:
-      Radius: 12
-      Thickness: 1
-      Fade: 1
-      Color: [0.7794118, 0.62366426, 0.19103232]
+    Sprite Renderer Component:
+      Texture Asset Handle: 12146085755896241728
+      Origin: [0.5, 0.5]
+      Crop: [0, 0, 256, 256]
+      Tint: [1, 1, 1]
+    Rigidbody2D Component:
+      Type: Dynamic
+      Fixed Rotation?: false
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [0.5, 0.5]
+      Density: 1
+      Friction: 0.5
+      Restitution: 0.8
+Asset Registry:
+  - Asset: 12146085755896241728
+    Path: assets/textures/small_checker.png
+    Type: Texture
+  - Asset: 312794087193195786
+    Path: assets/textures/texel_checker.png
+    Type: Texture

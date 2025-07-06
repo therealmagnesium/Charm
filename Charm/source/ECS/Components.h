@@ -7,6 +7,7 @@
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 
+#include <box2d/box2d.h>
 #include <glm/glm.hpp>
 #include <string>
 
@@ -115,5 +116,28 @@ namespace Charm
             {
             };
         */
+
+        struct Rigidbody2DComponent
+        {
+            BodyType type = BodyType::Static;
+            bool hasFixedRotation = false;
+            b2BodyId runtimeBody;
+
+            Rigidbody2DComponent() = default;
+            Rigidbody2DComponent(const Rigidbody2DComponent&) = default;
+        };
+
+        struct BoxCollider2DComponent
+        {
+            glm::vec2 offset;
+            glm::vec2 size = glm::vec2(0.5f, 0.5f);
+            float density = 1.f;
+            float friction = 0.5f;
+            float restitution = 0.f;
+            b2ShapeId runtimeShape;
+
+            BoxCollider2DComponent() = default;
+            BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
+        };
     }
 }

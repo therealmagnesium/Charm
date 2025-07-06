@@ -1,6 +1,8 @@
 #include "CharmApp.h"
+#include "Panels/DebugStatsPanel.h"
 #include "Panels/SceneHeirarchyPanel.h"
 #include "Panels/SceneViewport.h"
+#include "Panels/ToolbarPanel.h"
 
 #include <Charm.h>
 #include <imgui.h>
@@ -15,9 +17,6 @@ namespace CharmApp
 {
     static CharmState state;
 
-    void OnScenePlay();
-    void OnSceneStop();
-
     void OnCreate()
     {
         const ApplicationConfig& config = Application::GetConfig();
@@ -29,15 +28,13 @@ namespace CharmApp
         framebufferSpec.attachments = {TextureFormat::RGBA, TextureFormat::RedInteger, TextureFormat::DepthStencil};
         state.framebuffer = Framebuffers::Create(framebufferSpec);
 
-        state.iconPlay = Textures::Load("assets/textures/charm/play_button.png");
-        state.iconStop = Textures::Load("assets/textures/charm/stop_button.png");
+        state.editorScene = Scenes::Create();
+        state.runtimeScene = Scenes::Create();
+        state.activeScene = &state.editorScene;
 
-        AssetManager::Import("assets/textures/small_checker.png", AssetType::Texture);
-        AssetManager::Import("assets/textures/texel_checker.png", AssetType::Texture);
-
-        state.scene = Scenes::Create();
-        SceneSerializer::SetContext(state.scene);
-        SceneHeirarchyPanel::SetContext(state.scene);
+        SceneSerializer::SetContext(state.editorScene);
+        SceneHeirarchyPanel::SetContext(state.editorScene);
+        ToolbarPanel::Init();
     }
 
     void OnUpdate()
@@ -48,33 +45,25 @@ namespace CharmApp
             Application::Quit();
 
         if (Input::IsKeyPressed(KEY_F2))
-            Scenes::ResetEditorCameras(state.scene);
+            Scenes::ResetEditorCameras(*state.activeScene);
+
+        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_N))
+            OnSceneNew();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_S))
-        {
-            if (FileDialogs::Save())
-            {
-                const std::string& path = FileDialogs::GetSelectedPath();
-                SceneSerializer::Serialize(path.c_str());
-                INFO("Saved scene to %s", path.c_str());
-            }
-        }
+            OnSceneSaveAs();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_O))
-        {
-            if (FileDialogs::Open())
-            {
-                const std::string& path = FileDialogs::GetSelectedPath();
-                SceneSerializer::Deserialize(path.c_str());
-                INFO("Loaded scene %s", path.c_str());
-            }
-        }
+            OnSceneOpen();
+
+        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_D))
+            OnDuplicateEntity();
 
         Input::Capture(SceneViewportPanel::IsFocused());
         Application::SetViewportPosition(SceneViewportPanel::GetPosition());
         Application::SetViewportSize(SceneViewportPanel::GetSize());
 
-        if (state.scene.state == SceneState::Editor)
+        if (state.sceneState == SceneState::Editor)
         {
             if (Input::IsMouseClicked(MOUSE_BUTTON_LEFT) && !Input::IsKeyDown(KEY_LEFT_ALT))
             {
@@ -94,10 +83,10 @@ namespace CharmApp
                 }
             }
 
-            Scenes::UpdateEditor(state.scene);
+            Scenes::UpdateEditor(*state.activeScene);
         }
         else
-            Scenes::UpdateRuntime(state.scene);
+            Scenes::UpdateRuntime(*state.activeScene);
     }
 
     void OnRender()
@@ -106,48 +95,22 @@ namespace CharmApp
         RenderCommand::Clear();
         Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
 
-        if (state.scene.state == SceneState::Editor)
-        {
-            Scenes::RenderEditor(state.scene);
-        }
+        if (state.sceneState == SceneState::Editor)
+            Scenes::RenderEditor(*state.activeScene);
         else
-            Scenes::RenderRuntime(state.scene);
+            Scenes::RenderRuntime(*state.activeScene);
 
         Framebuffers::Unbind();
     }
 
     void OnRenderUI()
     {
-        const ApplicationConfig& config = Application::GetConfig();
-        const glm::vec2 virtualMouse = Utils::ScreenToVirtual(Input::GetMousePosition());
-
-        glm::vec2 viewportMouse = Utils::ScreenToViewport(Input::GetMousePosition(),
-                                                          SceneViewportPanel::GetPosition(),
-                                                          SceneViewportPanel::GetSize());
-
-        glm::vec2 glViewportMouse = Utils::ScreenToViewportGL(Input::GetMousePosition(),
-                                                              SceneViewportPanel::GetPosition(),
-                                                              SceneViewportPanel::GetSize());
-
         ImGui::DockSpaceOverViewport();
 
         SceneHeirarchyPanel::Display();
         SceneViewportPanel::Display(state.framebuffer.colorAttachments[0]);
-
-        ImGui::Begin("Debug Stats");
-        ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));
-        ImGui::Text("MS per frame: %.7f", Time::GetDelta());
-        ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());
-        ImGui::Text("Number of circles: %d", Renderer::GetCircleCount());
-        ImGui::Text("Number of draw calls: %d", Renderer::GetDrawCount());
-        ImGui::Text("Editor camera distance: %.2f", state.scene.editorCamera3D.distance);
-        ImGui::Text("Pixel data: %d", state.pixelData);
-        ImGui::Text("Virtual mouse position: " V2_FMT, V2_OPEN(virtualMouse));
-        ImGui::Text("Viewport mouse position: " V2_FMT, V2_OPEN(viewportMouse));
-        ImGui::Text("GL mouse position: " V2_FMT, V2_OPEN(glViewportMouse));
-        ImGui::Text("Is viewport hovered?: %s", Utils::BoolToCString(SceneViewportPanel::IsHovered()));
-        ImGui::Text("Is viewport focused?: %s", Utils::BoolToCString(SceneViewportPanel::IsFocused()));
-        ImGui::End();
+        DebugStatsPanel::Display();
+        ToolbarPanel::Display();
 
         ImGui::Begin("Asset Registry");
 
@@ -159,50 +122,82 @@ namespace CharmApp
         }
 
         ImGui::End();
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 2.f));
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0.f, 0.f));
-
-        const auto& colors = ImGui::GetStyle().Colors;
-        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
-        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(V3_OPEN(buttonHovered), 0.5f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(V3_OPEN(buttonActive), 0.5f));
-        ImGui::Begin("##Toolbar", NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-        float iconSize = ImGui::GetWindowHeight() - 12.f;
-        ImTextureID icon = (state.scene.state == SceneState::Editor) ? state.iconPlay.id : state.iconStop.id;
-        ImGui::SetCursorPosX((ImGui::GetContentRegionMax().x * 0.5f) - (iconSize * 0.5f));
-        if (ImGui::ImageButton("##PlayButton", icon, ImVec2(iconSize, iconSize), ImVec2(0.f, 1.f), ImVec2(1.f, 0.f)))
-        {
-            if (state.scene.state == SceneState::Editor)
-                OnScenePlay();
-            else
-                OnSceneStop();
-        }
-
-        ImGui::PopStyleVar(2);
-        ImGui::PopStyleColor(3);
-        ImGui::End();
     }
 
     void OnShutdown()
     {
-        Textures::Unload(state.iconPlay);
-        Textures::Unload(state.iconStop);
-
         AssetManager::Clean();
+        ToolbarPanel::Shutdown();
         Framebuffers::Destroy(state.framebuffer);
     }
 
     void OnScenePlay()
     {
-        state.scene.state = SceneState::Runtime;
+        state.sceneState = SceneState::Runtime;
+        state.runtimeScene = Scenes::Copy(state.editorScene);
+        state.activeScene = &state.runtimeScene;
+        Scenes::OnRuntimeStart(*state.activeScene);
+        SceneHeirarchyPanel::SetContext(*state.activeScene);
     }
 
     void OnSceneStop()
     {
-        state.scene.state = SceneState::Editor;
+        Scenes::OnRuntimeStop(*state.activeScene);
+        state.sceneState = SceneState::Editor;
+        state.activeScene = &state.editorScene;
+        state.runtimeScene = (Scene){};
+        SceneHeirarchyPanel::SetContext(*state.activeScene);
     }
+
+    void OnSceneNew()
+    {
+        if (state.sceneState != SceneState::Editor)
+            return;
+
+        Scenes::ClearRegistry(state.editorScene);
+        SceneHeirarchyPanel::SetSelectedEntity((Entity){});
+        AssetManager::Clean();
+    }
+
+    void OnSceneOpen()
+    {
+        if (state.sceneState != SceneState::Editor)
+            Scenes::OnRuntimeStop(*state.activeScene);
+
+        if (FileDialogs::Open())
+        {
+            OnSceneNew();
+
+            const std::string& path = FileDialogs::GetSelectedPath();
+            SceneSerializer::Deserialize(path.c_str());
+            INFO("Loaded scene %s", path.c_str());
+        }
+    }
+
+    void OnSceneSaveAs()
+    {
+        if (FileDialogs::Save())
+        {
+            const std::string& path = FileDialogs::GetSelectedPath();
+            SceneSerializer::Serialize(path.c_str());
+            INFO("Saved scene to %s", path.c_str());
+        }
+    }
+
+    void OnDuplicateEntity()
+    {
+        if (state.sceneState != SceneState::Editor)
+            return;
+
+        Entity& selectedEntity = SceneHeirarchyPanel::GetSelectedEntity();
+        if (selectedEntity)
+        {
+            Entity duplicate = Scenes::DuplicateEntity(state.editorScene, selectedEntity);
+            SceneHeirarchyPanel::SetSelectedEntity(duplicate);
+        }
+    }
+
+    s32 GetPixelData() { return state.pixelData; }
+    Scene* GetActiveScene() { return state.activeScene; }
+    SceneState GetActiveSceneState() { return state.sceneState; }
 }

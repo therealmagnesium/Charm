@@ -10,9 +10,10 @@ namespace CharmApp
     struct CharmState
     {
         Framebuffer framebuffer;
-        Scene scene;
-        Texture iconPlay;
-        Texture iconStop;
+        SceneState sceneState;
+        Scene editorScene;
+        Scene runtimeScene;
+        Scene* activeScene = NULL;
         s32 pixelData = -1;
     };
 
@@ -21,4 +22,15 @@ namespace CharmApp
     void OnRender();
     void OnRenderUI();
     void OnShutdown();
+
+    void OnScenePlay();
+    void OnSceneStop();
+    void OnSceneNew();
+    void OnSceneOpen();
+    void OnSceneSaveAs();
+    void OnDuplicateEntity();
+
+    s32 GetPixelData();
+    Scene* GetActiveScene();
+    SceneState GetActiveSceneState();
 }

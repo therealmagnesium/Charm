@@ -1,9 +1,10 @@
 #pragma once
-#include <Charm.h>
+#include <ECS/Scene.h>
+#include <ECS/Entity.h>
 
 using namespace Charm::ECS;
 
-namespace Charm
+namespace CharmApp
 {
     struct SceneHeirarchyState
     {
@@ -19,5 +20,6 @@ namespace Charm
         void SetSelectedEntity(const Entity& entity);
 
         Scene* GetContext();
+        Entity& GetSelectedEntity();
     }
 }

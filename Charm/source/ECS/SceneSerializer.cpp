@@ -4,6 +4,7 @@
 #include "ECS/Components.h"
 
 #include "Core/Log.h"
+#include "Core/Utils.h"
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
@@ -127,6 +128,7 @@ namespace Charm
         namespace SceneSerializer
         {
             void SerializeEntity(YAML::Emitter& out, Entity& entity);
+            void DeserializeEntity(Entity& entity, YAML::Node& node);
 
             void SetContext(Scene& scene) { context = &scene; }
 
@@ -141,8 +143,8 @@ namespace Charm
                 YAML::Emitter out;
                 out << YAML::BeginMap;
                 out << YAML::Key << "Scene" << YAML::Value << "Untitled";
-                out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
+                out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
                 for (auto entityID : context->registry.view<entt::entity>())
                 {
                     Entity entity = Entities::Create(entityID, context);
@@ -152,8 +154,19 @@ namespace Charm
 
                     SerializeEntity(out, entity);
                 }
-
                 out << YAML::EndSeq;
+
+                out << YAML::Key << "Asset Registry" << YAML::Value << YAML::BeginSeq;
+                for (auto& [handle, metadata] : AssetManager::GetRegistry())
+                {
+                    out << YAML::BeginMap;
+                    out << YAML::Key << "Asset" << YAML::Value << handle;
+                    out << YAML::Key << "Path" << YAML::Value << metadata.path;
+                    out << YAML::Key << "Type" << YAML::Value << Utils::AssetTypeToString(metadata.type);
+                    out << YAML::EndMap;
+                }
+                out << YAML::EndSeq;
+
                 out << YAML::EndMap;
 
                 std::ofstream fout(path);
@@ -165,6 +178,12 @@ namespace Charm
 
             void Deserialize(const char* path)
             {
+                if (context == NULL)
+                {
+                    ERROR("SceneSerializer::Deserialize - The context has not been set!");
+                    return;
+                }
+
                 std::stringstream stream;
                 std::ifstream in(path);
                 stream << in.rdbuf();
@@ -186,48 +205,20 @@ namespace Charm
                     {
                         UUID uuid = entity["Entity"].as<UUID>();
                         Entity deserializedEntity = Scenes::CreateEntity(*context, uuid);
+                        DeserializeEntity(deserializedEntity, entity);
+                    }
+                }
 
-                        auto internalNode = entity["Internal Component"];
-                        auto& internal = deserializedEntity.GetComponent<InternalComponent>();
-                        internal.tag = internalNode["Tag"].as<std::string>();
-                        internal.isActive = internalNode["Is Active?"].as<bool>();
+                YAML::Node assets = data["Asset Registry"];
+                if (assets)
+                {
+                    for (auto asset : assets)
+                    {
+                        AssetHandle handle = asset["Asset"].as<AssetHandle>();
+                        std::string path = asset["Path"].as<std::string>();
+                        AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
 
-                        auto transformNode = entity["Transform Component"];
-                        auto& transform = deserializedEntity.GetComponent<TransformComponent>();
-                        transform.position = transformNode["Position"].as<glm::vec3>();
-                        transform.rotation = transformNode["Rotation"].as<glm::vec3>();
-                        transform.scale = transformNode["Scale"].as<glm::vec3>();
-
-                        auto circleRendererNode = entity["Circle Renderer Component"];
-                        if (circleRendererNode)
-                        {
-                            auto& circleRenderer = deserializedEntity.AddComponent<CircleRendererComponent>();
-                            circleRenderer.radius = circleRendererNode["Radius"].as<float>();
-                            circleRenderer.thickness = circleRendererNode["Thickness"].as<float>();
-                            circleRenderer.fade = circleRendererNode["Fade"].as<float>();
-                            circleRenderer.color = circleRendererNode["Color"].as<glm::vec3>();
-                        }
-
-                        auto spriteRendererNode = entity["Sprite Renderer Component"];
-                        if (spriteRendererNode)
-                        {
-                            auto& spriteRenderer = deserializedEntity.AddComponent<SpriteRendererComponent>();
-                            spriteRenderer.sprite = spriteRendererNode["Texture Asset Handle"].as<float>();
-                            spriteRenderer.origin = spriteRendererNode["Origin"].as<glm::vec2>();
-                            spriteRenderer.crop = spriteRendererNode["Crop"].as<Rectangle>();
-                            spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec3>();
-                        }
-
-                        auto camera2DNode = entity["Camera2D Component"];
-                        if (camera2DNode)
-                        {
-                            auto& cameraComponent = deserializedEntity.AddComponent<Camera2DComponent>();
-                            cameraComponent.isPrimary = camera2DNode["Is Primary?"].as<bool>();
-                            cameraComponent.camera.target = camera2DNode["Target"].as<glm::vec2>();
-                            cameraComponent.camera.offset = camera2DNode["Offset"].as<glm::vec2>();
-                            cameraComponent.camera.rotation = camera2DNode["Rotation"].as<float>();
-                            cameraComponent.camera.zoom = camera2DNode["Zoom"].as<float>();
-                        }
+                        AssetManager::Import(path.c_str(), type, handle);
                     }
                 }
             }
@@ -288,7 +279,92 @@ namespace Charm
                     out << YAML::EndMap;
                 }
 
+                if (entity.HasComponent<Rigidbody2DComponent>())
+                {
+                    auto& rb2D = entity.GetComponent<Rigidbody2DComponent>();
+                    out << YAML::Key << "Rigidbody2D Component" << YAML::Value << YAML::BeginMap;
+                    out << YAML::Key << "Type" << YAML::Value << Utils::BodyTypeToString(rb2D.type);
+                    out << YAML::Key << "Fixed Rotation?" << YAML::Value << rb2D.hasFixedRotation;
+                    out << YAML::EndMap;
+                }
+
+                if (entity.HasComponent<BoxCollider2DComponent>())
+                {
+                    auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+                    out << YAML::Key << "Box Collider2D Component" << YAML::Value << YAML::BeginMap;
+                    out << YAML::Key << "Offset" << YAML::Value << bc2d.offset;
+                    out << YAML::Key << "Size" << YAML::Value << bc2d.size;
+                    out << YAML::Key << "Density" << YAML::Value << bc2d.density;
+                    out << YAML::Key << "Friction" << YAML::Value << bc2d.friction;
+                    out << YAML::Key << "Restitution" << YAML::Value << bc2d.restitution;
+                    out << YAML::EndMap;
+                }
+
                 out << YAML::EndMap;
+            }
+
+            void DeserializeEntity(Entity& entity, YAML::Node& node)
+            {
+                auto internalNode = node["Internal Component"];
+                auto& internal = entity.GetComponent<InternalComponent>();
+                internal.tag = internalNode["Tag"].as<std::string>();
+                internal.isActive = internalNode["Is Active?"].as<bool>();
+
+                auto transformNode = node["Transform Component"];
+                auto& transform = entity.GetComponent<TransformComponent>();
+                transform.position = transformNode["Position"].as<glm::vec3>();
+                transform.rotation = transformNode["Rotation"].as<glm::vec3>();
+                transform.scale = transformNode["Scale"].as<glm::vec3>();
+
+                auto circleRendererNode = node["Circle Renderer Component"];
+                if (circleRendererNode)
+                {
+                    auto& circleRenderer = entity.AddComponent<CircleRendererComponent>();
+                    circleRenderer.radius = circleRendererNode["Radius"].as<float>();
+                    circleRenderer.thickness = circleRendererNode["Thickness"].as<float>();
+                    circleRenderer.fade = circleRendererNode["Fade"].as<float>();
+                    circleRenderer.color = circleRendererNode["Color"].as<glm::vec3>();
+                }
+
+                auto spriteRendererNode = node["Sprite Renderer Component"];
+                if (spriteRendererNode)
+                {
+                    auto& spriteRenderer = entity.AddComponent<SpriteRendererComponent>();
+                    spriteRenderer.sprite = spriteRendererNode["Texture Asset Handle"].as<AssetHandle>();
+                    spriteRenderer.origin = spriteRendererNode["Origin"].as<glm::vec2>();
+                    spriteRenderer.crop = spriteRendererNode["Crop"].as<Rectangle>();
+                    spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec3>();
+                }
+
+                auto camera2DNode = node["Camera2D Component"];
+                if (camera2DNode)
+                {
+                    auto& cameraComponent = entity.AddComponent<Camera2DComponent>();
+                    cameraComponent.isPrimary = camera2DNode["Is Primary?"].as<bool>();
+                    cameraComponent.camera.target = camera2DNode["Target"].as<glm::vec2>();
+                    cameraComponent.camera.offset = camera2DNode["Offset"].as<glm::vec2>();
+                    cameraComponent.camera.rotation = camera2DNode["Rotation"].as<float>();
+                    cameraComponent.camera.zoom = camera2DNode["Zoom"].as<float>();
+                }
+
+                auto rb2DNode = node["Rigidbody2D Component"];
+                if (rb2DNode)
+                {
+                    auto& rb2D = entity.AddComponent<Rigidbody2DComponent>();
+                    rb2D.type = Utils::StringToBodyType(rb2DNode["Type"].as<std::string>());
+                    rb2D.hasFixedRotation = rb2DNode["Fixed Rotation?"].as<bool>();
+                }
+
+                auto bc2DNode = node["Box Collider2D Component"];
+                if (bc2DNode)
+                {
+                    auto& bc2D = entity.AddComponent<BoxCollider2DComponent>();
+                    bc2D.offset = bc2DNode["Offset"].as<glm::vec2>();
+                    bc2D.size = bc2DNode["Size"].as<glm::vec2>();
+                    bc2D.density = bc2DNode["Density"].as<float>();
+                    bc2D.friction = bc2DNode["Friction"].as<float>();
+                    bc2D.restitution = bc2DNode["Restitution"].as<float>();
+                }
             }
         }
     }

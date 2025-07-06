@@ -1,9 +1,10 @@
 #pragma once
-#include <Charm.h>
+#include <Graphics/Texture.h>
+#include <glm/glm.hpp>
 
 using namespace Charm::Graphics;
 
-namespace Charm
+namespace CharmApp
 {
     struct SceneViewportState
     {

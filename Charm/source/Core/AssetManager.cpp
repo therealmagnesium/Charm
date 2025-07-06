@@ -71,6 +71,20 @@ namespace Charm
                 return handle;
             }
 
+            void Import(const char* path, AssetType type, AssetHandle handle)
+            {
+                AssetMetadata metadata;
+                metadata.path = path;
+                metadata.type = type;
+
+                Asset* asset = LoadAsset(handle, metadata);
+                if (asset != NULL)
+                {
+                    assets->registry[handle] = metadata;
+                    assets->loadedAssets[handle] = asset;
+                }
+            }
+
             const AssetMap& GetAllAssets() { return assets->loadedAssets; }
             const AssetRegistry& GetRegistry() { return assets->registry; }
 

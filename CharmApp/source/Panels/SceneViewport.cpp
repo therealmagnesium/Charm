@@ -1,11 +1,9 @@
 #include "SceneViewport.h"
-
-#include <Charm.h>
 #include <imgui.h>
 
 using namespace Charm::Graphics;
 
-namespace Charm
+namespace CharmApp
 {
     static SceneViewportState state;
 

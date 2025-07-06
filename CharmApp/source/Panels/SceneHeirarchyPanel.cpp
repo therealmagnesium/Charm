@@ -1,12 +1,18 @@
 #include "SceneHeirarchyPanel.h"
 
+#include <ECS/Components.h>
+
+#include <Core/Log.h>
+#include <Core/Utils.h>
+
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
 
+using namespace Charm;
 using namespace Charm::ECS;
 
-namespace Charm
+namespace CharmApp
 {
     static SceneHeirarchyState state;
 
@@ -57,6 +63,7 @@ namespace Charm
         }
 
         Scene* GetContext() { return state.context; }
+        Entity& GetSelectedEntity() { return state.selectionContext; }
 
         void SetContext(Scene& context)
         {
@@ -70,9 +77,9 @@ namespace Charm
         {
             auto& internal = entity.GetComponent<InternalComponent>();
 
+            ImGui::PushID(internal.id);
             ImGuiTreeNodeFlags flags = ((state.selectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-            std::string entityLabel = internal.tag + "##" + std::to_string(internal.id);
-            bool isOpen = ImGui::TreeNodeEx(entityLabel.c_str(), flags);
+            bool isOpen = ImGui::TreeNodeEx(internal.tag.c_str(), flags);
 
             if (ImGui::IsItemClicked())
                 state.selectionContext = entity;
@@ -95,6 +102,7 @@ namespace Charm
 
                 Scenes::DestroyEntity(*state.context, entity);
             }
+            ImGui::PopID();
         }
 
         void DrawComponents(Entity& entity)
@@ -145,26 +153,38 @@ namespace Charm
                     ImGui::CloseCurrentPopup();
                 }
 
+                if (ImGui::MenuItem("Rigidbody 2D"))
+                {
+                    state.selectionContext.AddComponent<Rigidbody2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Box Collider 2D"))
+                {
+                    state.selectionContext.AddComponent<BoxCollider2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
                 ImGui::EndPopup();
             }
 
             DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component) {
-                DrawVec3Control("Position", component.position, 0.1f, 0.f, 80.f);
-                DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, 80.f);
-                DrawVec3Control("Scale", component.scale, 0.1f, 1.f, 80.f);
+                DrawVec3Control("Position", component.position, 0.1f, 0.f, 90.f);
+                DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, 90.f);
+                DrawVec3Control("Scale", component.scale, 0.1f, 1.f, 90.f);
             });
 
             DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
-                DrawFloatControl("Radius", &component.radius, 0.f, 100.f);
-                DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f);
-                DrawFloatControl("Fade", &component.fade, 0.f, 1.f);
-                DrawColorControl("Color", component.color, 80.f);
+                DrawFloatControl("Radius", &component.radius, 0.f, 100.f, 90.f);
+                DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, 90.f);
+                DrawFloatControl("Fade", &component.fade, 0.f, 1.f, 90.f);
+                DrawColorControl("Color", component.color, 90.f);
             });
 
             DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
                 ImGui::PushID("Texture");
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, 80.f);
+                ImGui::SetColumnWidth(0, 90.f);
                 ImGui::Text("Texture");
                 ImGui::NextColumn();
 
@@ -188,7 +208,7 @@ namespace Charm
 
                 ImGui::PushID("Crop");
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0.f, 80.f);
+                ImGui::SetColumnWidth(0.f, 90.f);
                 ImGui::Text("Crop");
                 ImGui::NextColumn();
 
@@ -197,23 +217,68 @@ namespace Charm
                 ImGui::Columns(1);
                 ImGui::PopID();
 
-                DrawVec2Control("Origin", component.origin, 1.f, 0.f, 80.f);
-                DrawColorControl("Tint", component.tint, 80.f);
+                DrawVec2Control("Origin", component.origin, 1.f, 0.f, 90.f);
+                DrawColorControl("Tint", component.tint, 90.f);
             });
 
             DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {
-                DrawVec2Control("Offset", component.camera.offset, 0.f, 0.f, 100.f);
-                DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, 100.f);
+                DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, 90.f);
+                DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, 90.f);
 
                 ImGui::PushID("Is Primary?");
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, 100.f);
+                ImGui::SetColumnWidth(0, 90.f);
                 ImGui::Text("Is Primary?");
                 ImGui::NextColumn();
 
                 ImGui::Checkbox("##", &component.isPrimary);
                 ImGui::Columns(1);
                 ImGui::PopID();
+            });
+
+            DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](Rigidbody2DComponent& component) {
+                ImGui::PushID("Body Type");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, 120.f);
+                ImGui::Text("Body Type");
+                ImGui::NextColumn();
+
+                const char* types[3] = {"Static", "Dynamic", "Kinematic"};
+                std::string preview = Utils::BodyTypeToString(component.type);
+                if (ImGui::BeginCombo("##Body Type", preview.c_str()))
+                {
+                    for (u8 i = 0; i < LEN(types); i++)
+                    {
+                        const bool isSelected = (types[i] == preview.c_str());
+                        if (ImGui::Selectable(types[i], isSelected))
+                        {
+                            component.type = (BodyType)i;
+                            break;
+                        }
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                ImGui::Columns(1);
+                ImGui::PopID();
+
+                ImGui::PushID("Has Fixed Rotation");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, 120.f);
+                ImGui::Text("Fixed Rotation?");
+                ImGui::NextColumn();
+                ImGui::Checkbox("##Fixed Rotation?", &component.hasFixedRotation);
+                ImGui::Columns(1);
+                ImGui::PopID();
+            });
+
+            DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {
+                DrawVec2Control("Offset", component.offset, 0.1f, 0.f, 100.f);
+                DrawVec2Control("Size", component.size, 0.1f, 0.f, 100.f);
+                DrawFloatControl("Density", &component.density, 0.f, 0.f, 100.f);
+                DrawFloatControl("Friction", &component.friction, 0.f, 0.f, 100.f);
+                DrawFloatControl("Restitution", &component.restitution, 0.f, 0.f, 100.f);
             });
         }
 

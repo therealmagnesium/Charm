@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Asset.h"
+#include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 
 #include <string>
@@ -16,6 +17,10 @@ namespace Charm
         bool IsDepthFormat(TextureFormat format);
         std::string GetFileName(const char* path, bool hasExtension = false);
         std::string AssetTypeToString(AssetType type);
+        AssetType StringToAssetType(const std::string& str);
+        BodyType StringToBodyType(const std::string& str);
+        std::string BodyTypeToString(BodyType type);
+        u32 BodyTypeToB2BodyType(BodyType type);
         glm::vec2 ScreenToVirtual(const glm::vec2& screenPosition);
         glm::vec2 ScreenToViewport(const glm::vec2& screenPosition, const glm::vec2& viewportPosition, const glm::vec2& viewportSize);
         glm::vec2 ScreenToViewportGL(const glm::vec2& screenPosition, const glm::vec2& viewportPosition, const glm::vec2& viewportSize);

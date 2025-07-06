@@ -10,6 +10,8 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 
+#include <box2d/types.h>
+
 using namespace Charm::Core;
 using namespace Charm::Graphics;
 
@@ -69,6 +71,68 @@ namespace Charm
             }
 
             return value;
+        }
+
+        AssetType StringToAssetType(const std::string& str)
+        {
+            AssetType type = AssetType::Invalid;
+
+            if (str == "Texture")
+                type = AssetType::Texture;
+
+            if (str == "Shader")
+                type = AssetType::Shader;
+
+            return type;
+        }
+
+        BodyType StringToBodyType(const std::string& str)
+        {
+            BodyType type = BodyType::Static;
+
+            if (str == "Dynamic")
+                type = BodyType::Dynamic;
+
+            if (str == "Kinematic")
+                type = BodyType::Kinematic;
+
+            return type;
+        }
+
+        std::string BodyTypeToString(BodyType type)
+        {
+            switch (type)
+            {
+                case BodyType::Static:
+                    return "Static";
+
+                case BodyType::Dynamic:
+                    return "Dynamic";
+
+                case BodyType::Kinematic:
+                    return "Kinematic";
+
+                default:
+                    return "Static";
+            }
+        }
+
+        u32 BodyTypeToB2BodyType(BodyType type)
+        {
+            switch (type)
+            {
+                case BodyType::Static:
+                    return b2_staticBody;
+
+                case BodyType::Dynamic:
+                    return b2_dynamicBody;
+
+                case BodyType::Kinematic:
+                    return b2_kinematicBody;
+
+                default:
+                    return b2_staticBody;
+            }
         }
 
         glm::vec2 ScreenToVirtual(const glm::vec2& screenPosition)

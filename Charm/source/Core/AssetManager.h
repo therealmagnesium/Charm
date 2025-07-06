@@ -18,6 +18,7 @@ namespace Charm
             void Clean();
 
             AssetHandle Import(const char* path, AssetType type);
+            void Import(const char* path, AssetType type, AssetHandle handle);
 
             const AssetMap& GetAllAssets();
             const AssetRegistry& GetRegistry();

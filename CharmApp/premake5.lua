@@ -16,6 +16,7 @@ files({
 includedirs({
 	"../Charm/source",
 	IncludeDir.SDL3,
+	IncludeDir.box2d,
 	IncludeDir.entt,
 	IncludeDir.glad,
 	IncludeDir.glm,

@@ -131,7 +131,7 @@ namespace Charm
             {
                 if (texture.id != 0)
                 {
-                    INFO("Unloading texture with an ID of %d...", texture.id);
+                    INFO("Texture with an ID of %d is unloading...", texture.id);
                     glDeleteTextures(1, &texture.id);
                 }
             }

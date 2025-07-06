@@ -1,0 +1,62 @@
+Scene: Untitled
+Entities:
+  - Entity: 13147909070247337785
+    Internal Component:
+      Tag: Main Camera
+      Is Active?: true
+    Transform Component:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Camera2D Component:
+      Is Primary?: true
+      Target: [0, 0]
+      Offset: [10, 6.5]
+      Rotation: 0
+      Zoom: 1
+  - Entity: 6984990433488634436
+    Internal Component:
+      Tag: Dynamic Object
+      Is Active?: true
+    Transform Component:
+      Position: [0, 3, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Origin: [0.5, 0.5]
+      Crop: [0, 0, 0, 0]
+      Tint: [0.6911765, 0.08131488, 0.08131488]
+    Rigidbody2D Component:
+      Type: Dynamic
+      Fixed Rotation?: false
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [0.5, 0.5]
+      Density: 3
+      Friction: 0.5
+      Restitution: 0.7
+  - Entity: 11597555647678808062
+    Internal Component:
+      Tag: Static Object
+      Is Active?: true
+    Transform Component:
+      Position: [0, -5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [20, 1, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Origin: [10, 0.5]
+      Crop: [0, 0, 0, 0]
+      Tint: [0.46568626, 0.2766187, 0.06391772]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [10, 0.5]
+      Density: 1
+      Friction: 0.5
+      Restitution: 0
+Asset Registry:
+  []

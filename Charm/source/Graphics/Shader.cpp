@@ -56,7 +56,7 @@ namespace Charm
 
             void Unload(Shader& shader)
             {
-                INFO("Unloading shader with an ID of %d...", shader.id);
+                INFO("Shader with an ID of %d is unloading...", shader.id);
                 glDeleteProgram(shader.id);
                 shader.id = 0;
             }

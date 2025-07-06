@@ -28,7 +28,7 @@ namespace Charm
                 };
 
                 const auto& MouseRotate = [&](const glm::vec2& delta) {
-                    const float rotationSpeed = 15.f;
+                    const float rotationSpeed = 5.f;
                     float yawSign = GetUpVector(camera).y < 0 ? -1.0f : 1.0f;
                     camera.yaw -= yawSign * delta.x * rotationSpeed;
                     camera.pitch -= delta.y * rotationSpeed;
