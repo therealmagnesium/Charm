@@ -357,7 +357,7 @@ namespace Charm
                 {
                     const UUID id = source.get<InternalComponent>(entityID).id;
 
-                    ASSERT(enttMap.find(id) != enttMap.end(), "");
+                    ASSERT(enttMap.find(id) != enttMap.end(), "Scenes::CopyComponent - Entity map could not find entity with UUID %ld", id);
                     entt::entity destEnttID = enttMap.at(id);
 
                     auto& component = source.get<T>(entityID);

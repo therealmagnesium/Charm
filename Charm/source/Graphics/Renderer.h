@@ -51,7 +51,7 @@ namespace Charm
             glm::vec3 clearColor;
             glm::mat4 viewMatrix;
             glm::mat4 projectionMatrix;
-            Shader defaultShader;
+            Shader quadShader;
             Shader circleShader;
             Shader lineShader;
         };

@@ -105,10 +105,10 @@ namespace Charm
                 state.viewMatrix = glm::mat4(1.f);
                 state.projectionMatrix = glm::mat4(1.f);
 
-                state.defaultShader = Shaders::Load("assets/shaders/Default_vs.glsl", "assets/shaders/Default_fs.glsl");
-                Shaders::CreateUniform(state.defaultShader, "viewMatrix");
-                Shaders::CreateUniform(state.defaultShader, "projectionMatrix");
-                Shaders::CreateUniform(state.defaultShader, "textures");
+                state.quadShader = Shaders::Load("assets/shaders/BatchingQuads_vs.glsl", "assets/shaders/BatchingQuads_fs.glsl");
+                Shaders::CreateUniform(state.quadShader, "viewMatrix");
+                Shaders::CreateUniform(state.quadShader, "projectionMatrix");
+                Shaders::CreateUniform(state.quadShader, "textures");
 
                 state.circleShader = Shaders::Load("assets/shaders/BatchingCircles_vs.glsl", "assets/shaders/BatchingCircles_fs.glsl");
                 Shaders::CreateUniform(state.circleShader, "viewMatrix");
@@ -128,7 +128,7 @@ namespace Charm
             {
                 INFO("The renderer is shutting down...");
                 CleanUpBatchRendering();
-                Shaders::Unload(state.defaultShader);
+                Shaders::Unload(state.quadShader);
                 Shaders::Unload(state.circleShader);
                 Shaders::Unload(state.lineShader);
                 Window::Shutdown();
@@ -145,9 +145,9 @@ namespace Charm
                 batchData.lineCount = 0;
                 batchData.drawCount = 0;
 
-                Shaders::Bind(state.defaultShader);
-                Shaders::SetUniform(state.defaultShader, "viewMatrix", state.viewMatrix);
-                Shaders::SetUniform(state.defaultShader, "projectionMatrix", state.projectionMatrix);
+                Shaders::Bind(state.quadShader);
+                Shaders::SetUniform(state.quadShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.quadShader, "projectionMatrix", state.projectionMatrix);
 
                 Shaders::Bind(state.circleShader);
                 Shaders::SetUniform(state.circleShader, "viewMatrix", state.viewMatrix);
@@ -172,9 +172,9 @@ namespace Charm
                 batchData.lineCount = 0;
                 batchData.drawCount = 0;
 
-                Shaders::Bind(state.defaultShader);
-                Shaders::SetUniform(state.defaultShader, "viewMatrix", state.viewMatrix);
-                Shaders::SetUniform(state.defaultShader, "projectionMatrix", state.projectionMatrix);
+                Shaders::Bind(state.quadShader);
+                Shaders::SetUniform(state.quadShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.quadShader, "projectionMatrix", state.projectionMatrix);
 
                 Shaders::Bind(state.circleShader);
                 Shaders::SetUniform(state.circleShader, "viewMatrix", state.viewMatrix);
@@ -251,7 +251,7 @@ namespace Charm
                     for (u32 i = 0; i < batchData.textureSlotIndex; i++)
                         Textures::Bind(batchData.textureSlots[i], i);
 
-                    Shaders::Bind(state.defaultShader);
+                    Shaders::Bind(state.quadShader);
                     glBindVertexArray(batchData.quadVertexArray);
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batchData.indexBuffer);
                     glDrawElements(GL_TRIANGLES, batchData.quadIndexCount, GL_UNSIGNED_INT, NULL);
@@ -546,8 +546,8 @@ namespace Charm
                 for (u32 i = 0; i < k_MaxTextures; i++)
                     samplers[i] = i;
 
-                Shaders::Bind(state.defaultShader);
-                Shaders::SetUniform(state.defaultShader, "textures", samplers, k_MaxTextures);
+                Shaders::Bind(state.quadShader);
+                Shaders::SetUniform(state.quadShader, "textures", samplers, k_MaxTextures);
 
                 batchData.whiteTexture = Textures::LoadDefaultWhite();
                 batchData.textureSlots[0] = batchData.whiteTexture;

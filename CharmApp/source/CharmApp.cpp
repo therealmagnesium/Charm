@@ -123,14 +123,39 @@ namespace CharmApp
         ToolbarPanel::Display();
 
         ImGui::Begin("Asset Registry");
-
-        for (auto& [handle, metadata] : AssetManager::GetRegistry())
         {
-            ImGui::Text("Handle: 0x%lx", handle);
-            ImGui::Text("Path: %s", metadata.path.c_str());
-            ImGui::Text("Type: %s", Utils::AssetTypeToString(metadata.type).c_str());
-        }
+            const float columnWidth = 65.f;
+            for (auto& [handle, metadata] : AssetManager::GetRegistry())
+            {
+                ImGui::PushID("Asset Registry");
 
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, columnWidth);
+                ImGui::Text("Handle");
+                ImGui::NextColumn();
+                ImGui::Text("0x%lx", handle);
+                ImGui::Columns(1);
+                ImGui::Separator();
+
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, columnWidth);
+                ImGui::Text("Path");
+                ImGui::NextColumn();
+                ImGui::Text("%s", metadata.path.c_str());
+                ImGui::Columns(1);
+                ImGui::Separator();
+
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, columnWidth);
+                ImGui::Text("Type");
+                ImGui::NextColumn();
+                ImGui::Text("%s", Utils::AssetTypeToString(metadata.type).c_str());
+                ImGui::Columns(1);
+                ImGui::Separator();
+
+                ImGui::PopID();
+            }
+        }
         ImGui::End();
     }
 

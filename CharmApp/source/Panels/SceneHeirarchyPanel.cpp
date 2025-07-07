@@ -118,6 +118,7 @@ namespace CharmApp
             ImGui::PopID();
 
             ImGui::SameLine();
+            ImGui::SetNextItemWidth(ImGui::CalcItemWidth() * 0.8f);
             if (ImGui::InputText("##Tag", tagBuffer, sizeof(tagBuffer)))
                 internal.tag = std::string(tagBuffer);
 
@@ -169,22 +170,25 @@ namespace CharmApp
             }
 
             DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component) {
-                DrawVec3Control("Position", component.position, 0.1f, 0.f, 90.f);
-                DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, 90.f);
-                DrawVec3Control("Scale", component.scale, 0.1f, 1.f, 90.f);
+                const float columnWidth = 75.f;
+                DrawVec3Control("Position", component.position, 0.1f, 0.f, columnWidth);
+                DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, columnWidth);
+                DrawVec3Control("Scale", component.scale, 0.1f, 1.f, columnWidth);
             });
 
             DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
-                DrawFloatControl("Radius", &component.radius, 0.f, 100.f, 90.f);
-                DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, 90.f);
-                DrawFloatControl("Fade", &component.fade, 0.f, 1.f, 90.f);
-                DrawColorControl("Color", component.color, 90.f);
+                const float columnWidth = 85.f;
+                DrawFloatControl("Radius", &component.radius, 0.f, 100.f, columnWidth);
+                DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, columnWidth);
+                DrawFloatControl("Fade", &component.fade, 0.f, 1.f, columnWidth);
+                DrawColorControl("Color", component.color, columnWidth);
             });
 
             DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
+                const float columnWidth = 65.f;
                 ImGui::PushID("Texture");
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, 90.f);
+                ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Texture");
                 ImGui::NextColumn();
 
@@ -209,7 +213,7 @@ namespace CharmApp
 
                 ImGui::PushID("Crop");
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0.f, 90.f);
+                ImGui::SetColumnWidth(0.f, columnWidth);
                 ImGui::Text("Crop");
                 ImGui::NextColumn();
 
@@ -218,17 +222,18 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
-                DrawVec2Control("Origin", component.origin, 1.f, 0.f, 90.f);
-                DrawColorControl("Tint", component.tint, 90.f);
+                DrawVec2Control("Origin", component.origin, 1.f, 0.f, columnWidth);
+                DrawColorControl("Tint", component.tint, columnWidth);
             });
 
             DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {
-                DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, 90.f);
-                DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, 90.f);
+                const float columnWidth = 90.f;
+                DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, columnWidth);
+                DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, columnWidth);
 
                 ImGui::PushID("Is Primary?");
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, 90.f);
+                ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Is Primary?");
                 ImGui::NextColumn();
 
@@ -238,14 +243,16 @@ namespace CharmApp
             });
 
             DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](Rigidbody2DComponent& component) {
+                const float columnWidth = 120.f;
                 ImGui::PushID("Body Type");
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, 120.f);
+                ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Body Type");
                 ImGui::NextColumn();
 
                 const char* types[3] = {"Static", "Dynamic", "Kinematic"};
                 std::string preview = Utils::BodyTypeToString(component.type);
+                ImGui::SetNextItemWidth(-1.f);
                 if (ImGui::BeginCombo("##Body Type", preview.c_str()))
                 {
                     for (u8 i = 0; i < LEN(types); i++)
@@ -266,7 +273,7 @@ namespace CharmApp
 
                 ImGui::PushID("Has Fixed Rotation");
                 ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, 120.f);
+                ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Fixed Rotation?");
                 ImGui::NextColumn();
                 ImGui::Checkbox("##Fixed Rotation?", &component.hasFixedRotation);
@@ -275,11 +282,12 @@ namespace CharmApp
             });
 
             DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {
-                DrawVec2Control("Offset", component.offset, 0.1f, 0.f, 100.f);
-                DrawVec2Control("Size", component.size, 0.1f, 0.f, 100.f);
-                DrawFloatControl("Density", &component.density, 0.f, 0.f, 100.f);
-                DrawFloatControl("Friction", &component.friction, 0.f, 0.f, 100.f);
-                DrawFloatControl("Restitution", &component.restitution, 0.f, 0.f, 100.f);
+                const float columnWidth = 90.f;
+                DrawVec2Control("Offset", component.offset, 0.1f, 0.f, columnWidth);
+                DrawVec2Control("Size", component.size, 0.1f, 0.f, columnWidth);
+                DrawFloatControl("Density", &component.density, 0.f, 0.f, columnWidth);
+                DrawFloatControl("Friction", &component.friction, 0.f, 0.f, columnWidth);
+                DrawFloatControl("Restitution", &component.restitution, 0.f, 0.f, columnWidth);
             });
         }
 
