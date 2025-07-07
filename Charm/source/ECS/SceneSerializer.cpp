@@ -251,6 +251,7 @@ namespace Charm
                     out << YAML::Key << "Sprite Renderer Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Texture Asset Handle" << YAML::Value << spriteRenderer.sprite;
                     out << YAML::Key << "Origin" << YAML::Value << spriteRenderer.origin;
+                    out << YAML::Key << "Origin Mode" << YAML::Value << Utils::OriginModeToString(spriteRenderer.originMode);
                     out << YAML::Key << "Crop" << YAML::Value << spriteRenderer.crop;
                     out << YAML::Key << "Tint" << YAML::Value << spriteRenderer.tint;
                     out << YAML::EndMap;
@@ -332,6 +333,7 @@ namespace Charm
                     auto& spriteRenderer = entity.AddComponent<SpriteRendererComponent>();
                     spriteRenderer.sprite = spriteRendererNode["Texture Asset Handle"].as<AssetHandle>();
                     spriteRenderer.origin = spriteRendererNode["Origin"].as<glm::vec2>();
+                    spriteRenderer.originMode = Utils::StringToOriginMode(spriteRendererNode["Origin Mode"].as<std::string>());
                     spriteRenderer.crop = spriteRendererNode["Crop"].as<Rectangle>();
                     spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec3>();
                 }

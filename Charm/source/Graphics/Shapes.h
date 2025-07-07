@@ -12,6 +12,19 @@ namespace Charm
             Kinematic,
         };
 
+        enum class OriginMode : u8
+        {
+            Center = 0,
+            Left,
+            Right,
+            BottomLeft,
+            BottomMiddle,
+            BottomRight,
+            TopLeft,
+            TopMiddle,
+            TopRight
+        };
+
         struct Rectangle
         {
             float x = 0.f;

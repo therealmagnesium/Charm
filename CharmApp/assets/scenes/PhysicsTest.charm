@@ -25,7 +25,8 @@ Entities:
     Sprite Renderer Component:
       Texture Asset Handle: 0
       Origin: [0.5, 0.5]
-      Crop: [0, 0, 0, 0]
+      Origin Mode: Center
+      Crop: [0, 0, 1, 1]
       Tint: [0.6911765, 0.08131488, 0.08131488]
     Rigidbody2D Component:
       Type: Dynamic
@@ -47,7 +48,8 @@ Entities:
     Sprite Renderer Component:
       Texture Asset Handle: 0
       Origin: [10, 0.5]
-      Crop: [0, 0, 0, 0]
+      Origin Mode: Center
+      Crop: [0, 0, 1, 1]
       Tint: [0.46568626, 0.2766187, 0.06391772]
     Rigidbody2D Component:
       Type: Static

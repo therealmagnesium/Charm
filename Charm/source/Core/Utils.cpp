@@ -54,23 +54,8 @@ namespace Charm
 
         std::string AssetTypeToString(AssetType type)
         {
-            std::string value = "Invalid";
-
-            switch (type)
-            {
-                case AssetType::Texture:
-                    value = "Texture";
-                    break;
-
-                case AssetType::Shader:
-                    value = "Shader";
-                    break;
-
-                default:
-                    break;
-            }
-
-            return value;
+            const char* types[3] = {"Invalid", "Texture", "Shader"};
+            return types[(u8)type];
         }
 
         AssetType StringToAssetType(const std::string& str)
@@ -201,6 +186,77 @@ namespace Charm
             transform = glm::scale(transform, glm::vec3(size, 1.f));
 
             return transform;
+        }
+
+        glm::vec2 OriginModeToVec2(OriginMode mode, const glm::vec2& position, const glm::vec2& size)
+        {
+            glm::vec2 origin;
+            origin.x = size.x / 2.f;
+            origin.y = size.y / 2.f;
+
+            switch (mode)
+            {
+                case OriginMode::Left:
+                    origin.x = 0.f;
+                    origin.y = size.y / 2.f;
+                    break;
+
+                case OriginMode::Right:
+                    origin.x = size.x;
+                    origin.y = size.y / 2.f;
+                    break;
+
+                case OriginMode::BottomLeft:
+                    origin.x = 0.f;
+                    origin.y = 0.f;
+                    break;
+
+                case OriginMode::BottomMiddle:
+                    origin.x = size.x / 2.f;
+                    origin.y = 0.f;
+                    break;
+
+                case OriginMode::BottomRight:
+                    origin.x = size.x;
+                    origin.y = 0.f;
+                    break;
+
+                case OriginMode::TopLeft:
+                    origin.x = 0.f;
+                    origin.y = size.y;
+                    break;
+
+                case OriginMode::TopMiddle:
+                    origin.x = size.x / 2.f;
+                    origin.y = size.y;
+                    break;
+
+                case OriginMode::TopRight:
+                    origin.x = size.x;
+                    origin.y = size.y;
+                    break;
+
+                default:
+                    break;
+            }
+
+            return origin;
+        }
+
+        OriginMode StringToOriginMode(const std::string& str)
+        {
+            const char* modes[9] = {"Center", "Left", "Right", "Bottom Left", "Bottom Middle", "Bottom Right", "Top Left", "Top Middle", "Top Right"};
+            std::unordered_map<std::string, OriginMode> originModes;
+            for (u8 i = 0; i < LEN(modes); i++)
+                originModes[modes[i]] = (OriginMode)i;
+
+            return originModes[str];
+        }
+
+        std::string OriginModeToString(OriginMode mode)
+        {
+            const char* modes[9] = {"Center", "Left", "Right", "Bottom Left", "Bottom Middle", "Bottom Right", "Top Left", "Top Middle", "Top Right"};
+            return modes[(u8)mode];
         }
     }
 }

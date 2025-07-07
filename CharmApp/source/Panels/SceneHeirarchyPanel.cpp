@@ -1,9 +1,12 @@
 #include "SceneHeirarchyPanel.h"
 
-#include <ECS/Components.h>
-
+#include <Core/AssetManager.h>
 #include <Core/Log.h>
 #include <Core/Utils.h>
+
+#include <ECS/Components.h>
+
+#include <Graphics/Texture.h>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -185,7 +188,7 @@ namespace CharmApp
             });
 
             DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
-                const float columnWidth = 65.f;
+                const float columnWidth = 100.f;
                 ImGui::PushID("Texture");
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0, columnWidth);
@@ -211,6 +214,27 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
+                ImGui::PushID("Origin Mode");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, columnWidth);
+                ImGui::Text("Origin Mode");
+                ImGui::NextColumn();
+
+                ImGui::SetNextItemWidth(-1.f);
+                if (ImGui::BeginCombo("##Origin Mode", Utils::OriginModeToString(component.originMode).c_str()))
+                {
+                    const char* modes[] = {"Center", "Left", "Right", "Bottom Left", "Bottom Middle", "Bottom Right", "Top Left", "Top Middle", "Top Right"};
+                    for (u8 i = 0; i < LEN(modes); i++)
+                    {
+                        const bool isSelected = (modes[i] == Utils::OriginModeToString(component.originMode));
+                        if (ImGui::Selectable(modes[i], isSelected))
+                            component.originMode = Utils::StringToOriginMode(modes[i]);
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::Columns(1);
+                ImGui::PopID();
+
                 ImGui::PushID("Crop");
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0.f, columnWidth);
@@ -222,7 +246,6 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
-                DrawVec2Control("Origin", component.origin, 1.f, 0.f, columnWidth);
                 DrawColorControl("Tint", component.tint, columnWidth);
             });
 

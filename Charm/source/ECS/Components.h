@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Asset.h"
 #include "Core/AssetManager.h"
 #include "Core/Random.h"
+#include "Core/Utils.h"
 
 #include "Graphics/Camera.h"
 #include "Graphics/Shapes.h"
@@ -63,6 +63,7 @@ namespace Charm
             AssetHandle sprite = 0;
             Rectangle crop;
             glm::vec2 origin;
+            OriginMode originMode = OriginMode::Center;
             glm::vec3 tint = glm::vec3(1.f);
 
             SpriteRendererComponent() = default;
@@ -70,6 +71,8 @@ namespace Charm
             SpriteRendererComponent(AssetHandle sprite)
             {
                 this->sprite = sprite;
+                this->crop.width = 1.f;
+                this->crop.height = 1.f;
 
                 Texture* texture = AssetManager::GetAsset<Texture>(sprite);
 
@@ -78,9 +81,6 @@ namespace Charm
                     this->crop.width = texture->width;
                     this->crop.height = texture->height;
                 }
-
-                this->origin.x = this->crop.width / 2.f;
-                this->origin.y = this->crop.height / 2.f;
             }
         };
 

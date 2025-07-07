@@ -196,7 +196,7 @@ namespace Charm
                     Entity entity = Entities::Create(entityID, &scene);
                     auto& transform = entity.GetComponent<TransformComponent>();
                     auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
-                    spriteRenderer.origin = transform.scale / 2.f; // Temp - Eventually have 9 origin modes
+                    spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position, transform.scale);
                 }
             }
 

@@ -25,5 +25,8 @@ namespace Charm
         glm::vec2 ScreenToViewport(const glm::vec2& screenPosition, const glm::vec2& viewportPosition, const glm::vec2& viewportSize);
         glm::vec2 ScreenToViewportGL(const glm::vec2& screenPosition, const glm::vec2& viewportPosition, const glm::vec2& viewportSize);
         glm::mat4 GetTransfomMatrix2D(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec2& origin);
+        glm::vec2 OriginModeToVec2(OriginMode mode, const glm::vec2& position, const glm::vec2& size);
+        std::string OriginModeToString(OriginMode mode);
+        OriginMode StringToOriginMode(const std::string& str);
     }
 }

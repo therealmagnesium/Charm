@@ -11,7 +11,8 @@ Entities:
     Sprite Renderer Component:
       Texture Asset Handle: 0
       Origin: [12.5, 1]
-      Crop: [0, 0, 0, 0]
+      Origin Mode: Center
+      Crop: [0, 0, 1, 1]
       Tint: [0.05513646, 0.045363087, 0.10970461]
     Rigidbody2D Component:
       Type: Static
@@ -33,7 +34,8 @@ Entities:
     Sprite Renderer Component:
       Texture Asset Handle: 0
       Origin: [1, 1]
-      Crop: [0, 0, 0, 0]
+      Origin Mode: Center
+      Crop: [0, 0, 1, 1]
       Tint: [0.0777653, 0.21002272, 0.65822786]
     Rigidbody2D Component:
       Type: Dynamic
@@ -55,7 +57,8 @@ Entities:
     Sprite Renderer Component:
       Texture Asset Handle: 0
       Origin: [1, 1]
-      Crop: [0, 0, 0, 0]
+      Origin Mode: Center
+      Crop: [0, 0, 1, 1]
       Tint: [0.65822786, 0.6067944, 0.0777653]
     Rigidbody2D Component:
       Type: Dynamic
@@ -63,7 +66,7 @@ Entities:
     Box Collider2D Component:
       Offset: [0, 0]
       Size: [1, 1]
-      Density: 1
+      Density: 2
       Friction: 0.5
       Restitution: 1
   - Entity: 8418872166115155180
