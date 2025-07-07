@@ -18,11 +18,8 @@ namespace Charm
                 glClear(GL_COLOR_BUFFER_BIT);
             }
 
-            void SetViewport(u32 x, u32 y, u32 width, u32 height)
-            {
-                glViewport(x, y, width, height);
-            }
-
+            void SetViewport(u32 x, u32 y, u32 width, u32 height) { glViewport(x, y, width, height); }
+            void SetLineWidth(float width) { glLineWidth(width); }
             void ShowCursor() { SDL_ShowCursor(); }
             void HideCursor() { SDL_HideCursor(); }
         }

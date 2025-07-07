@@ -22,6 +22,7 @@ namespace Charm
 
         struct Scene
         {
+            bool isDebugRenderingEnabled = false;
             entt::registry registry;
             Camera2D editorCamera2D;
             Camera3D editorCamera3D;
@@ -45,7 +46,7 @@ namespace Charm
             void OnRuntimeStop(Scene& scene);
 
             void UpdateEditor(Scene& scene);
-            void RenderEditor(Scene& scene);
+            void RenderEditor(Scene& scene, Entity& selectionContext);
 
             void UpdateRuntime(Scene& scene);
             void RenderRuntime(Scene& scene);

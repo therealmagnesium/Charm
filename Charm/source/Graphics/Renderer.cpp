@@ -1,4 +1,5 @@
 #include "Graphics/Renderer.h"
+#include "Graphics/RenderCommand.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Texture.h"
 #include "Graphics/Window.h"
@@ -29,10 +30,13 @@ namespace Charm
             u32 quadVertexArray = 0;
             u32 quadVertexBuffer = 0;
 
-            u32 indexBuffer = 0;
-
             u32 circleVertexArray = 0;
             u32 circleVertexBuffer = 0;
+
+            u32 lineVertexArray = 0;
+            u32 lineVertexBuffer = 0;
+
+            u32 indexBuffer = 0;
 
             Texture whiteTexture;
 
@@ -44,6 +48,10 @@ namespace Charm
             CircleVertex* circleBuffer = NULL;
             CircleVertex* circleBufferRef = NULL;
 
+            u32 lineVertexCount = 0;
+            LineVertex* lineBuffer = NULL;
+            LineVertex* lineBufferRef = NULL;
+
             Texture textureSlots[k_MaxTextures];
             u32 textureSlotIndex = 1;
 
@@ -53,6 +61,7 @@ namespace Charm
             u32 drawCount = 0;
             u32 quadCount = 0;
             u32 circleCount = 0;
+            u32 lineCount = 0;
         };
 
         static RenderState state;
@@ -80,7 +89,7 @@ namespace Charm
 
                 ASSERT(SDL_Init(SDL_INIT_VIDEO) != false, "Failed to initialize SDL3!");
 
-                const ApplicationConfig config = Application::GetConfig();
+                const ApplicationConfig& config = Application::GetConfig();
                 Window::Initialize(config.virtualWidth, config.virtualHeight, config.name.c_str());
 
                 gladLoadGL();
@@ -89,6 +98,7 @@ namespace Charm
                 INFO("GPU specs: %s", glGetString(GL_RENDERER));
                 INFO("OpenGL version: %s", glGetString(GL_VERSION));
 
+                glEnable(GL_LINE_SMOOTH);
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -104,6 +114,10 @@ namespace Charm
                 Shaders::CreateUniform(state.circleShader, "viewMatrix");
                 Shaders::CreateUniform(state.circleShader, "projectionMatrix");
 
+                state.lineShader = Shaders::Load("assets/shaders/BatchingLines_vs.glsl", "assets/shaders/BatchingLines_fs.glsl");
+                Shaders::CreateUniform(state.lineShader, "viewMatrix");
+                Shaders::CreateUniform(state.lineShader, "projectionMatrix");
+
                 SetupBatchRendering();
 
                 INFO("The renderer was successfully initialized");
@@ -116,6 +130,7 @@ namespace Charm
                 CleanUpBatchRendering();
                 Shaders::Unload(state.defaultShader);
                 Shaders::Unload(state.circleShader);
+                Shaders::Unload(state.lineShader);
                 Window::Shutdown();
                 SDL_Quit();
             }
@@ -127,6 +142,7 @@ namespace Charm
                 state.projectionMatrix = Cameras::GetProjectionMatrix2D();
                 batchData.quadCount = 0;
                 batchData.circleCount = 0;
+                batchData.lineCount = 0;
                 batchData.drawCount = 0;
 
                 Shaders::Bind(state.defaultShader);
@@ -137,8 +153,13 @@ namespace Charm
                 Shaders::SetUniform(state.circleShader, "viewMatrix", state.viewMatrix);
                 Shaders::SetUniform(state.circleShader, "projectionMatrix", state.projectionMatrix);
 
+                Shaders::Bind(state.lineShader);
+                Shaders::SetUniform(state.lineShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.lineShader, "projectionMatrix", state.projectionMatrix);
+
                 BeginBatchQuad();
                 BeginBatchCircle();
+                BeginBatchLine();
             }
 
             void BeginScene2D(const Camera3D& camera)
@@ -148,6 +169,7 @@ namespace Charm
                 state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
                 batchData.quadCount = 0;
                 batchData.circleCount = 0;
+                batchData.lineCount = 0;
                 batchData.drawCount = 0;
 
                 Shaders::Bind(state.defaultShader);
@@ -158,17 +180,24 @@ namespace Charm
                 Shaders::SetUniform(state.circleShader, "viewMatrix", state.viewMatrix);
                 Shaders::SetUniform(state.circleShader, "projectionMatrix", state.projectionMatrix);
 
+                Shaders::Bind(state.lineShader);
+                Shaders::SetUniform(state.lineShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.lineShader, "projectionMatrix", state.projectionMatrix);
+
                 BeginBatchQuad();
                 BeginBatchCircle();
+                BeginBatchLine();
             }
 
             void EndScene2D()
             {
                 EndBatchQuad();
                 EndBatchCircle();
+                EndBatchLine();
 
                 Flush(BatchMode::Quads);
                 Flush(BatchMode::Circles);
+                Flush(BatchMode::Lines);
             }
 
             void BeginBatchQuad()
@@ -201,6 +230,20 @@ namespace Charm
                 glBufferSubData(GL_ARRAY_BUFFER, 0, size, batchData.circleBuffer);
             }
 
+            void BeginBatchLine()
+            {
+                batchData.lineVertexCount = 0;
+                batchData.lineBufferRef = batchData.lineBuffer;
+            }
+
+            void EndBatchLine()
+            {
+                u64 size = (u8*)batchData.lineBufferRef - (u8*)batchData.lineBuffer;
+
+                glBindBuffer(GL_ARRAY_BUFFER, batchData.lineVertexBuffer);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, size, batchData.lineBuffer);
+            }
+
             void Flush(BatchMode mode)
             {
                 if (batchData.quadIndexCount > 0 && mode == BatchMode::Quads)
@@ -222,6 +265,16 @@ namespace Charm
                     glBindVertexArray(batchData.circleVertexArray);
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batchData.indexBuffer);
                     glDrawElements(GL_TRIANGLES, batchData.circleIndexCount, GL_UNSIGNED_INT, NULL);
+
+                    batchData.drawCount++;
+                }
+
+                if (batchData.lineVertexCount > 0 && mode == BatchMode::Lines)
+                {
+                    Shaders::Bind(state.lineShader);
+                    glBindVertexArray(batchData.lineVertexArray);
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                    glDrawArrays(GL_LINES, 0, batchData.lineVertexCount);
 
                     batchData.drawCount++;
                 }
@@ -341,13 +394,60 @@ namespace Charm
                 AddCircleToBatch(transform, color, thickness, fade);
             }
 
-            void DrawEntity(const glm::mat4& transform, SpriteRendererComponent& spriteRenderer, s32 entityID)
+            void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& color)
+            {
+                DrawLineEx(p0, p1, 4.f, color);
+            }
+
+            void DrawLineEx(const glm::vec3& p0, const glm::vec3& p1, float lineWidth, const glm::vec3& color)
+            {
+                CheckForNewBatch(BatchMode::Lines);
+                RenderCommand::SetLineWidth(lineWidth);
+
+                batchData.lineBufferRef->position = p0;
+                batchData.lineBufferRef->color = color;
+                batchData.lineBufferRef++;
+
+                batchData.lineBufferRef->position = p1;
+                batchData.lineBufferRef->color = color;
+                batchData.lineBufferRef++;
+
+                batchData.lineVertexCount += 2;
+                batchData.lineCount++;
+            }
+
+            void DrawRectangleLines(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color)
+            {
+                glm::vec3 p0 = glm::vec3(position.x - size.x * 0.5f, position.y - size.y * 0.5f, 0.f);
+                glm::vec3 p1 = glm::vec3(position.x + size.x * 0.5f, position.y - size.y * 0.5f, 0.f);
+                glm::vec3 p2 = glm::vec3(position.x + size.x * 0.5f, position.y + size.y * 0.5f, 0.f);
+                glm::vec3 p3 = glm::vec3(position.x - size.x * 0.5f, position.y + size.y * 0.5f, 0.f);
+
+                DrawLine(p0, p1, color);
+                DrawLine(p1, p2, color);
+                DrawLine(p2, p3, color);
+                DrawLine(p3, p0, color);
+            }
+
+            void DrawRectangleLines(const glm::mat4& transform, const glm::vec3& color)
+            {
+                glm::vec3 lineVertices[4];
+                for (u8 i = 0; i < LEN(lineVertices); i++)
+                    lineVertices[i] = transform * batchData.quadVertexPositions[i];
+
+                DrawLineEx(lineVertices[0], lineVertices[1], 6.f, color);
+                DrawLineEx(lineVertices[1], lineVertices[2], 6.f, color);
+                DrawLineEx(lineVertices[2], lineVertices[3], 6.f, color);
+                DrawLineEx(lineVertices[3], lineVertices[0], 6.f, color);
+            }
+
+            void DrawEntity(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID)
             {
                 CheckForNewBatch(BatchMode::Quads);
                 AddEntityToBatch(transform, spriteRenderer, entityID);
             }
 
-            void DrawEntity(const glm::mat4& transform, CircleRendererComponent& circleRenderer, s32 entityID)
+            void DrawEntity(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID)
             {
                 CheckForNewBatch(BatchMode::Circles);
                 AddEntityToBatch(transform, circleRenderer, entityID);
@@ -356,6 +456,7 @@ namespace Charm
             glm::vec3& GetClearColor() { return state.clearColor; }
             u32 GetQuadCount() { return batchData.quadCount; }
             u32 GetCircleCount() { return batchData.circleCount; }
+            u32 GetLineCount() { return batchData.lineCount; }
             u32 GetDrawCount() { return batchData.drawCount; }
 
             void SetClearColor(float r, float g, float b)
@@ -394,27 +495,6 @@ namespace Charm
 
                 batchData.quadBuffer = new QuadVertex[k_MaxVertexCount];
 
-                u32* indices = new u32[k_MaxIndexCount];
-                u32 offset = 0;
-
-                for (u32 i = 0; i < k_MaxIndexCount; i += 6)
-                {
-                    indices[i + 0] = 0 + offset;
-                    indices[i + 1] = 1 + offset;
-                    indices[i + 2] = 2 + offset;
-
-                    indices[i + 3] = 2 + offset;
-                    indices[i + 4] = 3 + offset;
-                    indices[i + 5] = 0 + offset;
-
-                    offset += 4;
-                }
-
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batchData.indexBuffer);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, k_MaxIndexCount * sizeof(u32), indices, GL_STATIC_DRAW);
-
-                delete[] indices;
-
                 // Circles
                 glGenVertexArrays(1, &batchData.circleVertexArray);
                 glGenBuffers(1, &batchData.circleVertexBuffer);
@@ -444,6 +524,23 @@ namespace Charm
 
                 batchData.circleBuffer = new CircleVertex[k_MaxVertexCount];
 
+                // Lines
+                glGenVertexArrays(1, &batchData.lineVertexArray);
+                glGenBuffers(1, &batchData.lineVertexBuffer);
+
+                glBindVertexArray(batchData.lineVertexArray);
+
+                glBindBuffer(GL_ARRAY_BUFFER, batchData.lineVertexBuffer);
+                glBufferData(GL_ARRAY_BUFFER, k_MaxVertexCount * sizeof(LineVertex), NULL, GL_DYNAMIC_DRAW);
+
+                glEnableVertexAttribArray(0);
+                glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)offsetof(LineVertex, position));
+
+                glEnableVertexAttribArray(1);
+                glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)offsetof(LineVertex, color));
+
+                batchData.lineBuffer = new LineVertex[k_MaxVertexCount];
+
                 // All
                 s32 samplers[k_MaxTextures];
                 for (u32 i = 0; i < k_MaxTextures; i++)
@@ -464,18 +561,43 @@ namespace Charm
                 batchData.circleVertexPositions[1] = glm::vec4(0.5f, -0.5f, 0.f, 1.f);
                 batchData.circleVertexPositions[2] = glm::vec4(0.5f, 0.5f, 0.f, 1.f);
                 batchData.circleVertexPositions[3] = glm::vec4(-0.5f, 0.5f, 0.f, 1.f);
+
+                u32* indices = new u32[k_MaxIndexCount];
+                u32 offset = 0;
+
+                for (u32 i = 0; i < k_MaxIndexCount; i += 6)
+                {
+                    indices[i + 0] = 0 + offset;
+                    indices[i + 1] = 1 + offset;
+                    indices[i + 2] = 2 + offset;
+
+                    indices[i + 3] = 2 + offset;
+                    indices[i + 4] = 3 + offset;
+                    indices[i + 5] = 0 + offset;
+
+                    offset += 4;
+                }
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batchData.indexBuffer);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, k_MaxIndexCount * sizeof(u32), indices, GL_STATIC_DRAW);
+
+                delete[] indices;
             }
 
             void CleanUpBatchRendering()
             {
                 delete[] batchData.quadBuffer;
                 delete[] batchData.circleBuffer;
+                delete[] batchData.lineBuffer;
 
                 glDeleteVertexArrays(1, &batchData.quadVertexArray);
                 glDeleteBuffers(1, &batchData.quadVertexBuffer);
 
                 glDeleteVertexArrays(1, &batchData.circleVertexArray);
                 glDeleteBuffers(1, &batchData.circleVertexBuffer);
+
+                glDeleteVertexArrays(1, &batchData.lineVertexArray);
+                glDeleteBuffers(1, &batchData.lineVertexBuffer);
 
                 glDeleteBuffers(1, &batchData.indexBuffer);
 
@@ -496,6 +618,13 @@ namespace Charm
                     EndBatchCircle();
                     Flush(mode);
                     BeginBatchCircle();
+                }
+
+                if (mode == BatchMode::Lines && batchData.lineVertexCount >= k_MaxVertexCount)
+                {
+                    EndBatchLine();
+                    Flush(mode);
+                    BeginBatchLine();
                 }
             }
 

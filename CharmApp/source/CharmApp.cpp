@@ -32,6 +32,12 @@ namespace CharmApp
         state.runtimeScene = Scenes::Create();
         state.activeScene = &state.editorScene;
 
+        Entity mainCamera = Scenes::CreateEntity(state.editorScene, "Main Camera");
+        auto& cameraComponent = mainCamera.AddComponent<Camera2DComponent>();
+        cameraComponent.camera.offset.x = (float)config.virtualWidth / (float)Application::GetPixelsPerUnit() / 2.f;
+        cameraComponent.camera.offset.y = (float)config.virtualHeight / (float)Application::GetPixelsPerUnit() / 2.f;
+        cameraComponent.isPrimary = true;
+
         SceneSerializer::SetContext(state.editorScene);
         SceneHeirarchyPanel::SetContext(state.editorScene);
         ToolbarPanel::Init();
@@ -39,10 +45,14 @@ namespace CharmApp
 
     void OnUpdate()
     {
+        ASSERT(state.activeScene != NULL, "CharmApp::OnUpdate - The currently active scene is null!");
         Input::Capture(true);
 
         if (Input::IsKeyPressed(KEY_ESCAPE))
             Application::Quit();
+
+        if (Input::IsKeyPressed(KEY_F1))
+            state.activeScene->isDebugRenderingEnabled = !state.activeScene->isDebugRenderingEnabled;
 
         if (Input::IsKeyPressed(KEY_F2))
             Scenes::ResetEditorCameras(*state.activeScene);
@@ -96,7 +106,7 @@ namespace CharmApp
         Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
 
         if (state.sceneState == SceneState::Editor)
-            Scenes::RenderEditor(*state.activeScene);
+            Scenes::RenderEditor(*state.activeScene, SceneHeirarchyPanel::GetSelectedEntity());
         else
             Scenes::RenderRuntime(*state.activeScene);
 
@@ -137,7 +147,6 @@ namespace CharmApp
         state.runtimeScene = Scenes::Copy(state.editorScene);
         state.activeScene = &state.runtimeScene;
         Scenes::OnRuntimeStart(*state.activeScene);
-        SceneHeirarchyPanel::SetContext(*state.activeScene);
     }
 
     void OnSceneStop()
@@ -145,8 +154,7 @@ namespace CharmApp
         Scenes::OnRuntimeStop(*state.activeScene);
         state.sceneState = SceneState::Editor;
         state.activeScene = &state.editorScene;
-        state.runtimeScene = (Scene){};
-        SceneHeirarchyPanel::SetContext(*state.activeScene);
+        state.runtimeScene = Scenes::Create();
     }
 
     void OnSceneNew()
@@ -154,9 +162,10 @@ namespace CharmApp
         if (state.sceneState != SceneState::Editor)
             return;
 
-        Scenes::ClearRegistry(state.editorScene);
         SceneHeirarchyPanel::SetSelectedEntity((Entity){});
         AssetManager::Clean();
+
+        Scenes::ClearRegistry(state.editorScene);
     }
 
     void OnSceneOpen()
@@ -168,8 +177,14 @@ namespace CharmApp
         {
             OnSceneNew();
 
+            Scene newScene = Scenes::Create();
+            SceneSerializer::SetContext(newScene);
+
             const std::string& path = FileDialogs::GetSelectedPath();
             SceneSerializer::Deserialize(path.c_str());
+
+            state.editorScene = Scenes::Copy(newScene);
+            Scenes::ClearRegistry(newScene);
             INFO("Loaded scene %s", path.c_str());
         }
     }
@@ -179,6 +194,7 @@ namespace CharmApp
         if (FileDialogs::Save())
         {
             const std::string& path = FileDialogs::GetSelectedPath();
+            SceneSerializer::SetContext(state.editorScene);
             SceneSerializer::Serialize(path.c_str());
             INFO("Saved scene to %s", path.c_str());
         }

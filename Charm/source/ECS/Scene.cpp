@@ -24,6 +24,7 @@ namespace Charm
         {
             void DrawAllCircles(Scene& scene);
             void DrawAllSprites(Scene& scene);
+            float GetHighlightThickness(float radius);
 
             template <typename T>
             void CopyComponent(entt::registry& dest, entt::registry& source, const std::unordered_map<UUID, entt::entity>& enttMap);
@@ -35,7 +36,7 @@ namespace Charm
             {
                 Scene scene;
                 scene.physicsWorldID = b2_nullWorldId;
-                ResetEditorCameras(scene);
+                Scenes::ResetEditorCameras(scene);
 
                 return scene;
             }
@@ -118,6 +119,8 @@ namespace Charm
                     Entity entity = Entities::Create(entityID, &scene);
                     DestroyEntity(scene, entity);
                 }
+
+                scene.registry.clear();
             }
 
             void OnRuntimeStart(Scene& scene)
@@ -144,18 +147,19 @@ namespace Charm
 
                     if (entity.HasComponent<BoxCollider2DComponent>())
                     {
-                        auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+                        auto& bc2D = entity.GetComponent<BoxCollider2DComponent>();
 
-                        b2Polygon polygon = b2MakeBox(bc2d.size.x * transform.scale.x, bc2d.size.y * transform.scale.y);
+                        b2Vec2 center = (b2Vec2){bc2D.offset.x, -bc2D.offset.y};
+                        b2Polygon polygon = b2MakeOffsetBox(bc2D.size.x, bc2D.size.y, center, b2MakeRot(0.f));
 
                         b2ShapeDef shapeDef = b2DefaultShapeDef();
-                        shapeDef.density = bc2d.density;
+                        shapeDef.density = bc2D.density;
                         shapeDef.material = b2DefaultSurfaceMaterial();
-                        shapeDef.material.friction = bc2d.friction;
-                        shapeDef.material.restitution = bc2d.restitution;
+                        shapeDef.material.friction = bc2D.friction;
+                        shapeDef.material.restitution = bc2D.restitution;
 
                         b2ShapeId shape = b2CreatePolygonShape(body, &shapeDef, &polygon);
-                        bc2d.runtimeShape = shape;
+                        bc2D.runtimeShape = shape;
                     }
                 }
             }
@@ -166,13 +170,18 @@ namespace Charm
                 for (auto entityID : rigidbodies)
                 {
                     Entity entity = Entities::Create(entityID, &scene);
-                    auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
 
-                    b2DestroyShape(bc2d.runtimeShape, true);
+                    if (entity.HasComponent<BoxCollider2DComponent>())
+                    {
+                        auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+                        b2DestroyShape(bc2d.runtimeShape, true);
+                    }
                 }
 
                 b2DestroyWorld(scene.physicsWorldID);
                 scene.physicsWorldID = b2_nullWorldId;
+
+                Scenes::ClearRegistry(scene);
             }
 
             void UpdateEditor(Scene& scene)
@@ -180,13 +189,45 @@ namespace Charm
                 activeCamera2D = NULL;
                 activeCamera3D = NULL;
                 Cameras::UpdateEditor(scene.editorCamera3D);
+
+                auto sprites = scene.registry.view<SpriteRendererComponent>();
+                for (auto entityID : sprites)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& transform = entity.GetComponent<TransformComponent>();
+                    auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                    spriteRenderer.origin = transform.scale / 2.f; // Temp - Eventually have 9 origin modes
+                }
             }
 
-            void RenderEditor(Scene& scene)
+            void RenderEditor(Scene& scene, Entity& selectionContext)
             {
                 Renderer::BeginScene2D(scene.editorCamera3D);
                 DrawAllCircles(scene);
                 DrawAllSprites(scene);
+
+                if (selectionContext)
+                {
+                    const auto& transform = selectionContext.GetComponent<TransformComponent>();
+                    const glm::vec3 selectionColor = glm::vec3(0.8f, 0.4f, 0.2f);
+
+                    if (selectionContext.HasComponent<SpriteRendererComponent>())
+                    {
+                        const auto& spriteRenderer = selectionContext.GetComponent<SpriteRendererComponent>();
+                        const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale, transform.rotation.z, spriteRenderer.origin);
+
+                        Renderer::DrawRectangleLines(transformMatrix, selectionColor);
+                    }
+
+                    if (selectionContext.HasComponent<CircleRendererComponent>())
+                    {
+                        const auto& circleRenderer = selectionContext.GetComponent<CircleRendererComponent>();
+                        const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale, transform.rotation.z, glm::vec2(0.f));
+
+                        float thickness = GetHighlightThickness(circleRenderer.radius);
+                        Renderer::DrawCirclePro(transform.position, circleRenderer.radius, thickness, 0.01f, selectionColor);
+                    }
+                }
                 Renderer::EndScene2D();
             }
 
@@ -194,12 +235,13 @@ namespace Charm
             {
                 activeCamera2D = NULL;
                 activeCamera3D = NULL;
-                auto cameras = scene.registry.group<Camera2DComponent>(entt::get<TransformComponent>);
-                auto rigidbodies = scene.registry.group<Rigidbody2DComponent>(entt::get<TransformComponent>);
+                auto cameras = scene.registry.view<Camera2DComponent>();
+                auto rigidbodies = scene.registry.view<Rigidbody2DComponent>();
 
                 for (auto entityID : cameras)
                 {
-                    auto& cameraComponent = cameras.get<Camera2DComponent>(entityID);
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
 
                     if (cameraComponent.isPrimary)
                     {
@@ -211,8 +253,9 @@ namespace Charm
                 b2World_Step(scene.physicsWorldID, Time::GetDelta(), 4);
                 for (auto entityID : rigidbodies)
                 {
-                    auto& transform = rigidbodies.get<TransformComponent>(entityID);
-                    auto& rb2d = rigidbodies.get<Rigidbody2DComponent>(entityID);
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& transform = entity.GetComponent<TransformComponent>();
+                    auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
 
                     b2Vec2 position = b2Body_GetPosition(rb2d.runtimeBody);
                     float rotationRadians = b2Rot_GetAngle(b2Body_GetRotation(rb2d.runtimeBody));
@@ -252,17 +295,18 @@ namespace Charm
 
             void DrawAllCircles(Scene& scene)
             {
-                auto circles = scene.registry.group<CircleRendererComponent>(entt::get<TransformComponent, InternalComponent>);
+                auto circles = scene.registry.view<CircleRendererComponent>();
 
                 for (auto entityID : circles)
                 {
-                    auto& internal = circles.get<InternalComponent>(entityID);
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& internal = entity.GetComponent<InternalComponent>();
 
                     if (!internal.isActive)
                         continue;
 
-                    auto& transform = circles.get<TransformComponent>(entityID);
-                    auto& circleRenderer = circles.get<CircleRendererComponent>(entityID);
+                    auto& transform = entity.GetComponent<TransformComponent>();
+                    auto& circleRenderer = entity.GetComponent<CircleRendererComponent>();
 
                     const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, glm::vec2(circleRenderer.radius),
                                                                                  transform.rotation.z, glm::vec2(0.f));
@@ -272,21 +316,36 @@ namespace Charm
 
             void DrawAllSprites(Scene& scene)
             {
-                auto sprites = scene.registry.group<SpriteRendererComponent>(entt::get<TransformComponent, InternalComponent>);
+                auto sprites = scene.registry.view<SpriteRendererComponent>();
 
                 for (auto entityID : sprites)
                 {
-                    auto& internal = sprites.get<InternalComponent>(entityID);
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& internal = entity.GetComponent<InternalComponent>();
 
                     if (!internal.isActive)
                         continue;
 
-                    auto& transform = sprites.get<TransformComponent>(entityID);
-                    auto& spriteRenderer = sprites.get<SpriteRendererComponent>(entityID);
+                    auto& transform = entity.GetComponent<TransformComponent>();
+                    auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
 
                     const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale,
                                                                                  transform.rotation.z, spriteRenderer.origin);
+
                     Renderer::DrawEntity(transformMatrix, spriteRenderer, (s32)entityID);
+
+                    if (entity.HasComponent<BoxCollider2DComponent>() && scene.isDebugRenderingEnabled)
+                    {
+                        auto& bc2D = entity.GetComponent<BoxCollider2DComponent>();
+
+                        glm::vec2 origin;
+                        origin.x = bc2D.offset.x + bc2D.size.x;
+                        origin.y = bc2D.offset.y + bc2D.size.y;
+
+                        const glm::mat4 colliderTransformMatrix = Utils::GetTransfomMatrix2D(transform.position, bc2D.size * 2.f,
+                                                                                             transform.rotation.z, origin);
+                        Renderer::DrawRectangleLines(colliderTransformMatrix, glm::vec3(0.f, 1.f, 0.f));
+                    }
                 }
             }
 
@@ -311,6 +370,23 @@ namespace Charm
             {
                 if (source.HasComponent<T>())
                     dest.AddComponent<T>(source.GetComponent<T>());
+            }
+
+            float GetHighlightThickness(float radius)
+            {
+                float maxThickness = 0.4f;  // Max cap (fully filled)
+                float minThickness = 0.05f; // Minimum visible stroke width
+                float scale = 1.0f;         // Controls how quickly the thickness shrinks with larger radius
+
+                float thickness = (scale / radius) / radius;
+
+                // Clamp thickness between minThickness and maxThickness
+                if (thickness > maxThickness)
+                    thickness = maxThickness;
+                if (thickness < minThickness)
+                    thickness = minThickness;
+
+                return thickness;
             }
         }
     }

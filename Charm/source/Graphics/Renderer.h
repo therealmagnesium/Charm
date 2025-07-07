@@ -18,6 +18,7 @@ namespace Charm
         {
             Quads = 0,
             Circles,
+            Lines,
         };
 
         struct QuadVertex
@@ -39,6 +40,12 @@ namespace Charm
             s32 entityID = -1;
         };
 
+        struct LineVertex
+        {
+            glm::vec3 position;
+            glm::vec3 color;
+        };
+
         struct RenderState
         {
             glm::vec3 clearColor;
@@ -46,6 +53,7 @@ namespace Charm
             glm::mat4 projectionMatrix;
             Shader defaultShader;
             Shader circleShader;
+            Shader lineShader;
         };
 
         namespace Renderer
@@ -63,6 +71,9 @@ namespace Charm
             void BeginBatchCircle();
             void EndBatchCircle();
 
+            void BeginBatchLine();
+            void EndBatchLine();
+
             void Flush(BatchMode mode);
 
             void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color);
@@ -77,12 +88,18 @@ namespace Charm
             void DrawCircle(const glm::vec2& center, float radius, const glm::vec3& color);
             void DrawCirclePro(const glm::vec2& center, float radius, float thickness, float fade, const glm::vec3& color);
 
-            void DrawEntity(const glm::mat4& transform, SpriteRendererComponent& spriteRenderer, s32 entityID);
-            void DrawEntity(const glm::mat4& transform, CircleRendererComponent& circleRenderer, s32 entityID);
+            void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& color);
+            void DrawLineEx(const glm::vec3& p0, const glm::vec3& p1, float lineWidth, const glm::vec3& color);
+            void DrawRectangleLines(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color);
+            void DrawRectangleLines(const glm::mat4& transform, const glm::vec3& color);
+
+            void DrawEntity(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);
+            void DrawEntity(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
 
             glm::vec3& GetClearColor();
             u32 GetQuadCount();
             u32 GetCircleCount();
+            u32 GetLineCount();
             u32 GetDrawCount();
 
             void SetClearColor(float r, float g, float b);

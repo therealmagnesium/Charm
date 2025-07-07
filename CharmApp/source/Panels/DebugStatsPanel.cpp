@@ -39,6 +39,7 @@ namespace CharmApp
             ImGui::Text("MS per frame: %.7f", Time::GetDelta());
             ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());
             ImGui::Text("Number of circles: %d", Renderer::GetCircleCount());
+            ImGui::Text("Number of lines: %d", Renderer::GetLineCount());
             ImGui::Text("Number of draw calls: %d", Renderer::GetDrawCount());
             ImGui::Text("Editor camera distance: %.2f", activeScene->editorCamera3D.distance);
             ImGui::Text("Pixel data: %d", pixelData);

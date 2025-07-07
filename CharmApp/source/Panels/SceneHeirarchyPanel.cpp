@@ -190,6 +190,7 @@ namespace CharmApp
 
                 const AssetRegistry& registry = AssetManager::GetRegistry();
                 std::string placeholder = (AssetManager::GetAsset<Texture>(component.sprite) != NULL) ? registry.at(component.sprite).path.c_str() : "Select texture";
+                ImGui::SetNextItemWidth(-1.f);
                 if (ImGui::BeginCombo("##Texture", placeholder.c_str()))
                 {
                     if (ImGui::Selectable("None", component.sprite == 0))
@@ -321,7 +322,7 @@ namespace CharmApp
             ImGui::PopStyleColor(3);
 
             ImGui::SameLine();
-            ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f, "%.2f");
+            ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f);
             ImGui::PopItemWidth();
             ImGui::SameLine();
 
@@ -333,7 +334,7 @@ namespace CharmApp
             ImGui::PopStyleColor(3);
 
             ImGui::SameLine();
-            ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f, "%.2f");
+            ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f);
             ImGui::PopItemWidth();
 
             ImGui::PopStyleVar();
@@ -365,7 +366,7 @@ namespace CharmApp
             ImGui::PopStyleColor(3);
 
             ImGui::SameLine();
-            ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f, "%.2f");
+            ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f);
             ImGui::PopItemWidth();
             ImGui::SameLine();
 
@@ -377,7 +378,7 @@ namespace CharmApp
             ImGui::PopStyleColor(3);
 
             ImGui::SameLine();
-            ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f, "%.2f");
+            ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f);
             ImGui::PopItemWidth();
             ImGui::SameLine();
 
@@ -389,7 +390,7 @@ namespace CharmApp
             ImGui::PopStyleColor(3);
 
             ImGui::SameLine();
-            ImGui::DragFloat("##Z", &v.z, speed, 0.f, 0.f, "%.2f");
+            ImGui::DragFloat("##Z", &v.z, speed, 0.f, 0.f);
             ImGui::PopItemWidth();
 
             ImGui::PopStyleVar();

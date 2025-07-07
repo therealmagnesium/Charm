@@ -50,7 +50,7 @@ Entities:
     Camera2D Component:
       Is Primary?: true
       Target: [0, 0]
-      Offset: [10, 5.7]
+      Offset: [10, 5.625]
       Rotation: 0
       Zoom: 1
   - Entity: 17327925099248547969
@@ -80,7 +80,7 @@ Entities:
       Tag: Player
       Is Active?: true
     Transform Component:
-      Position: [0, 0, 0]
+      Position: [0, -3, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     Sprite Renderer Component:
@@ -98,9 +98,9 @@ Entities:
       Friction: 0.5
       Restitution: 0.8
 Asset Registry:
-  - Asset: 12146085755896241728
-    Path: assets/textures/small_checker.png
-    Type: Texture
   - Asset: 312794087193195786
     Path: assets/textures/texel_checker.png
+    Type: Texture
+  - Asset: 12146085755896241728
+    Path: assets/textures/small_checker.png
     Type: Texture

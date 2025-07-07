@@ -11,7 +11,7 @@ Entities:
     Camera2D Component:
       Is Primary?: true
       Target: [0, 0]
-      Offset: [10, 6.5]
+      Offset: [10, 5.625]
       Rotation: 0
       Zoom: 1
   - Entity: 6984990433488634436
