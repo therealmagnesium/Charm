@@ -63,6 +63,7 @@ Entities:
       Scale: [20, 1, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 0
+      Sorting Layer: 0
       Origin: [10, 0.5]
       Origin Mode: Center
       Crop: [0, 0, 1, 1]
@@ -86,6 +87,7 @@ Entities:
       Scale: [1, 1, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 12146085755896241728
+      Sorting Layer: 0
       Origin: [0.5, 0.5]
       Origin Mode: Center
       Crop: [0, 0, 256, 256]
@@ -100,9 +102,9 @@ Entities:
       Friction: 0.5
       Restitution: 0.8
 Asset Registry:
-  - Asset: 312794087193195786
-    Path: assets/textures/texel_checker.png
-    Type: Texture
   - Asset: 12146085755896241728
     Path: assets/textures/small_checker.png
+    Type: Texture
+  - Asset: 312794087193195786
+    Path: assets/textures/texel_checker.png
     Type: Texture

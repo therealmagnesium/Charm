@@ -24,7 +24,7 @@ namespace Charm
             io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-            float fontSize = 16.f;
+            float fontSize = 18.f;
             ImFont* font = io.Fonts->AddFontFromFileTTF("assets/fonts/montserrat/Montserrat-Regular.ttf", fontSize);
             io.FontDefault = font;
 

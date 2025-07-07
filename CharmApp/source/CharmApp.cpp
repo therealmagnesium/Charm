@@ -87,10 +87,11 @@ namespace CharmApp
 
                 if (state.pixelData != -1)
                 {
-                    Scene* currentScene = SceneHeirarchyPanel::GetContext();
-                    Entity entity = Entities::Create((entt::entity)state.pixelData, currentScene);
+                    Entity entity = Entities::Create((entt::entity)state.pixelData, &state.editorScene);
                     SceneHeirarchyPanel::SetSelectedEntity(entity);
                 }
+                else if (state.pixelData == -1 && SceneViewportPanel::IsFocused() && SceneViewportPanel::IsHovered())
+                    SceneHeirarchyPanel::SetSelectedEntity((Entity){});
             }
 
             Scenes::UpdateEditor(*state.activeScene);

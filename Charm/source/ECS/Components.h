@@ -61,10 +61,11 @@ namespace Charm
         struct SpriteRendererComponent
         {
             AssetHandle sprite = 0;
+            s32 sortingLayer = 0;
             Rectangle crop;
             glm::vec2 origin;
-            OriginMode originMode = OriginMode::Center;
             glm::vec3 tint = glm::vec3(1.f);
+            OriginMode originMode = OriginMode::Center;
 
             SpriteRendererComponent() = default;
             SpriteRendererComponent(const SpriteRendererComponent&) = default;

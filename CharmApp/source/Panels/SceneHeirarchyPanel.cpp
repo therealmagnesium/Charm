@@ -173,14 +173,14 @@ namespace CharmApp
             }
 
             DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component) {
-                const float columnWidth = 75.f;
+                const float columnWidth = 80.f;
                 DrawVec3Control("Position", component.position, 0.1f, 0.f, columnWidth);
                 DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, columnWidth);
                 DrawVec3Control("Scale", component.scale, 0.1f, 1.f, columnWidth);
             });
 
             DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
-                const float columnWidth = 85.f;
+                const float columnWidth = 90.f;
                 DrawFloatControl("Radius", &component.radius, 0.f, 100.f, columnWidth);
                 DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, columnWidth);
                 DrawFloatControl("Fade", &component.fade, 0.f, 1.f, columnWidth);
@@ -188,13 +188,12 @@ namespace CharmApp
             });
 
             DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
-                const float columnWidth = 100.f;
+                const float columnWidth = 115.f;
                 ImGui::PushID("Texture");
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Texture");
                 ImGui::NextColumn();
-
                 const AssetRegistry& registry = AssetManager::GetRegistry();
                 std::string placeholder = (AssetManager::GetAsset<Texture>(component.sprite) != NULL) ? registry.at(component.sprite).path.c_str() : "Select texture";
                 ImGui::SetNextItemWidth(-1.f);
@@ -219,7 +218,6 @@ namespace CharmApp
                 ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Origin Mode");
                 ImGui::NextColumn();
-
                 ImGui::SetNextItemWidth(-1.f);
                 if (ImGui::BeginCombo("##Origin Mode", Utils::OriginModeToString(component.originMode).c_str()))
                 {
@@ -235,12 +233,28 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
+                ImGui::PushID("Sorting Layer");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, columnWidth);
+                ImGui::Text("Sorting Layer");
+                ImGui::NextColumn();
+                ImGui::SetNextItemWidth(-1.f);
+                if (ImGui::InputInt("##Sorting Layer", &component.sortingLayer))
+                {
+                    if (component.sortingLayer < 0)
+                        component.sortingLayer = 0;
+
+                    if (component.sortingLayer >= MAX_SORTING_LAYERS)
+                        component.sortingLayer = MAX_SORTING_LAYERS - 1;
+                }
+                ImGui::Columns(1);
+                ImGui::PopID();
+
                 ImGui::PushID("Crop");
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0.f, columnWidth);
                 ImGui::Text("Crop");
                 ImGui::NextColumn();
-
                 ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
                 ImGui::DragFloat4("##Crop", &component.crop.x);
                 ImGui::Columns(1);
@@ -250,7 +264,7 @@ namespace CharmApp
             });
 
             DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {
-                const float columnWidth = 90.f;
+                const float columnWidth = 100.f;
                 DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, columnWidth);
                 DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, columnWidth);
 
@@ -266,7 +280,7 @@ namespace CharmApp
             });
 
             DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](Rigidbody2DComponent& component) {
-                const float columnWidth = 120.f;
+                const float columnWidth = 130.f;
                 ImGui::PushID("Body Type");
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0, columnWidth);
@@ -305,7 +319,7 @@ namespace CharmApp
             });
 
             DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {
-                const float columnWidth = 90.f;
+                const float columnWidth = 100.f;
                 DrawVec2Control("Offset", component.offset, 0.1f, 0.f, columnWidth);
                 DrawVec2Control("Size", component.size, 0.1f, 0.f, columnWidth);
                 DrawFloatControl("Density", &component.density, 0.f, 0.f, columnWidth);

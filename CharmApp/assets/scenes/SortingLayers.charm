@@ -1,0 +1,63 @@
+Scene: Untitled
+Entities:
+  - Entity: 17599396501119429213
+    Internal Component:
+      Tag: Blue Square
+      Is Active?: true
+    Transform Component:
+      Position: [0.1, -0.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [2, 2, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [1, 1]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.027369894, 0.10182795, 0.26254827]
+  - Entity: 9786545104327866926
+    Internal Component:
+      Tag: Green Square
+      Is Active?: true
+    Transform Component:
+      Position: [0.6, -1, 0]
+      Rotation: [0, 0, 0]
+      Scale: [2, 2, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 0
+      Origin: [1, 1]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.027369894, 0.26254827, 0.15086122]
+  - Entity: 5431004726329433676
+    Internal Component:
+      Tag: Red Square
+      Is Active?: true
+    Transform Component:
+      Position: [-0.5, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [2, 2, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 2
+      Origin: [1, 1]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.5135135, 0.08922049, 0.08922049]
+  - Entity: 8111841050252125299
+    Internal Component:
+      Tag: Main Camera
+      Is Active?: true
+    Transform Component:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Camera2D Component:
+      Is Primary?: true
+      Target: [0, 0]
+      Offset: [10, 5.625]
+      Rotation: 0
+      Zoom: 1
+Asset Registry:
+  []

@@ -10,6 +10,7 @@ Entities:
       Scale: [25, 2, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 0
+      Sorting Layer: 0
       Origin: [12.5, 1]
       Origin Mode: Center
       Crop: [0, 0, 1, 1]
@@ -33,6 +34,7 @@ Entities:
       Scale: [2, 2, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 0
+      Sorting Layer: 0
       Origin: [1, 1]
       Origin Mode: Center
       Crop: [0, 0, 1, 1]
@@ -56,6 +58,7 @@ Entities:
       Scale: [2, 2, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 0
+      Sorting Layer: 0
       Origin: [1, 1]
       Origin Mode: Center
       Crop: [0, 0, 1, 1]

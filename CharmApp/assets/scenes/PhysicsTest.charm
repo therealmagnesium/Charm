@@ -1,5 +1,44 @@
 Scene: Untitled
 Entities:
+  - Entity: 5338687107740167531
+    Internal Component:
+      Tag: Static Object 2
+      Is Active?: true
+    Transform Component:
+      Position: [4, -4.8, 0]
+      Rotation: [0, 0, 30]
+      Scale: [20, 10, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [10, 5]
+      Origin Mode: Center
+      Crop: [0, 0, 1, 1]
+      Tint: [0.05706533, 0.16988415, 0.13198747]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [10, 5]
+      Density: 1
+      Friction: 0.5
+      Restitution: 0
+  - Entity: 2807501522680936455
+    Internal Component:
+      Tag: Background
+      Is Active?: true
+    Transform Component:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [30, 20, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 0
+      Origin: [15, 10]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.14609206, 0.33328003, 0.3861004]
   - Entity: 13147909070247337785
     Internal Component:
       Tag: Main Camera
@@ -24,6 +63,7 @@ Entities:
       Scale: [1, 1, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 0
+      Sorting Layer: 1
       Origin: [0.5, 0.5]
       Origin Mode: Center
       Crop: [0, 0, 1, 1]
@@ -44,19 +84,20 @@ Entities:
     Transform Component:
       Position: [0, -5, 0]
       Rotation: [0, 0, 0]
-      Scale: [20, 1, 1]
+      Scale: [20, 5, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 0
-      Origin: [10, 0.5]
+      Sorting Layer: 1
+      Origin: [10, 2.5]
       Origin Mode: Center
       Crop: [0, 0, 1, 1]
-      Tint: [0.46568626, 0.2766187, 0.06391772]
+      Tint: [0.05706533, 0.16988415, 0.13198747]
     Rigidbody2D Component:
       Type: Static
       Fixed Rotation?: false
     Box Collider2D Component:
       Offset: [0, 0]
-      Size: [10, 0.5]
+      Size: [10, 2.5]
       Density: 1
       Friction: 0.5
       Restitution: 0

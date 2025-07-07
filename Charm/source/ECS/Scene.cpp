@@ -38,6 +38,9 @@ namespace Charm
                 scene.physicsWorldID = b2_nullWorldId;
                 Scenes::ResetEditorCameras(scene);
 
+                for (u8 i = 0; i < LEN(scene.sortingLayers); i++)
+                    scene.sortingLayers[i].reserve(1);
+
                 return scene;
             }
 
@@ -108,6 +111,15 @@ namespace Charm
                 scene.registry.destroy(entity.handle);
                 entity.context = NULL;
                 entity.handle = entt::null;
+            }
+
+            void AddEntityToSortingLayer(Scene& scene, Entity& entity, u32 layer)
+            {
+                auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                std::vector<Entity>& sortingLayer = scene.sortingLayers[spriteRenderer.sortingLayer];
+
+                if (entity && (std::find(sortingLayer.begin(), sortingLayer.end(), entity) == sortingLayer.end()))
+                    scene.sortingLayers[layer].emplace_back(entity);
             }
 
             void ClearRegistry(Scene& scene)
@@ -186,6 +198,9 @@ namespace Charm
 
             void UpdateEditor(Scene& scene)
             {
+                for (u8 i = 0; i < LEN(scene.sortingLayers); i++)
+                    scene.sortingLayers[i].clear();
+
                 activeCamera2D = NULL;
                 activeCamera3D = NULL;
                 Cameras::UpdateEditor(scene.editorCamera3D);
@@ -322,29 +337,42 @@ namespace Charm
                 {
                     Entity entity = Entities::Create(entityID, &scene);
                     auto& internal = entity.GetComponent<InternalComponent>();
+                    auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
 
                     if (!internal.isActive)
                         continue;
 
-                    auto& transform = entity.GetComponent<TransformComponent>();
-                    auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                    Scenes::AddEntityToSortingLayer(scene, entity, spriteRenderer.sortingLayer);
+                }
 
-                    const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale,
-                                                                                 transform.rotation.z, spriteRenderer.origin);
-
-                    Renderer::DrawEntity(transformMatrix, spriteRenderer, (s32)entityID);
-
-                    if (entity.HasComponent<BoxCollider2DComponent>() && scene.isDebugRenderingEnabled)
+                for (u32 i = 0; i < LEN(scene.sortingLayers); i++)
+                {
+                    for (Entity& entity : scene.sortingLayers[i])
                     {
-                        auto& bc2D = entity.GetComponent<BoxCollider2DComponent>();
+                        auto& internal = entity.GetComponent<InternalComponent>();
+                        auto& transform = entity.GetComponent<TransformComponent>();
+                        auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
 
-                        glm::vec2 origin;
-                        origin.x = bc2D.offset.x + bc2D.size.x;
-                        origin.y = bc2D.offset.y + bc2D.size.y;
+                        if (!internal.isActive)
+                            continue;
 
-                        const glm::mat4 colliderTransformMatrix = Utils::GetTransfomMatrix2D(transform.position, bc2D.size * 2.f,
-                                                                                             transform.rotation.z, origin);
-                        Renderer::DrawRectangleLines(colliderTransformMatrix, glm::vec3(0.f, 1.f, 0.f));
+                        const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale,
+                                                                                     transform.rotation.z, spriteRenderer.origin);
+
+                        Renderer::DrawEntity(transformMatrix, spriteRenderer, (s32)entity.handle);
+
+                        if (entity.HasComponent<BoxCollider2DComponent>() && scene.isDebugRenderingEnabled)
+                        {
+                            auto& bc2D = entity.GetComponent<BoxCollider2DComponent>();
+
+                            glm::vec2 origin;
+                            origin.x = bc2D.offset.x + bc2D.size.x;
+                            origin.y = bc2D.offset.y + bc2D.size.y;
+
+                            const glm::mat4 colliderTransformMatrix = Utils::GetTransfomMatrix2D(transform.position, bc2D.size * 2.f,
+                                                                                                 transform.rotation.z, origin);
+                            Renderer::DrawRectangleLines(colliderTransformMatrix, glm::vec3(0.f, 1.f, 0.f));
+                        }
                     }
                 }
             }

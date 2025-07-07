@@ -5,6 +5,8 @@
 #include <box2d/types.h>
 #include <entt/entt.hpp>
 
+#define MAX_SORTING_LAYERS 8
+
 using namespace Charm::Core;
 using namespace Charm::Graphics;
 
@@ -28,6 +30,7 @@ namespace Charm
             Camera3D editorCamera3D;
             b2WorldDef physicsWorld;
             b2WorldId physicsWorldID;
+            std::vector<Entity> sortingLayers[MAX_SORTING_LAYERS];
         };
 
         namespace Scenes
@@ -38,8 +41,9 @@ namespace Charm
             Entity CreateEntity(Scene& scene, const char* tag = "Entity");
             Entity CreateEntity(Scene& scene, UUID id, const char* tag = "Entity");
             Entity DuplicateEntity(Scene& scene, Entity& entity);
-
             void DestroyEntity(Scene& scene, Entity& entity);
+            void AddEntityToSortingLayer(Scene& scene, Entity& entity, u32 layer);
+
             void ClearRegistry(Scene& scene);
 
             void OnRuntimeStart(Scene& scene);
