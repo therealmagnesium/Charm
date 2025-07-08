@@ -9,6 +9,7 @@ namespace CharmApp
 {
     struct CharmState
     {
+        std::string currentScenePath;
         Framebuffer framebuffer;
         SceneState sceneState;
         Scene editorScene;
@@ -27,8 +28,11 @@ namespace CharmApp
     void OnSceneStop();
     void OnSceneNew();
     void OnSceneOpen();
+    void OnSceneSave();
     void OnSceneSaveAs();
     void OnDuplicateEntity();
+
+    void OpenScene(const char* path);
 
     s32 GetPixelData();
     Scene* GetActiveScene();

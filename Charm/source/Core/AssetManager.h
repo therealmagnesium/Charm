@@ -25,6 +25,9 @@ namespace Charm
 
             Asset* GetAsset(AssetHandle handle);
             bool IsHandleValid(AssetHandle handle);
+            bool IsAssetLoaded(AssetHandle handle);
+            bool IsAssetRegistered(const std::string& path);
+            AssetHandle FindAssetHandle(const std::string& path);
 
             template <typename T>
             inline T* GetAsset(AssetHandle handle)

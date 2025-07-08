@@ -2,8 +2,6 @@
 #include "Core/Base.h"
 #include "Core/Asset.h"
 
-using namespace Charm::Core;
-
 namespace Charm
 {
     namespace Graphics
@@ -18,7 +16,7 @@ namespace Charm
             RedInteger
         };
 
-        struct Texture : public Asset
+        struct Texture : public Core::Asset
         {
             u32 id = 0;
             u32 width = 0;
@@ -28,7 +26,7 @@ namespace Charm
             u32 channelCount = 0;
 
             inline bool operator==(const Texture& other) const { return id == other.id; }
-            inline AssetType GetType() override { return AssetType::Texture; }
+            inline Core::AssetType GetType() override { return Core::AssetType::Texture; }
         };
 
         namespace Textures

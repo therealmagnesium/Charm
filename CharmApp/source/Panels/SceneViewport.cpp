@@ -1,7 +1,12 @@
 #include "SceneViewport.h"
+#include "../CharmApp.h"
+
+#include <ECS/SceneSerializer.h>
 #include <imgui.h>
+#include <filesystem>
 
 using namespace Charm::Graphics;
+using namespace Charm::ECS;
 
 namespace CharmApp
 {
@@ -28,6 +33,21 @@ namespace CharmApp
 
             ImGui::SetCursorPos(windowPosition);
             ImGui::Image(textureID, aspectSize, ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content Browser Item");
+                if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
+                {
+                    std::filesystem::path path = (const char*)payload->Data;
+                    std::string extension = path.extension().string();
+                    if (extension == ".charm")
+                        CharmApp::OpenScene(path.c_str());
+                    else
+                        ERROR("SceneViewportPanel::Display - Cannot load scene to viewport because it is not a \".charm\" file");
+                }
+                ImGui::EndDragDropTarget();
+            }
             ImGui::End();
         }
 

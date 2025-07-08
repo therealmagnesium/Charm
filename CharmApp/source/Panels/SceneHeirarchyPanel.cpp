@@ -1,4 +1,5 @@
 #include "SceneHeirarchyPanel.h"
+#include "../CharmApp.h"
 
 #include <Core/AssetManager.h>
 #include <Core/Log.h>
@@ -11,6 +12,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <filesystem>
 
 using namespace Charm;
 using namespace Charm::ECS;
@@ -208,8 +210,38 @@ namespace CharmApp
                         if (ImGui::Selectable(metadata.path.c_str(), isSelected))
                             component.sprite = handle;
                     }
+
                     ImGui::EndCombo();
                 }
+
+                if (ImGui::BeginDragDropTarget())
+                {
+                    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content Browser Item");
+                    if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
+                    {
+                        std::filesystem::path path = (const char*)payload->Data;
+                        std::string extension = path.extension().string();
+                        if (extension == ".png" || extension == ".jpg" || extension == ".jpeg")
+                        {
+                            AssetHandle handle = AssetManager::FindAssetHandle(path.string());
+                            if (handle != 0)
+                            {
+                                AssetManager::Import(path.c_str(), AssetType::Texture, handle);
+                                component.sprite = handle;
+                            }
+                            else
+                                component.sprite = AssetManager::Import(path.c_str(), AssetType::Texture);
+
+                            Texture* texture = AssetManager::GetAsset<Texture>(component.sprite);
+                            component.crop.width = texture->width;
+                            component.crop.height = texture->height;
+                        }
+                        else
+                            ERROR("SceneHeirarchyPanel::Display - Cannot load texture because \"%s\" is not an image file", path.c_str());
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
                 ImGui::Columns(1);
                 ImGui::PopID();
 

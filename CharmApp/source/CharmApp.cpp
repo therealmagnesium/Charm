@@ -1,4 +1,6 @@
 #include "CharmApp.h"
+#include "Panels/AssetRegistryPanel.h"
+#include "Panels/ContentBrowserPanel.h"
 #include "Panels/DebugStatsPanel.h"
 #include "Panels/SceneHeirarchyPanel.h"
 #include "Panels/SceneViewport.h"
@@ -40,6 +42,7 @@ namespace CharmApp
 
         SceneSerializer::SetContext(state.editorScene);
         SceneHeirarchyPanel::SetContext(state.editorScene);
+        ContentBrowserPanel::Init();
         ToolbarPanel::Init();
     }
 
@@ -61,6 +64,9 @@ namespace CharmApp
             OnSceneNew();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_S))
+            OnSceneSave();
+
+        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
             OnSceneSaveAs();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_O))
@@ -118,51 +124,18 @@ namespace CharmApp
     {
         ImGui::DockSpaceOverViewport();
 
+        AssetRegistryPanel::Display();
+        ContentBrowserPanel::Display();
         SceneHeirarchyPanel::Display();
         SceneViewportPanel::Display(state.framebuffer.colorAttachments[0]);
         DebugStatsPanel::Display();
         ToolbarPanel::Display();
-
-        ImGui::Begin("Asset Registry");
-        {
-            const float columnWidth = 65.f;
-            for (auto& [handle, metadata] : AssetManager::GetRegistry())
-            {
-                ImGui::PushID("Asset Registry");
-
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Handle");
-                ImGui::NextColumn();
-                ImGui::Text("0x%lx", handle);
-                ImGui::Columns(1);
-                ImGui::Separator();
-
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Path");
-                ImGui::NextColumn();
-                ImGui::Text("%s", metadata.path.c_str());
-                ImGui::Columns(1);
-                ImGui::Separator();
-
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Type");
-                ImGui::NextColumn();
-                ImGui::Text("%s", Utils::AssetTypeToString(metadata.type).c_str());
-                ImGui::Columns(1);
-                ImGui::Separator();
-
-                ImGui::PopID();
-            }
-        }
-        ImGui::End();
     }
 
     void OnShutdown()
     {
         AssetManager::Clean();
+        ContentBrowserPanel::Shutdown();
         ToolbarPanel::Shutdown();
         Framebuffers::Destroy(state.framebuffer);
     }
@@ -201,18 +174,20 @@ namespace CharmApp
 
         if (FileDialogs::Open())
         {
-            OnSceneNew();
-
-            Scene newScene = Scenes::Create();
-            SceneSerializer::SetContext(newScene);
-
             const std::string& path = FileDialogs::GetSelectedPath();
-            SceneSerializer::Deserialize(path.c_str());
-
-            state.editorScene = Scenes::Copy(newScene);
-            Scenes::ClearRegistry(newScene);
+            CharmApp::OpenScene(path.c_str());
             INFO("Loaded scene %s", path.c_str());
         }
+    }
+
+    void OnSceneSave()
+    {
+        if (state.currentScenePath.empty())
+            return;
+
+        SceneSerializer::SetContext(state.editorScene);
+        SceneSerializer::Serialize(state.currentScenePath.c_str());
+        INFO("Saved scene %s", state.currentScenePath.c_str());
     }
 
     void OnSceneSaveAs()
@@ -237,6 +212,21 @@ namespace CharmApp
             Entity duplicate = Scenes::DuplicateEntity(state.editorScene, selectedEntity);
             SceneHeirarchyPanel::SetSelectedEntity(duplicate);
         }
+    }
+
+    void OpenScene(const char* path)
+    {
+        OnSceneNew();
+
+        Scene newScene = Scenes::Create();
+        SceneSerializer::SetContext(newScene);
+        SceneSerializer::Deserialize(path);
+
+        state.currentScenePath = path;
+
+        state.editorScene = Scenes::Copy(newScene);
+        SceneSerializer::SetContext(state.editorScene);
+        Scenes::ClearRegistry(newScene);
     }
 
     s32 GetPixelData() { return state.pixelData; }

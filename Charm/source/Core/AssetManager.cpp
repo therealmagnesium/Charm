@@ -56,18 +56,7 @@ namespace Charm
             AssetHandle Import(const char* path, AssetType type)
             {
                 AssetHandle handle = Random::GenerateUUID();
-
-                AssetMetadata metadata;
-                metadata.path = path;
-                metadata.type = type;
-
-                Asset* asset = LoadAsset(handle, metadata);
-                if (asset != NULL)
-                {
-                    assets->registry[handle] = metadata;
-                    assets->loadedAssets[handle] = asset;
-                }
-
+                AssetManager::Import(path, type, handle);
                 return handle;
             }
 
@@ -77,7 +66,7 @@ namespace Charm
                 metadata.path = path;
                 metadata.type = type;
 
-                Asset* asset = LoadAsset(handle, metadata);
+                Asset* asset = (IsAssetRegistered(metadata.path) && IsAssetLoaded(handle)) ? assets->loadedAssets[handle] : LoadAsset(handle, metadata);
                 if (asset != NULL)
                 {
                     assets->registry[handle] = metadata;
@@ -100,6 +89,51 @@ namespace Charm
             bool IsHandleValid(AssetHandle handle)
             {
                 return handle != 0 && assets->registry.find(handle) != assets->registry.end();
+            }
+
+            bool IsAssetLoaded(AssetHandle handle)
+            {
+                bool isLoaded = false;
+                for (auto& [loadedHandle, asset] : assets->loadedAssets)
+                {
+                    if (loadedHandle == handle)
+                    {
+                        isLoaded = true;
+                        break;
+                    }
+                }
+
+                return isLoaded;
+            }
+
+            bool IsAssetRegistered(const std::string& path)
+            {
+                bool isRegistered = false;
+                for (auto& [handle, metadata] : assets->registry)
+                {
+                    if (metadata.path == path)
+                    {
+                        isRegistered = true;
+                        break;
+                    }
+                }
+
+                return isRegistered;
+            }
+
+            AssetHandle FindAssetHandle(const std::string& path)
+            {
+                AssetHandle searchedAssetHandle = 0;
+                for (auto& [handle, metadata] : assets->registry)
+                {
+                    if (metadata.path == path)
+                    {
+                        searchedAssetHandle = handle;
+                        break;
+                    }
+                }
+
+                return searchedAssetHandle;
             }
 
             Asset* LoadAsset(AssetHandle handle, AssetMetadata& metadata)
