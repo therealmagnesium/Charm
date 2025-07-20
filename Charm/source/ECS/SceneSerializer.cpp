@@ -134,11 +134,7 @@ namespace Charm
 
             void Serialize(const char* path)
             {
-                if (context == NULL)
-                {
-                    ERROR("SceneSerializer::Serialize - The context has not been set!");
-                    return;
-                }
+                ASSERT_ERROR(context != NULL, "SceneSerializer::Serialize - The context has not been set!");
 
                 YAML::Emitter out;
                 out << YAML::BeginMap;
@@ -170,7 +166,7 @@ namespace Charm
                 out << YAML::EndMap;
 
                 std::ofstream fout(path);
-                fout << out.c_str();
+                fout << out.c_str() << "\n";
                 fout.close();
             }
 
@@ -178,11 +174,7 @@ namespace Charm
 
             void Deserialize(const char* path)
             {
-                if (context == NULL)
-                {
-                    ERROR("SceneSerializer::Deserialize - The context has not been set!");
-                    return;
-                }
+                ASSERT_ERROR(context != NULL, "SceneSerializer::Deserialize - The context has not been set!");
 
                 std::stringstream stream;
                 std::ifstream in(path);
@@ -302,6 +294,14 @@ namespace Charm
                     out << YAML::EndMap;
                 }
 
+                if (entity.HasComponent<NativeScriptComponent>())
+                {
+                    auto& nsc = entity.GetComponent<NativeScriptComponent>();
+                    out << YAML::Key << "Native Script Component" << YAML::Value << YAML::BeginMap;
+                    out << YAML::Key << "Script Name" << YAML::Value << nsc.scriptName;
+                    out << YAML::EndMap;
+                }
+
                 out << YAML::EndMap;
             }
 
@@ -368,6 +368,13 @@ namespace Charm
                     bc2D.density = bc2DNode["Density"].as<float>();
                     bc2D.friction = bc2DNode["Friction"].as<float>();
                     bc2D.restitution = bc2DNode["Restitution"].as<float>();
+                }
+
+                auto nsNode = node["Native Script Component"];
+                if (nsNode)
+                {
+                    auto& nsc = entity.AddComponent<NativeScriptComponent>();
+                    nsc.scriptName = nsNode["Script Name"].as<std::string>();
                 }
             }
         }

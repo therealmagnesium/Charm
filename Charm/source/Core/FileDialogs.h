@@ -1,5 +1,5 @@
 #pragma once
-#include <string>
+#include <filesystem>
 #include <vector>
 
 namespace Charm
@@ -8,8 +8,8 @@ namespace Charm
     {
         struct FileDialogState
         {
-            std::string defaultPath;
-            std::vector<std::string> selectedPaths;
+            std::filesystem::path defaultPath;
+            std::vector<std::filesystem::path> selectedPaths;
         };
 
         namespace FileDialogs
@@ -21,8 +21,10 @@ namespace Charm
             bool OpenMultiple();
             bool Save();
 
-            const std::string& GetSelectedPath();
-            const std::vector<std::string>& GetSelectedPathMulti();
+            const std::filesystem::path& GetSelectedPath();
+            const std::vector<std::filesystem::path>& GetSelectedPathMulti();
+
+            void SetDefaultPath(const std::filesystem::path& path);
         }
     }
 }

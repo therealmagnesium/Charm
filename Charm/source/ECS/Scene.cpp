@@ -1,6 +1,7 @@
 #include "ECS/Scene.h"
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
+#include "ECS/ScriptManager.h"
 
 #include "Core/Application.h"
 #include "Core/Time.h"
@@ -19,6 +20,13 @@ namespace Charm
     {
         static Camera2D* activeCamera2D = NULL; // Active 2D runtime camera
         static Camera3D* activeCamera3D = NULL; // Active 3D runtime camera
+
+        struct WorldData
+        {
+            entt::registry registry;
+            b2WorldDef physicsWorld;
+            b2WorldId physicsWorldID;
+        };
 
         namespace Scenes
         {
@@ -69,6 +77,7 @@ namespace Charm
                 CopyComponent<Camera2DComponent>(destRegistry, sourceRegistry, enttMap);
                 CopyComponent<Rigidbody2DComponent>(destRegistry, sourceRegistry, enttMap);
                 CopyComponent<BoxCollider2DComponent>(destRegistry, sourceRegistry, enttMap);
+                CopyComponent<NativeScriptComponent>(destRegistry, sourceRegistry, enttMap);
 
                 return newScene;
             }
@@ -102,6 +111,7 @@ namespace Charm
                 CopyComponentIfExists<Camera2DComponent>(newEntity, entity);
                 CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
                 CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
+                CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
 
                 return newEntity;
             }
@@ -137,6 +147,21 @@ namespace Charm
 
             void OnRuntimeStart(Scene& scene)
             {
+                auto nativeScripts = scene.registry.view<NativeScriptComponent>();
+                for (auto entityID : nativeScripts)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& nsc = entity.GetComponent<NativeScriptComponent>();
+
+                    nsc.CreateScript = ScriptManager::GetScriptInitFunc(nsc.scriptName);
+                    if (nsc.scriptInstance == NULL && nsc.CreateScript != NULL)
+                    {
+                        nsc.scriptInstance = nsc.CreateScript();
+                        nsc.scriptInstance->m_entity = entity;
+                        nsc.scriptInstance->OnCreate();
+                    }
+                }
+
                 scene.physicsWorld = b2DefaultWorldDef();
                 scene.physicsWorld.gravity = (b2Vec2){0.f, -9.81f};
                 scene.physicsWorldID = b2CreateWorld(&scene.physicsWorld);
@@ -178,6 +203,20 @@ namespace Charm
 
             void OnRuntimeStop(Scene& scene)
             {
+                auto nativeScripts = scene.registry.view<NativeScriptComponent>();
+                for (auto entityID : nativeScripts)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& nsc = entity.GetComponent<NativeScriptComponent>();
+                    nsc.DestroyScript = ScriptManager::GetScriptDestroyFunc(nsc.scriptName);
+
+                    if (nsc.scriptInstance != NULL && nsc.DestroyScript != NULL)
+                    {
+                        nsc.scriptInstance->OnDestroy();
+                        nsc.DestroyScript(nsc.scriptInstance);
+                    }
+                }
+
                 auto rigidbodies = scene.registry.view<Rigidbody2DComponent>();
                 for (auto entityID : rigidbodies)
                 {
@@ -250,13 +289,28 @@ namespace Charm
             {
                 activeCamera2D = NULL;
                 activeCamera3D = NULL;
+
                 auto cameras = scene.registry.view<Camera2DComponent>();
                 auto rigidbodies = scene.registry.view<Rigidbody2DComponent>();
+                auto nativeScripts = scene.registry.view<NativeScriptComponent>();
+
+                for (auto entityID : nativeScripts)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& nsc = entity.GetComponent<NativeScriptComponent>();
+
+                    if (nsc.scriptInstance != NULL)
+                        nsc.scriptInstance->OnUpdate();
+                }
 
                 for (auto entityID : cameras)
                 {
                     Entity entity = Entities::Create(entityID, &scene);
+                    auto& transform = entity.GetComponent<TransformComponent>();
                     auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
+
+                    cameraComponent.camera.target = transform.position;
+                    cameraComponent.camera.rotation = transform.rotation.z;
 
                     if (cameraComponent.isPrimary)
                     {

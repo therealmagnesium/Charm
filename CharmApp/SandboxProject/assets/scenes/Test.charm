@@ -1,35 +1,35 @@
 Scene: Untitled
 Entities:
-  - Entity: 10901146394738847797
+  - Entity: 1182659768702964623
     Internal Component:
       Tag: Ground
       Is Active?: true
     Transform Component:
       Position: [0, -5, 0]
       Rotation: [0, 0, 0]
-      Scale: [25, 2, 1]
+      Scale: [30, 2, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 0
       Sorting Layer: 0
-      Origin: [12.5, 1]
+      Origin: [15, 1]
       Origin Mode: Center
-      Crop: [0, 0, 1, 1]
-      Tint: [0.05513646, 0.045363087, 0.10970461]
+      Crop: [0, 0, 0, 0]
+      Tint: [0.0258612, 0.025491571, 0.07335907]
     Rigidbody2D Component:
       Type: Static
       Fixed Rotation?: false
     Box Collider2D Component:
       Offset: [0, 0]
-      Size: [12.5, 1]
+      Size: [15, 1]
       Density: 1
       Friction: 0.5
-      Restitution: 0
-  - Entity: 10312224621417702723
+      Restitution: 1
+  - Entity: 4560730961409125273
     Internal Component:
       Tag: Blue Square
       Is Active?: true
     Transform Component:
-      Position: [0, 3, 0]
+      Position: [2, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [2, 2, 1]
     Sprite Renderer Component:
@@ -37,42 +37,35 @@ Entities:
       Sorting Layer: 0
       Origin: [1, 1]
       Origin Mode: Center
-      Crop: [0, 0, 1, 1]
-      Tint: [0.0777653, 0.21002272, 0.65822786]
-    Rigidbody2D Component:
-      Type: Dynamic
-      Fixed Rotation?: true
-    Box Collider2D Component:
-      Offset: [0, 0]
-      Size: [1, 1]
-      Density: 1
-      Friction: 0.5
-      Restitution: 1
-  - Entity: 6425683783560165654
-    Internal Component:
-      Tag: Yellow Square
-      Is Active?: true
-    Transform Component:
-      Position: [-5, 4, 0]
-      Rotation: [0, 0, 21.2]
-      Scale: [2, 2, 1]
-    Sprite Renderer Component:
-      Texture Asset Handle: 0
-      Sorting Layer: 0
-      Origin: [1, 1]
-      Origin Mode: Center
-      Crop: [0, 0, 1, 1]
-      Tint: [0.65822786, 0.6067944, 0.0777653]
+      Crop: [0, 0, 0, 0]
+      Tint: [0.036523003, 0.18435234, 0.3783784]
     Rigidbody2D Component:
       Type: Dynamic
       Fixed Rotation?: false
     Box Collider2D Component:
       Offset: [0, 0]
       Size: [1, 1]
-      Density: 2
+      Density: 1
       Friction: 0.5
-      Restitution: 1
-  - Entity: 8418872166115155180
+      Restitution: 0.4
+  - Entity: 17085633122211820146
+    Internal Component:
+      Tag: Yellow Square
+      Is Active?: true
+    Transform Component:
+      Position: [-2, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [2, 2, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 0
+      Origin: [1, 1]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.57142854, 0.5377635, 0.11252069]
+    Native Script Component:
+      Script Name: Top Down Controller
+  - Entity: 16080295526009848805
     Internal Component:
       Tag: Main Camera
       Is Active?: true

@@ -11,8 +11,8 @@ namespace CharmApp
     {
         void Init()
         {
-            state.iconPlay = Textures::Load("assets/textures/charm/play_button.png");
-            state.iconStop = Textures::Load("assets/textures/charm/stop_button.png");
+            state.iconPlay = Textures::Load("assets/textures/play_button.png");
+            state.iconStop = Textures::Load("assets/textures/stop_button.png");
         }
 
         void Shutdown()

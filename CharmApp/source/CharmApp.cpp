@@ -40,10 +40,21 @@ namespace CharmApp
         cameraComponent.camera.offset.y = (float)config.virtualHeight / (float)Application::GetPixelsPerUnit() / 2.f;
         cameraComponent.isPrimary = true;
 
+        state.project = ProjectManager::Load("SandboxProject/Sandbox.chprj");
+        if (!state.project.startScenePath.empty())
+        {
+            std::filesystem::path scenePath = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath, state.project);
+            OpenScene(scenePath.c_str());
+        }
+        FileDialogs::SetDefaultPath(ProjectManager::GetAssetPath(state.project));
+
         SceneSerializer::SetContext(state.editorScene);
         SceneHeirarchyPanel::SetContext(state.editorScene);
         ContentBrowserPanel::Init();
         ToolbarPanel::Init();
+
+        const std::filesystem::path scriptModulePath = ProjectManager::GetAssetFileSystemPath("scripts/binaries/libCharmScriptModule.so", state.project);
+        ScriptManager::LoadModule(scriptModulePath.c_str());
     }
 
     void OnUpdate()
@@ -60,10 +71,13 @@ namespace CharmApp
         if (Input::IsKeyPressed(KEY_F2))
             Scenes::ResetEditorCameras(*state.activeScene);
 
+        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_R))
+            ScriptManager::ReloadModule();
+
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_N))
             OnSceneNew();
 
-        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_S))
+        if (Input::IsKeyDown(KEY_LEFT_CTRL) && !Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
             OnSceneSave();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
@@ -134,6 +148,7 @@ namespace CharmApp
 
     void OnShutdown()
     {
+        ScriptManager::UnloadModule();
         AssetManager::Clean();
         ContentBrowserPanel::Shutdown();
         ToolbarPanel::Shutdown();
@@ -146,11 +161,13 @@ namespace CharmApp
         state.runtimeScene = Scenes::Copy(state.editorScene);
         state.activeScene = &state.runtimeScene;
         Scenes::OnRuntimeStart(*state.activeScene);
+        SceneHeirarchyPanel::SetContext(*state.activeScene);
     }
 
     void OnSceneStop()
     {
         Scenes::OnRuntimeStop(*state.activeScene);
+        SceneHeirarchyPanel::SetContext(state.editorScene);
         state.sceneState = SceneState::Editor;
         state.activeScene = &state.editorScene;
         state.runtimeScene = Scenes::Create();
@@ -176,14 +193,16 @@ namespace CharmApp
         {
             const std::string& path = FileDialogs::GetSelectedPath();
             CharmApp::OpenScene(path.c_str());
-            INFO("Loaded scene %s", path.c_str());
         }
     }
 
     void OnSceneSave()
     {
         if (state.currentScenePath.empty())
+        {
+            OnSceneSaveAs();
             return;
+        }
 
         SceneSerializer::SetContext(state.editorScene);
         SceneSerializer::Serialize(state.currentScenePath.c_str());
@@ -225,11 +244,14 @@ namespace CharmApp
         state.currentScenePath = path;
 
         state.editorScene = Scenes::Copy(newScene);
-        SceneSerializer::SetContext(state.editorScene);
         Scenes::ClearRegistry(newScene);
+        SceneSerializer::SetContext(state.editorScene);
+
+        INFO("Loaded scene %s", path);
     }
 
     s32 GetPixelData() { return state.pixelData; }
     Scene* GetActiveScene() { return state.activeScene; }
     SceneState GetActiveSceneState() { return state.sceneState; }
+    Project& GetProject() { return state.project; }
 }

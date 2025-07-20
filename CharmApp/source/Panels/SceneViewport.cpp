@@ -40,6 +40,8 @@ namespace CharmApp
                 if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
                 {
                     std::filesystem::path path = (const char*)payload->Data;
+                    path = ProjectManager::GetAssetFileSystemPath(path, CharmApp::GetProject());
+
                     std::string extension = path.extension().string();
                     if (extension == ".charm")
                         CharmApp::OpenScene(path.c_str());

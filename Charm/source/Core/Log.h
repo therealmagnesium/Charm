@@ -17,6 +17,14 @@
             exit(420);                     \
         }                                  \
     }
+#define ASSERT_ERROR(expression, message, ...) \
+    {                                          \
+        if (!(expression))                     \
+        {                                      \
+            ERROR(message, ##__VA_ARGS__);     \
+            return;                            \
+        }                                      \
+    }
 
 namespace Charm
 {

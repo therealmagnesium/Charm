@@ -4,18 +4,20 @@
 using namespace Charm::Core;
 using namespace Charm::Graphics;
 using namespace Charm::ECS;
+using namespace Charm::Projects;
 
 namespace CharmApp
 {
     struct CharmState
     {
-        std::string currentScenePath;
+        Project project;
         Framebuffer framebuffer;
         SceneState sceneState;
         Scene editorScene;
         Scene runtimeScene;
         Scene* activeScene = NULL;
         s32 pixelData = -1;
+        std::string currentScenePath;
     };
 
     void OnCreate();
@@ -37,4 +39,5 @@ namespace CharmApp
     s32 GetPixelData();
     Scene* GetActiveScene();
     SceneState GetActiveSceneState();
+    Project& GetProject();
 }

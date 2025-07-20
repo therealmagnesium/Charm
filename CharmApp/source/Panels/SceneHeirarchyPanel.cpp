@@ -171,6 +171,12 @@ namespace CharmApp
                     ImGui::CloseCurrentPopup();
                 }
 
+                if (ImGui::MenuItem("Native Script"))
+                {
+                    state.selectionContext.AddComponent<NativeScriptComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
                 ImGui::EndPopup();
             }
 
@@ -220,6 +226,8 @@ namespace CharmApp
                     if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
                     {
                         std::filesystem::path path = (const char*)payload->Data;
+                        path = ProjectManager::GetAssetFileSystemPath(path, CharmApp::GetProject());
+
                         std::string extension = path.extension().string();
                         if (extension == ".png" || extension == ".jpg" || extension == ".jpeg")
                         {
@@ -357,6 +365,35 @@ namespace CharmApp
                 DrawFloatControl("Density", &component.density, 0.f, 0.f, columnWidth);
                 DrawFloatControl("Friction", &component.friction, 0.f, 0.f, columnWidth);
                 DrawFloatControl("Restitution", &component.restitution, 0.f, 0.f, columnWidth);
+            });
+
+            DrawComponent<NativeScriptComponent>("Native Script", entity, [](NativeScriptComponent& component) {
+                ImGui::PushID("Script Name");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, 110.f);
+                ImGui::Text("Script Name");
+                ImGui::NextColumn();
+
+                std::string placeholder = (component.scriptName.empty()) ? "None" : component.scriptName;
+                ImGui::SetNextItemWidth(-1.f);
+                if (ImGui::BeginCombo("##Script Name", placeholder.c_str()))
+                {
+                    if (ImGui::Selectable("None", component.scriptName.empty()))
+                        component.scriptName = "";
+
+                    const ScriptBindingMap& bindings = ScriptManager::GetAllBindings();
+                    for (auto& [name, binding] : bindings)
+                    {
+                        const bool isSelected = (component.scriptName == name);
+                        if (ImGui::Selectable(name.c_str(), isSelected))
+                            component.scriptName = name;
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                ImGui::Columns(1);
+                ImGui::PopID();
             });
         }
 

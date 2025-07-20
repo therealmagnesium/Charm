@@ -10,6 +10,13 @@ namespace Charm
 {
     namespace ECS
     {
+        namespace Entities
+        {
+            Entity Create(entt::entity handle, Scene* context);
+            Entity FindWithTag(const char* tag, Scene* scene);
+            std::vector<Entity> FindEntitiesWithTag(const char* tag, Scene* scene);
+        }
+
         struct Entity
         {
             Scene* context = NULL;
@@ -44,9 +51,49 @@ namespace Charm
             inline bool operator!=(const Entity& other) { return handle != other.handle || context != other.context; }
         };
 
-        namespace Entities
+        class Scriptable
         {
-            Entity Create(entt::entity handle, Scene* context);
-        }
+        public:
+            Scriptable() = default;
+            virtual ~Scriptable() = default;
+
+            virtual void OnCreate() {};
+            virtual void OnDestroy() {};
+            virtual void OnUpdate() {};
+
+            inline Entity FindEntityWithTag(const char* tag) { return Entities::FindWithTag(tag, m_entity.context); }
+            inline std::vector<Entity> FindEntitiesWithTag(const char* tag) { return Entities::FindEntitiesWithTag(tag, m_entity.context); }
+
+            template <typename T>
+            inline T& HasComponent()
+            {
+                return m_entity.HasComponent<T>();
+            }
+
+            template <typename T>
+            inline T& GetComponent()
+            {
+                return m_entity.GetComponent<T>();
+            }
+
+            template <typename T, typename... Args>
+            inline T& AddComponent(Args&&... args)
+            {
+                return m_entity.AddComponent<T>(std::forward<Args>(args)...);
+            }
+
+            template <typename T>
+            inline void RemoveComponent()
+            {
+                m_entity.RemoveComponent<T>();
+            }
+
+        private:
+            Entity m_entity;
+
+            friend void Scenes::OnRuntimeStart(Scene&);
+            friend void Scenes::OnRuntimeStop(Scene&);
+        };
+
     }
 }

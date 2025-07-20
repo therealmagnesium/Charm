@@ -83,8 +83,10 @@ namespace Charm
                 return true;
             }
 
-            const std::string& GetSelectedPath() { return state.selectedPaths[0]; }
-            const std::vector<std::string>& GetSelectedPathMulti() { return state.selectedPaths; }
+            const std::filesystem::path& GetSelectedPath() { return state.selectedPaths[0]; }
+            const std::vector<std::filesystem::path>& GetSelectedPathMulti() { return state.selectedPaths; }
+
+            void SetDefaultPath(const std::filesystem::path& path) { state.defaultPath = path; }
         }
     }
 }

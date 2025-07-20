@@ -1,13 +1,15 @@
 #pragma once
+#include "ECS/Entity.h"
+#include "ECS/ScriptManager.h"
+
 #include "Core/AssetManager.h"
 #include "Core/Random.h"
-#include "Core/Utils.h"
 
 #include "Graphics/Camera.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 
-#include <box2d/box2d.h>
+#include <box2d/types.h>
 #include <glm/glm.hpp>
 #include <string>
 
@@ -139,6 +141,18 @@ namespace Charm
 
             BoxCollider2DComponent() = default;
             BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
+        };
+
+        struct NativeScriptComponent
+        {
+            std::string scriptName;
+            Scriptable* scriptInstance = NULL;
+
+            ScriptInitFunc CreateScript = NULL;
+            ScriptShutdownFunc DestroyScript = NULL;
+
+            NativeScriptComponent() = default;
+            NativeScriptComponent(const NativeScriptComponent&) = default;
         };
     }
 }

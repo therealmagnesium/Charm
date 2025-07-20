@@ -16,6 +16,7 @@
 #include "ECS/Entity.h"
 #include "ECS/Scene.h"
 #include "ECS/SceneSerializer.h"
+#include "ECS/ScriptManager.h"
 
 #include "Graphics/Camera.h"
 #include "Graphics/Framebuffer.h"
@@ -25,5 +26,8 @@
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 #include "Graphics/Window.h"
+
+#include "Projects/Project.h"
+#include "Projects/ProjectSerializer.h"
 
 #include "UI/UI.h"

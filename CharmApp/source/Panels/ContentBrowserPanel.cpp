@@ -1,4 +1,6 @@
 #include "ContentBrowserPanel.h"
+#include "../CharmApp.h"
+
 #include <imgui.h>
 
 using namespace Charm::Graphics;
@@ -6,15 +8,14 @@ using namespace Charm::Graphics;
 namespace CharmApp
 {
     static ContentBrowserState state;
-    static std::filesystem::path assetsDirectory = "assets";
 
     namespace ContentBrowserPanel
     {
         void Init()
         {
-            state.currentDirectory = assetsDirectory;
-            state.iconFile = Textures::Load("assets/textures/charm/file_icon.png");
-            state.iconFolder = Textures::Load("assets/textures/charm/folder_icon.png");
+            state.currentDirectory = ProjectManager::GetAssetPath(CharmApp::GetProject());
+            state.iconFile = Textures::Load("assets/textures/file_icon.png");
+            state.iconFolder = Textures::Load("assets/textures/folder_icon.png");
         }
 
         void Shutdown()
@@ -27,7 +28,29 @@ namespace CharmApp
         {
             ImGui::Begin("Content Browser");
 
-            if (state.currentDirectory != assetsDirectory)
+            ImGui::PushID("Padding");
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 130.f);
+            ImGui::Text("Padding");
+            ImGui::NextColumn();
+            ImGui::SetNextItemWidth(ImGui::CalcItemWidth() * 0.7f);
+            ImGui::DragFloat("##Padding", &state.padding);
+            ImGui::Columns(1);
+            ImGui::PopID();
+
+            ImGui::PushID("Thumbnail size");
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, 130.f);
+            ImGui::Text("Thumbnail size");
+            ImGui::NextColumn();
+            ImGui::SetNextItemWidth(ImGui::CalcItemWidth() * 0.7f);
+            ImGui::DragFloat("##Thumbnail size", &state.thumbnailSize);
+            ImGui::Columns(1);
+            ImGui::PopID();
+
+            ImGui::Separator();
+
+            if (state.currentDirectory != ProjectManager::GetAssetPath(CharmApp::GetProject()))
             {
                 if (ImGui::Button("Back"))
                     state.currentDirectory = state.currentDirectory.parent_path();
@@ -66,7 +89,8 @@ namespace CharmApp
 
                 if (ImGui::BeginDragDropSource())
                 {
-                    const char* itemPath = path.c_str();
+                    std::string relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(CharmApp::GetProject()));
+                    const char* itemPath = relativePath.c_str();
                     ImGui::SetDragDropPayload("Content Browser Item", itemPath, (strnlen(itemPath, 1024) + 1) * sizeof(char));
                     ImGui::EndDragDropSource();
                 }
@@ -79,8 +103,6 @@ namespace CharmApp
 
             ImGui::Columns(1);
 
-            ImGui::DragFloat("Padding", &state.padding);
-            ImGui::DragFloat("Thumbnail size", &state.thumbnailSize);
             ImGui::End();
         }
     }

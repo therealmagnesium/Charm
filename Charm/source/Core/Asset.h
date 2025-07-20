@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Base.h"
-#include <string>
+#include <filesystem>
 #include <unordered_map>
 
 namespace Charm
@@ -27,7 +27,7 @@ namespace Charm
 
         struct AssetMetadata
         {
-            std::string path = "";
+            std::filesystem::path path;
             AssetType type = AssetType::Invalid;
         };
     }

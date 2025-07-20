@@ -15,6 +15,7 @@ namespace Charm
     namespace ECS
     {
         struct Entity;
+        struct WorldData;
 
         enum class SceneState : u8
         {
@@ -25,9 +26,9 @@ namespace Charm
         struct Scene
         {
             bool isDebugRenderingEnabled = false;
-            entt::registry registry;
             Camera2D editorCamera2D;
             Camera3D editorCamera3D;
+            entt::registry registry;
             b2WorldDef physicsWorld;
             b2WorldId physicsWorldID;
             std::vector<Entity> sortingLayers[MAX_SORTING_LAYERS];

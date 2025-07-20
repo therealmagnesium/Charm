@@ -1,0 +1,5 @@
+Project:
+  Name: Sandbox
+  Start Scene: scenes/Test.charm
+  Assets Directory: assets
+  Script Module: scripts/binaries/CharmScriptModule.so
