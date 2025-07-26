@@ -1,8 +1,8 @@
 #pragma once
+#include "ECS/PhysicsWorld.h"
 #include "Core/Random.h"
 #include "Graphics/Camera.h"
 
-#include <box2d/types.h>
 #include <entt/entt.hpp>
 
 #define MAX_SORTING_LAYERS 8
@@ -15,7 +15,6 @@ namespace Charm
     namespace ECS
     {
         struct Entity;
-        struct WorldData;
 
         enum class SceneState : u8
         {
@@ -29,8 +28,11 @@ namespace Charm
             Camera2D editorCamera2D;
             Camera3D editorCamera3D;
             entt::registry registry;
-            b2WorldDef physicsWorld;
-            b2WorldId physicsWorldID;
+            // b2WorldDef physicsWorld;
+            // b2WorldId physicsWorldID;
+            PhysicsWorld physicsWorld;
+            PhysicsWorldID physicsWorldID;
+
             std::vector<Entity> sortingLayers[MAX_SORTING_LAYERS];
         };
 

@@ -279,6 +279,11 @@ namespace Charm
                     out << YAML::Key << "Rigidbody2D Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Type" << YAML::Value << Utils::BodyTypeToString(rb2D.type);
                     out << YAML::Key << "Fixed Rotation?" << YAML::Value << rb2D.hasFixedRotation;
+                    out << YAML::Key << "Gravity Scale" << YAML::Value << rb2D.gravityScale;
+                    out << YAML::Key << "Linear Damping" << YAML::Value << rb2D.linearDamping;
+                    out << YAML::Key << "Angular Damping" << YAML::Value << rb2D.angularDamping;
+                    out << YAML::Key << "Linear Velocity" << YAML::Value << rb2D.linearVelocity;
+                    out << YAML::Key << "Angular Velocity" << YAML::Value << rb2D.angularVelocity;
                     out << YAML::EndMap;
                 }
 
@@ -357,6 +362,11 @@ namespace Charm
                     auto& rb2D = entity.AddComponent<Rigidbody2DComponent>();
                     rb2D.type = Utils::StringToBodyType(rb2DNode["Type"].as<std::string>());
                     rb2D.hasFixedRotation = rb2DNode["Fixed Rotation?"].as<bool>();
+                    rb2D.gravityScale = rb2DNode["Gravity Scale"].as<float>();
+                    rb2D.linearDamping = rb2DNode["Linear Damping"].as<float>();
+                    rb2D.angularDamping = rb2DNode["Angular Damping"].as<float>();
+                    rb2D.linearVelocity = rb2DNode["Linear Velocity"].as<glm::vec2>();
+                    rb2D.angularVelocity = rb2DNode["Angular Velocity"].as<float>();
                 }
 
                 auto bc2DNode = node["Box Collider2D Component"];

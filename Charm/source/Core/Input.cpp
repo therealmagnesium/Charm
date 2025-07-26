@@ -47,7 +47,7 @@ namespace Charm
                         break;
 
                     case InputAxis::Vertical:
-                        value = IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP);
+                        value = IsKeyDown(KEY_UP) - IsKeyDown(KEY_DOWN);
                         break;
                 }
 

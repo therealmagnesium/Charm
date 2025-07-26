@@ -31,7 +31,13 @@ namespace Charm
             template <typename T>
             inline T& GetComponent()
             {
-                return context->registry.get<T>(handle);
+                return context->registry.get_or_emplace<T>(handle);
+            }
+
+            template <typename T>
+            inline T* TryGetComponent()
+            {
+                return context->registry.try_get<T>(handle);
             }
 
             template <typename T, typename... Args>
@@ -74,6 +80,12 @@ namespace Charm
             inline T& GetComponent()
             {
                 return m_entity.GetComponent<T>();
+            }
+
+            template <typename T>
+            inline T* TryGetComponent()
+            {
+                return m_entity.TryGetComponent<T>();
             }
 
             template <typename T, typename... Args>

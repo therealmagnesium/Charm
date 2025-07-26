@@ -33,6 +33,7 @@ namespace Charm
             void LoadModule(const char* path);
             void UnloadModule();
             void ReloadModule();
+            void ClearBindings();
 
             ScriptInitFunc GetScriptInitFunc(const std::string& name);
             ScriptShutdownFunc GetScriptDestroyFunc(const std::string& name);

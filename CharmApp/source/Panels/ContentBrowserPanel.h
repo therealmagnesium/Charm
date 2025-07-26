@@ -9,6 +9,7 @@ namespace CharmApp
     struct ContentBrowserState
     {
         std::filesystem::path currentDirectory;
+        std::filesystem::path selectedFilePath;
         Graphics::Texture iconFile;
         Graphics::Texture iconFolder;
         float padding = 32.f;
@@ -20,5 +21,7 @@ namespace CharmApp
         void Init();
         void Shutdown();
         void Display();
+
+        std::filesystem::path& GetSelectedFilePath();
     }
 }

@@ -9,9 +9,7 @@
 #include "Core/Utils.h"
 
 #include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/fwd.hpp>
 #include <SDL3/SDL.h>
 
 using namespace Charm::Core;

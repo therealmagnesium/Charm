@@ -21,13 +21,6 @@ namespace Charm
         static Camera2D* activeCamera2D = NULL; // Active 2D runtime camera
         static Camera3D* activeCamera3D = NULL; // Active 3D runtime camera
 
-        struct WorldData
-        {
-            entt::registry registry;
-            b2WorldDef physicsWorld;
-            b2WorldId physicsWorldID;
-        };
-
         namespace Scenes
         {
             void DrawAllCircles(Scene& scene);
@@ -43,7 +36,7 @@ namespace Charm
             Scene Create()
             {
                 Scene scene;
-                scene.physicsWorldID = b2_nullWorldId;
+                scene.physicsWorldID = Physics_NullWorldID;
                 Scenes::ResetEditorCameras(scene);
 
                 for (u8 i = 0; i < LEN(scene.sortingLayers); i++)
@@ -71,6 +64,7 @@ namespace Charm
                     enttMap[id] = newEntity.handle;
                 }
 
+                CopyComponent<InternalComponent>(destRegistry, sourceRegistry, enttMap);
                 CopyComponent<TransformComponent>(destRegistry, sourceRegistry, enttMap);
                 CopyComponent<SpriteRendererComponent>(destRegistry, sourceRegistry, enttMap);
                 CopyComponent<CircleRendererComponent>(destRegistry, sourceRegistry, enttMap);
@@ -105,6 +99,7 @@ namespace Charm
                 const auto& sourceInternal = entity.GetComponent<InternalComponent>();
 
                 Entity newEntity = CreateEntity(scene, sourceInternal.tag.c_str());
+                CopyComponentIfExists<InternalComponent>(newEntity, entity);
                 CopyComponentIfExists<TransformComponent>(newEntity, entity);
                 CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
                 CopyComponentIfExists<CircleRendererComponent>(newEntity, entity);
@@ -162,9 +157,12 @@ namespace Charm
                     }
                 }
 
-                scene.physicsWorld = b2DefaultWorldDef();
-                scene.physicsWorld.gravity = (b2Vec2){0.f, -9.81f};
-                scene.physicsWorldID = b2CreateWorld(&scene.physicsWorld);
+                b2WorldDef worldDef = b2DefaultWorldDef();
+                scene.physicsWorld = Utils::B2WorldDefToPhysicsWorld(worldDef);
+                scene.physicsWorld.gravity = (PhysicsWorld::Vec2){0.f, -9.81f};
+
+                b2WorldId worldID = b2CreateWorld((b2WorldDef*)&scene.physicsWorld);
+                scene.physicsWorldID = Utils::B2WorldToPhysicsWorldID(worldID);
 
                 auto rigidbodies = scene.registry.view<Rigidbody2DComponent>();
                 for (auto entityID : rigidbodies)
@@ -178,9 +176,12 @@ namespace Charm
                     bodyDef.motionLocks.angularZ = rb2D.hasFixedRotation;
                     bodyDef.position = (b2Vec2){transform.position.x, transform.position.y};
                     bodyDef.rotation = b2MakeRot(glm::radians(transform.rotation.z));
+                    bodyDef.linearDamping = rb2D.linearDamping;
+                    bodyDef.angularDamping = rb2D.angularDamping;
+                    bodyDef.gravityScale = rb2D.gravityScale;
 
-                    b2BodyId body = b2CreateBody(scene.physicsWorldID, &bodyDef);
-                    rb2D.runtimeBody = body;
+                    b2BodyId body = b2CreateBody(*(b2WorldId*)&scene.physicsWorldID, &bodyDef);
+                    rb2D.runtimeBody = Utils::B2BodyToPhysicsBody(body);
 
                     if (entity.HasComponent<BoxCollider2DComponent>())
                     {
@@ -196,7 +197,7 @@ namespace Charm
                         shapeDef.material.restitution = bc2D.restitution;
 
                         b2ShapeId shape = b2CreatePolygonShape(body, &shapeDef, &polygon);
-                        bc2D.runtimeShape = shape;
+                        bc2D.runtimeShape = Utils::B2ShapeToPhysicsShape(shape);
                     }
                 }
             }
@@ -225,12 +226,12 @@ namespace Charm
                     if (entity.HasComponent<BoxCollider2DComponent>())
                     {
                         auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
-                        b2DestroyShape(bc2d.runtimeShape, true);
+                        b2DestroyShape(*(b2ShapeId*)&bc2d.runtimeShape, true);
                     }
                 }
 
-                b2DestroyWorld(scene.physicsWorldID);
-                scene.physicsWorldID = b2_nullWorldId;
+                b2DestroyWorld(*(b2WorldId*)&scene.physicsWorldID);
+                scene.physicsWorldID = Physics_NullWorldID;
 
                 Scenes::ClearRegistry(scene);
             }
@@ -319,15 +320,28 @@ namespace Charm
                     }
                 }
 
-                b2World_Step(scene.physicsWorldID, Time::GetDelta(), 4);
+                b2World_Step(*(b2WorldId*)&scene.physicsWorldID, Time::GetDelta(), 4);
                 for (auto entityID : rigidbodies)
                 {
                     Entity entity = Entities::Create(entityID, &scene);
                     auto& transform = entity.GetComponent<TransformComponent>();
-                    auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+                    auto& rb2D = entity.GetComponent<Rigidbody2DComponent>();
+                    auto& runtimeBody = *(b2BodyId*)&rb2D.runtimeBody;
 
-                    b2Vec2 position = b2Body_GetPosition(rb2d.runtimeBody);
-                    float rotationRadians = b2Rot_GetAngle(b2Body_GetRotation(rb2d.runtimeBody));
+                    if (!b2Body_IsValid(runtimeBody))
+                        continue;
+
+                    b2Vec2 linearVelocity = b2Body_GetLinearVelocity(runtimeBody);
+                    float angularVelocity = b2Body_GetAngularVelocity(runtimeBody);
+
+                    b2Vec2 newLinearVelocity = (b2Vec2){linearVelocity.x + rb2D.linearVelocity.x, linearVelocity.y + rb2D.linearVelocity.y};
+                    float newAngularVelocity = angularVelocity + glm::radians(rb2D.angularVelocity);
+
+                    b2Body_SetLinearVelocity(runtimeBody, newLinearVelocity);
+                    b2Body_SetAngularVelocity(runtimeBody, newAngularVelocity);
+
+                    b2Vec2 position = b2Body_GetPosition(runtimeBody);
+                    float rotationRadians = b2Rot_GetAngle(b2Body_GetRotation(runtimeBody));
                     transform.position.x = position.x;
                     transform.position.y = position.y;
                     transform.rotation.z = glm::degrees(rotationRadians);

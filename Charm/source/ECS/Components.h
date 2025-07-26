@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Entity.h"
+#include "ECS/PhysicsWorld.h"
 #include "ECS/ScriptManager.h"
 
 #include "Core/AssetManager.h"
@@ -9,7 +10,6 @@
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 
-#include <box2d/types.h>
 #include <glm/glm.hpp>
 #include <string>
 
@@ -122,9 +122,15 @@ namespace Charm
 
         struct Rigidbody2DComponent
         {
-            BodyType type = BodyType::Static;
+            PhysicsBodyType type = PhysicsBodyType::Static;
             bool hasFixedRotation = false;
-            b2BodyId runtimeBody;
+            float gravityScale = 1.f;
+            float linearDamping = 0.f;
+            float angularDamping = 0.f;
+            glm::vec2 linearVelocity;
+            float angularVelocity = 0.f;
+            // b2BodyId runtimeBody;
+            PhysicsBodyID runtimeBody;
 
             Rigidbody2DComponent() = default;
             Rigidbody2DComponent(const Rigidbody2DComponent&) = default;
@@ -137,7 +143,8 @@ namespace Charm
             float density = 1.f;
             float friction = 0.5f;
             float restitution = 0.f;
-            b2ShapeId runtimeShape;
+            // b2ShapeId runtimeShape;
+            PhysicsShapeID runtimeShape;
 
             BoxCollider2DComponent() = default;
             BoxCollider2DComponent(const BoxCollider2DComponent&) = default;

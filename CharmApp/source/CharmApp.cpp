@@ -2,6 +2,7 @@
 #include "Panels/AssetRegistryPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/DebugStatsPanel.h"
+#include "Panels/InspectorPanel.h"
 #include "Panels/SceneHeirarchyPanel.h"
 #include "Panels/SceneViewport.h"
 #include "Panels/ToolbarPanel.h"
@@ -33,12 +34,6 @@ namespace CharmApp
         state.editorScene = Scenes::Create();
         state.runtimeScene = Scenes::Create();
         state.activeScene = &state.editorScene;
-
-        Entity mainCamera = Scenes::CreateEntity(state.editorScene, "Main Camera");
-        auto& cameraComponent = mainCamera.AddComponent<Camera2DComponent>();
-        cameraComponent.camera.offset.x = (float)config.virtualWidth / (float)Application::GetPixelsPerUnit() / 2.f;
-        cameraComponent.camera.offset.y = (float)config.virtualHeight / (float)Application::GetPixelsPerUnit() / 2.f;
-        cameraComponent.isPrimary = true;
 
         state.project = ProjectManager::Load("SandboxProject/Sandbox.chprj");
         if (!state.project.startScenePath.empty())
@@ -75,7 +70,7 @@ namespace CharmApp
             ScriptManager::ReloadModule();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_N))
-            OnSceneNew();
+            OnSceneNew(true);
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && !Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
             OnSceneSave();
@@ -141,6 +136,7 @@ namespace CharmApp
         AssetRegistryPanel::Display();
         ContentBrowserPanel::Display();
         SceneHeirarchyPanel::Display();
+        InspectorPanel::Display();
         SceneViewportPanel::Display(state.framebuffer.colorAttachments[0]);
         DebugStatsPanel::Display();
         ToolbarPanel::Display();
@@ -157,31 +153,62 @@ namespace CharmApp
 
     void OnScenePlay()
     {
+        Entity prev = SceneHeirarchyPanel::GetSelectedEntity();
+
         state.sceneState = SceneState::Runtime;
         state.runtimeScene = Scenes::Copy(state.editorScene);
         state.activeScene = &state.runtimeScene;
         Scenes::OnRuntimeStart(*state.activeScene);
         SceneHeirarchyPanel::SetContext(*state.activeScene);
+
+        if (prev)
+        {
+            auto& prevInternal = prev.GetComponent<InternalComponent>();
+            SceneHeirarchyPanel::SetSelectedEntity(Entities::FindWithTag(prevInternal.tag.c_str(), state.activeScene));
+        }
     }
 
     void OnSceneStop()
     {
+        Entity prev = SceneHeirarchyPanel::GetSelectedEntity();
+        const char* prevTag = "";
+
+        if (prev)
+        {
+            auto& prevInternal = prev.GetComponent<InternalComponent>();
+            prevTag = prevInternal.tag.c_str();
+        }
+
         Scenes::OnRuntimeStop(*state.activeScene);
         SceneHeirarchyPanel::SetContext(state.editorScene);
         state.sceneState = SceneState::Editor;
         state.activeScene = &state.editorScene;
+
+        if (prev)
+            SceneHeirarchyPanel::SetSelectedEntity(Entities::FindWithTag(prevTag, state.activeScene));
+
         state.runtimeScene = Scenes::Create();
     }
 
-    void OnSceneNew()
+    void OnSceneNew(bool shouldCreateMainCamera)
     {
         if (state.sceneState != SceneState::Editor)
             return;
 
         SceneHeirarchyPanel::SetSelectedEntity((Entity){});
         AssetManager::Clean();
-
+        ScriptManager::ClearBindings();
         Scenes::ClearRegistry(state.editorScene);
+
+        if (shouldCreateMainCamera)
+        {
+            auto& config = Application::GetConfig();
+            Entity mainCamera = Scenes::CreateEntity(state.editorScene, "Main Camera");
+            auto& cameraComponent = mainCamera.AddComponent<Camera2DComponent>();
+            cameraComponent.camera.offset.x = (float)config.virtualWidth / (float)Application::GetPixelsPerUnit() / 2.f;
+            cameraComponent.camera.offset.y = (float)config.virtualHeight / (float)Application::GetPixelsPerUnit() / 2.f;
+            cameraComponent.isPrimary = true;
+        }
     }
 
     void OnSceneOpen()
@@ -235,7 +262,7 @@ namespace CharmApp
 
     void OpenScene(const char* path)
     {
-        OnSceneNew();
+        OnSceneNew(false);
 
         Scene newScene = Scenes::Create();
         SceneSerializer::SetContext(newScene);

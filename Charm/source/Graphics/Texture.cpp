@@ -1,5 +1,6 @@
 #include "Graphics/Texture.h"
 #include "Core/Log.h"
+#include "Core/Utils.h"
 
 #include <glad/glad.h>
 #include <stb_image.h>
@@ -15,8 +16,8 @@ namespace Charm
                 Texture texture;
 
                 stbi_set_flip_vertically_on_load(true);
-                u8* data = stbi_load(path, (s32*)&texture.width, (s32*)&texture.height, (s32*)&texture.channelCount, 0);
-                if (data == NULL)
+                texture.data = stbi_load(path, (s32*)&texture.width, (s32*)&texture.height, (s32*)&texture.channelCount, 0);
+                if (texture.data == NULL)
                 {
                     WARN("Failed to load texture \"%s\"", path, texture.id);
                     texture.width = 64;
@@ -41,15 +42,7 @@ namespace Charm
                 }
 
                 glGenTextures(1, &texture.id);
-                glBindTexture(GL_TEXTURE_2D, texture.id);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
-                             texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, data);
-
-                stbi_image_free(data);
+                Invalidate(texture);
 
                 INFO("Texture \"%s\" was loaded successfully with an ID of %d", path, texture.id);
                 return texture;
@@ -134,12 +127,27 @@ namespace Charm
                 {
                     INFO("Texture with an ID of %d is unloading...", texture.id);
                     glDeleteTextures(1, &texture.id);
+
+                    if (texture.data != NULL)
+                        stbi_image_free(texture.data);
                 }
             }
 
             void Bind(const Texture& texture, u8 slot)
             {
                 glBindTextureUnit(slot, texture.id);
+            }
+
+            void Invalidate(Texture& texture)
+            {
+                u32 glFilter = Utils::TextureFilterToGL(texture.filter);
+                glBindTexture(GL_TEXTURE_2D, texture.id);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glFilter);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glFilter);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
+                             texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, texture.data);
             }
         }
     }

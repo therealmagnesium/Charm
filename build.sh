@@ -28,6 +28,7 @@ CleanProject () {
     rm -rf CharmApp/SandboxProject/assets/scripts/binaries
     rm -rf CharmApp/SandboxProject/assets/scripts/intermediates
     rm CharmApp/SandboxProject/Makefile
+    rm CharmApp/SandboxProject/*.make
 }
 
 BuildProject () {

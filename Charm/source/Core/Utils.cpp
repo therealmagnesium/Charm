@@ -1,11 +1,15 @@
 #include "Core/Utils.h"
 #include "Core/Application.h"
 #include "Core/Asset.h"
+
+#include "ECS/PhysicsWorld.h"
+
 #include "Graphics/Window.h"
 
 #include <string>
 #include <filesystem>
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -14,16 +18,15 @@
 
 using namespace Charm::Core;
 using namespace Charm::Graphics;
+using namespace Charm::ECS;
 
 namespace Charm
 {
     namespace Utils
     {
-        const char* BoolToCString(bool value)
-        {
-            const char* x = value ? "true" : "false";
-            return x;
-        }
+        const char* BoolToCString(bool value) { return (value) ? "true" : "false"; }
+        u32 TextureFilterToGL(Graphics::TextureFilter filter) { return (filter == TextureFilter::Linear) ? GL_LINEAR : GL_NEAREST; }
+        std::string TextureFilterToString(Graphics::TextureFilter filter) { return (filter == TextureFilter::Linear) ? "Linear" : "Nearest"; }
 
         bool IsDepthFormat(TextureFormat format)
         {
@@ -71,30 +74,30 @@ namespace Charm
             return type;
         }
 
-        BodyType StringToBodyType(const std::string& str)
+        PhysicsBodyType StringToBodyType(const std::string& str)
         {
-            BodyType type = BodyType::Static;
+            PhysicsBodyType type = PhysicsBodyType::Static;
 
             if (str == "Dynamic")
-                type = BodyType::Dynamic;
+                type = PhysicsBodyType::Dynamic;
 
             if (str == "Kinematic")
-                type = BodyType::Kinematic;
+                type = PhysicsBodyType::Kinematic;
 
             return type;
         }
 
-        std::string BodyTypeToString(BodyType type)
+        std::string BodyTypeToString(PhysicsBodyType type)
         {
             switch (type)
             {
-                case BodyType::Static:
+                case PhysicsBodyType::Static:
                     return "Static";
 
-                case BodyType::Dynamic:
+                case PhysicsBodyType::Dynamic:
                     return "Dynamic";
 
-                case BodyType::Kinematic:
+                case PhysicsBodyType::Kinematic:
                     return "Kinematic";
 
                 default:
@@ -102,17 +105,17 @@ namespace Charm
             }
         }
 
-        u32 BodyTypeToB2BodyType(BodyType type)
+        u32 BodyTypeToB2BodyType(PhysicsBodyType type)
         {
             switch (type)
             {
-                case BodyType::Static:
+                case PhysicsBodyType::Static:
                     return b2_staticBody;
 
-                case BodyType::Dynamic:
+                case PhysicsBodyType::Dynamic:
                     return b2_dynamicBody;
 
-                case BodyType::Kinematic:
+                case PhysicsBodyType::Kinematic:
                     return b2_kinematicBody;
 
                 default:
@@ -258,5 +261,10 @@ namespace Charm
             const char* modes[9] = {"Center", "Left", "Right", "Bottom Left", "Bottom Middle", "Bottom Right", "Top Left", "Top Middle", "Top Right"};
             return modes[(u8)mode];
         }
+
+        ECS::PhysicsBodyID B2BodyToPhysicsBody(b2BodyId& body) { return *(PhysicsBodyID*)&body; }
+        ECS::PhysicsShapeID B2ShapeToPhysicsShape(b2ShapeId& shape) { return *(PhysicsShapeID*)&shape; }
+        ECS::PhysicsWorldID B2WorldToPhysicsWorldID(b2WorldId& world) { return *(PhysicsWorldID*)&world; }
+        ECS::PhysicsWorld B2WorldDefToPhysicsWorld(b2WorldDef& worldDef) { return *(PhysicsWorld*)&worldDef; }
     }
 }

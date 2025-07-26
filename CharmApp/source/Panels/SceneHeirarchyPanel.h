@@ -10,7 +10,6 @@ namespace CharmApp
     {
         Scene* context = NULL;
         Entity selectionContext;
-        u32 textureSelectionIndex = 0;
     };
 
     namespace SceneHeirarchyPanel

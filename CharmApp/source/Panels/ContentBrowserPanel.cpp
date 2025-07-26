@@ -1,4 +1,6 @@
 #include "ContentBrowserPanel.h"
+#include "SceneHeirarchyPanel.h"
+#include "InspectorPanel.h"
 #include "../CharmApp.h"
 
 #include <imgui.h>
@@ -53,8 +55,14 @@ namespace CharmApp
             if (state.currentDirectory != ProjectManager::GetAssetPath(CharmApp::GetProject()))
             {
                 if (ImGui::Button("Back"))
+                {
                     state.currentDirectory = state.currentDirectory.parent_path();
+                    state.selectedFilePath = "";
+                }
             }
+
+            if (SceneHeirarchyPanel::GetSelectedEntity())
+                state.selectedFilePath = "";
 
             float cellSize = state.thumbnailSize + state.padding;
             float panelWidth = ImGui::GetContentRegionAvail().x;
@@ -84,7 +92,17 @@ namespace CharmApp
                                        ImVec2(0.f, 1.f), ImVec2(1.f, 0.f)))
                 {
                     if (entry.is_directory())
+                    {
                         state.currentDirectory /= path.filename();
+                        state.selectedFilePath = "";
+                    }
+                    else
+                    {
+                        state.selectedFilePath = path;
+                        AssetHandle handle = AssetManager::FindAssetHandle(path.string());
+                        SceneHeirarchyPanel::SetSelectedEntity((Entity){});
+                        InspectorPanel::SetSelectedAsset(handle);
+                    }
                 }
 
                 if (ImGui::BeginDragDropSource())
@@ -105,5 +123,7 @@ namespace CharmApp
 
             ImGui::End();
         }
+
+        std::filesystem::path& GetSelectedFilePath() { return state.selectedFilePath; }
     }
 }

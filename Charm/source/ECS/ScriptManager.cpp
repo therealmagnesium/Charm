@@ -45,6 +45,8 @@ namespace Charm
                 LoadModule(pathString.c_str());
             }
 
+            void ClearBindings() { state.bindings.clear(); }
+
             ScriptInitFunc GetScriptInitFunc(const std::string& name)
             {
                 auto it = state.bindings.find(name);

@@ -12,5 +12,5 @@ public:
     void OnUpdate() override;
 
 private:
-    float m_speed = 12.f;
+    float m_speed = 2.f;
 };

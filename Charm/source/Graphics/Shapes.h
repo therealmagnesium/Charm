@@ -5,13 +5,6 @@ namespace Charm
 {
     namespace Graphics
     {
-        enum class BodyType : u8
-        {
-            Static = 0,
-            Dynamic,
-            Kinematic,
-        };
-
         enum class OriginMode : u8
         {
             Center = 0,

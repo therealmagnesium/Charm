@@ -19,7 +19,6 @@ files({ "assets/scripts/**.h", "assets/scripts/**.cpp" })
 includedirs({
 	"assets/scripts",
 	"../../Charm/source",
-	"../../vendor/box2d/include",
 	"../../vendor/glm/",
 	"../../vendor/entt/",
 	--"vendor/charm/include",
@@ -40,7 +39,7 @@ filter("system:windows")
 defines({ "SANDBOX_PLATFORM_WINDOWS" })
 
 filter("system:linux")
-defines({ "SANDBOX_PLATFORM_LINUX", "SDL_STATIC_LIB" })
+defines({ "SANDBOX_PLATFORM_LINUX" })
 
 filter("configurations:Debug")
 defines({ "SANDBOX_DEBUG" })
