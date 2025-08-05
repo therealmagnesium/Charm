@@ -113,7 +113,7 @@ namespace Charm
             {
                 if (framebuffer.id != 0)
                 {
-                    INFO("Unloading framebuffer with an ID of %d...", framebuffer.id);
+                    INFO("Framebuffer with an ID of %d is unloading...", framebuffer.id);
 
                     for (Texture& attachment : framebuffer.colorAttachments)
                         Textures::Unload(attachment);

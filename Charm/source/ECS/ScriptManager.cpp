@@ -13,7 +13,7 @@ namespace Charm
             {
                 state.modulePath = path;
                 state.moduleHandle = dlopen(path, RTLD_NOW);
-                ASSERT_ERROR(state.moduleHandle != NULL, "ScriptManager::LoadModule - Failed to load module \"%s\"!", path);
+                ASSERT_ERROR(state.moduleHandle != NULL, "ScriptManager::LoadModule - Failed to load module \"%s\"!", dlerror());
 
                 state.RegisterScripts = (ScriptRegisterFunc)dlsym(state.moduleHandle, "RegisterScripts");
                 ASSERT_ERROR(state.RegisterScripts != NULL, "ScriptManager::LoadModule - Failed to find function \"RegisterScripts\"!");
@@ -25,7 +25,7 @@ namespace Charm
 
             void UnloadModule()
             {
-                INFO("Script Manager is unloading module %s", state.modulePath.c_str());
+                INFO("Script Manager is unloading module %s...", state.modulePath.c_str());
 
                 if (state.moduleHandle != NULL)
                 {
@@ -35,7 +35,6 @@ namespace Charm
                 }
 
                 state.bindings.clear();
-                INFO("Script Manager finished unloading module %s", state.modulePath.c_str());
             }
 
             void ReloadModule()

@@ -66,6 +66,9 @@ namespace Charm
                 metadata.path = path;
                 metadata.type = type;
 
+                if (metadata.type == AssetType::Invalid)
+                    return;
+
                 Asset* asset = (IsAssetRegistered(metadata.path) && IsAssetLoaded(handle)) ? assets->loadedAssets[handle] : LoadAsset(handle, metadata);
                 if (asset != NULL)
                 {

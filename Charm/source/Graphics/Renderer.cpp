@@ -72,7 +72,7 @@ namespace Charm
             void CleanUpBatchRendering();
             void CheckForNewBatch(BatchMode mode);
             float CheckBatchForTextureIndex(Texture& texture);
-            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, u32 textureIndex, const glm::vec2& textureSize, const glm::vec3& color);
+            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, u32 textureIndex, const glm::vec2& textureSize, const glm::vec4& color);
             void AddCircleToBatch(const glm::mat4& transform, const glm::vec3& color, float thickness, float fade);
             void AddEntityToBatch(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);
             void AddEntityToBatch(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
@@ -278,7 +278,7 @@ namespace Charm
                 }
             }
 
-            void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color)
+            void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
             {
                 Rectangle rectangle;
                 rectangle.x = position.x;
@@ -289,12 +289,12 @@ namespace Charm
                 DrawRectanglePro(rectangle, glm::vec2(0.f), 0.f, color);
             }
 
-            void DrawRectangleRec(const Rectangle& rectangle, const glm::vec3& color)
+            void DrawRectangleRec(const Rectangle& rectangle, const glm::vec4& color)
             {
                 DrawRectanglePro(rectangle, glm::vec2(0.f), 0.f, color);
             }
 
-            void DrawRectanglePro(const Rectangle& rectangle, const glm::vec2& origin, float rotation, const glm::vec3& color)
+            void DrawRectanglePro(const Rectangle& rectangle, const glm::vec2& origin, float rotation, const glm::vec4& color)
             {
                 CheckForNewBatch(BatchMode::Quads);
 
@@ -310,7 +310,7 @@ namespace Charm
                 AddQuadToBatch(transform, source, textureIndex, glm::vec2(1.f), color);
             }
 
-            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec3& tint)
+            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec4& tint)
             {
                 Rectangle source;
                 source.width = texture.width;
@@ -325,7 +325,7 @@ namespace Charm
                 DrawTexturePro(texture, source, dest, glm::vec2(0.f), 0.f, tint);
             }
 
-            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, const glm::vec2& scale, const glm::vec3& tint)
+            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, const glm::vec2& scale, const glm::vec4& tint)
             {
                 Rectangle source;
                 source.width = texture.width;
@@ -353,7 +353,7 @@ namespace Charm
                 DrawTexturePro(texture, source, dest, origin, rotation, tint);
             }
 
-            void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec3& tint)
+            void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec4& tint)
             {
                 Rectangle dest;
                 dest.x = position.x;
@@ -364,7 +364,7 @@ namespace Charm
                 DrawTexturePro(texture, source, dest, glm::vec2(0.f), 0.f, tint);
             }
 
-            void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec3& tint)
+            void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec4& tint)
             {
                 CheckForNewBatch(BatchMode::Quads);
 
@@ -480,7 +480,7 @@ namespace Charm
                 glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, position));
 
                 glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, color));
+                glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, color));
 
                 glEnableVertexAttribArray(2);
                 glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texCoord));
@@ -550,10 +550,10 @@ namespace Charm
                 batchData.whiteTexture = Textures::LoadDefaultWhite();
                 batchData.textureSlots[0] = batchData.whiteTexture;
 
-                batchData.quadVertexPositions[0] = glm::vec4(0.f, 0.f, 0.f, 1.f);
-                batchData.quadVertexPositions[1] = glm::vec4(1.f, 0.f, 0.f, 1.f);
-                batchData.quadVertexPositions[2] = glm::vec4(1.f, 1.f, 0.f, 1.f);
-                batchData.quadVertexPositions[3] = glm::vec4(0.f, 1.f, 0.f, 1.f);
+                batchData.quadVertexPositions[0] = glm::vec4(0.f, 1.f, 0.f, 1.f);
+                batchData.quadVertexPositions[1] = glm::vec4(1.f, 1.f, 0.f, 1.f);
+                batchData.quadVertexPositions[2] = glm::vec4(1.f, 0.f, 0.f, 1.f);
+                batchData.quadVertexPositions[3] = glm::vec4(0.f, 0.f, 0.f, 1.f);
 
                 batchData.circleVertexPositions[0] = glm::vec4(-0.5f, -0.5f, 0.f, 1.f);
                 batchData.circleVertexPositions[1] = glm::vec4(0.5f, -0.5f, 0.f, 1.f);
@@ -652,7 +652,7 @@ namespace Charm
                 return textureIndex;
             }
 
-            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, u32 textureIndex, const glm::vec2& textureSize, const glm::vec3& color)
+            void AddQuadToBatch(const glm::mat4& transform, Rectangle& source, u32 textureIndex, const glm::vec2& textureSize, const glm::vec4& color)
             {
                 glm::vec2 textureCoords[4];
                 textureCoords[0] = glm::vec2(source.x / textureSize.x, source.y / textureSize.y);

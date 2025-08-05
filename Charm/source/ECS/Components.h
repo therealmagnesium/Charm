@@ -66,7 +66,7 @@ namespace Charm
             s32 sortingLayer = 0;
             Rectangle crop;
             glm::vec2 origin;
-            glm::vec3 tint = glm::vec3(1.f);
+            glm::vec4 tint = glm::vec4(1.f);
             OriginMode originMode = OriginMode::Center;
 
             SpriteRendererComponent() = default;
@@ -89,6 +89,7 @@ namespace Charm
 
         struct CircleRendererComponent
         {
+            s32 sortingLayer = 0;
             float radius = 1.f;
             float thickness = 1.f;
             float fade = 0.05f;
@@ -129,21 +130,22 @@ namespace Charm
             float angularDamping = 0.f;
             glm::vec2 linearVelocity;
             float angularVelocity = 0.f;
-            // b2BodyId runtimeBody;
             PhysicsBodyID runtimeBody;
 
             Rigidbody2DComponent() = default;
             Rigidbody2DComponent(const Rigidbody2DComponent&) = default;
+
+            void AddForce(const glm::vec2& force, ForceMode mode);
         };
 
         struct BoxCollider2DComponent
         {
+            bool isTrigger = false;
             glm::vec2 offset;
             glm::vec2 size = glm::vec2(0.5f, 0.5f);
             float density = 1.f;
             float friction = 0.5f;
             float restitution = 0.f;
-            // b2ShapeId runtimeShape;
             PhysicsShapeID runtimeShape;
 
             BoxCollider2DComponent() = default;

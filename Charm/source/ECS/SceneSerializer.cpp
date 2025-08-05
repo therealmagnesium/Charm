@@ -63,6 +63,34 @@ namespace YAML
     };
 
     template <>
+    struct convert<glm::vec4>
+    {
+        static Node encode(const glm::vec4& v)
+        {
+            Node node;
+            node.push_back(v.r);
+            node.push_back(v.g);
+            node.push_back(v.b);
+            node.push_back(v.a);
+
+            return node;
+        }
+
+        static bool decode(const Node& node, glm::vec4& v)
+        {
+            if (!node.IsSequence() || node.size() != 4)
+                return false;
+
+            v.r = node[0].as<float>();
+            v.g = node[1].as<float>();
+            v.b = node[2].as<float>();
+            v.a = node[3].as<float>();
+
+            return true;
+        }
+    };
+
+    template <>
     struct convert<Rectangle>
     {
         static Node encode(const Rectangle& r)
@@ -159,6 +187,20 @@ namespace Charm
                     out << YAML::Key << "Asset" << YAML::Value << handle;
                     out << YAML::Key << "Path" << YAML::Value << metadata.path;
                     out << YAML::Key << "Type" << YAML::Value << Utils::AssetTypeToString(metadata.type);
+
+                    Asset* asset = AssetManager::GetAsset(handle);
+                    switch (asset->GetType())
+                    {
+                        case AssetType::Texture:
+                        {
+                            Texture* texture = (Texture*)asset;
+                            out << YAML::Key << "Texture Filter" << YAML::Value << Utils::TextureFilterToString(texture->filter);
+                            break;
+                        }
+
+                        default:
+                            break;
+                    }
                     out << YAML::EndMap;
                 }
                 out << YAML::EndSeq;
@@ -211,6 +253,14 @@ namespace Charm
                         AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
 
                         AssetManager::Import(path.c_str(), type, handle);
+
+                        YAML::Node textureFilterNode = asset["Texture Filter"];
+                        if (textureFilterNode)
+                        {
+                            Texture* texture = AssetManager::GetAsset<Texture>(handle);
+                            texture->filter = Utils::StringToTextureFilter(textureFilterNode.as<std::string>());
+                            Textures::Invalidate(*texture);
+                        }
                     }
                 }
             }
@@ -293,6 +343,7 @@ namespace Charm
                     out << YAML::Key << "Box Collider2D Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Offset" << YAML::Value << bc2d.offset;
                     out << YAML::Key << "Size" << YAML::Value << bc2d.size;
+                    out << YAML::Key << "Is Trigger?" << YAML::Value << bc2d.isTrigger;
                     out << YAML::Key << "Density" << YAML::Value << bc2d.density;
                     out << YAML::Key << "Friction" << YAML::Value << bc2d.friction;
                     out << YAML::Key << "Restitution" << YAML::Value << bc2d.restitution;
@@ -342,7 +393,7 @@ namespace Charm
                     spriteRenderer.origin = spriteRendererNode["Origin"].as<glm::vec2>();
                     spriteRenderer.originMode = Utils::StringToOriginMode(spriteRendererNode["Origin Mode"].as<std::string>());
                     spriteRenderer.crop = spriteRendererNode["Crop"].as<Rectangle>();
-                    spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec3>();
+                    spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec4>();
                 }
 
                 auto camera2DNode = node["Camera2D Component"];
@@ -375,6 +426,7 @@ namespace Charm
                     auto& bc2D = entity.AddComponent<BoxCollider2DComponent>();
                     bc2D.offset = bc2DNode["Offset"].as<glm::vec2>();
                     bc2D.size = bc2DNode["Size"].as<glm::vec2>();
+                    bc2D.isTrigger = bc2DNode["Is Trigger?"].as<bool>();
                     bc2D.density = bc2DNode["Density"].as<float>();
                     bc2D.friction = bc2DNode["Friction"].as<float>();
                     bc2D.restitution = bc2DNode["Restitution"].as<float>();

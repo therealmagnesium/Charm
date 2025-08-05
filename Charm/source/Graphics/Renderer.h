@@ -24,7 +24,7 @@ namespace Charm
         struct QuadVertex
         {
             glm::vec3 position;
-            glm::vec3 color;
+            glm::vec4 color;
             glm::vec2 texCoord;
             u32 texIndex = 0;
             s32 entityID = -1;
@@ -76,14 +76,14 @@ namespace Charm
 
             void Flush(BatchMode mode);
 
-            void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color);
-            void DrawRectangleRec(const Rectangle& rectangle, const glm::vec3& color);
-            void DrawRectanglePro(const Rectangle& rectangle, const glm::vec2& origin, float rotation, const glm::vec3& color);
+            void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
+            void DrawRectangleRec(const Rectangle& rectangle, const glm::vec4& color);
+            void DrawRectanglePro(const Rectangle& rectangle, const glm::vec2& origin, float rotation, const glm::vec4& color);
 
-            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec3& tint);
-            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, const glm::vec2& scale, const glm::vec3& tint);
-            void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec3& tint);
-            void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec3& tint);
+            void DrawTexture(Texture& texture, const glm::vec2& position, const glm::vec4& tint);
+            void DrawTextureEx(Texture& texture, const glm::vec2& position, float rotation, const glm::vec2& scale, const glm::vec4& tint);
+            void DrawTextureRec(Texture& texture, Rectangle& source, const glm::vec2& position, const glm::vec4& tint);
+            void DrawTexturePro(Texture& texture, Rectangle& source, Rectangle& dest, const glm::vec2& origin, float rotation, const glm::vec4& tint);
 
             void DrawCircle(const glm::vec2& center, float radius, const glm::vec3& color);
             void DrawCirclePro(const glm::vec2& center, float radius, float thickness, float fade, const glm::vec3& color);

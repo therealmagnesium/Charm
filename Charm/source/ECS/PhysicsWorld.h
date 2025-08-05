@@ -11,6 +11,12 @@ namespace Charm
         typedef void* EnqueueTaskCallback(TaskCallback* task, int itemCount, int minRange, void* taskContext, void* userContext);
         typedef void FinishTaskCallback(void* userTask, void* userContext);
 
+        enum class ForceMode : u8
+        {
+            Force = 0,
+            Impulse
+        };
+
         enum class PhysicsBodyType : u8
         {
             Static = 0,
@@ -36,6 +42,9 @@ namespace Charm
             int32_t index1;
             uint16_t world0;
             uint16_t generation;
+
+            inline bool operator==(const PhysicsShapeID& other) { return index1 == other.index1 && world0 == other.world0 && generation == other.generation; }
+            inline bool operator!=(const PhysicsShapeID& other) { return index1 != other.index1 || world0 != other.world0 || generation != other.generation; }
         };
 
         struct PhysicsWorld

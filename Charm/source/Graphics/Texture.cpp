@@ -15,7 +15,6 @@ namespace Charm
             {
                 Texture texture;
 
-                stbi_set_flip_vertically_on_load(true);
                 texture.data = stbi_load(path, (s32*)&texture.width, (s32*)&texture.height, (s32*)&texture.channelCount, 0);
                 if (texture.data == NULL)
                 {

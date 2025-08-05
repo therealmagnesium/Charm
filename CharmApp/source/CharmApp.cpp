@@ -36,12 +36,6 @@ namespace CharmApp
         state.activeScene = &state.editorScene;
 
         state.project = ProjectManager::Load("SandboxProject/Sandbox.chprj");
-        if (!state.project.startScenePath.empty())
-        {
-            std::filesystem::path scenePath = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath, state.project);
-            OpenScene(scenePath.c_str());
-        }
-        FileDialogs::SetDefaultPath(ProjectManager::GetAssetPath(state.project));
 
         SceneSerializer::SetContext(state.editorScene);
         SceneHeirarchyPanel::SetContext(state.editorScene);
@@ -50,6 +44,13 @@ namespace CharmApp
 
         const std::filesystem::path scriptModulePath = ProjectManager::GetAssetFileSystemPath("scripts/binaries/libCharmScriptModule.so", state.project);
         ScriptManager::LoadModule(scriptModulePath.c_str());
+
+        if (!state.project.startScenePath.empty())
+        {
+            std::filesystem::path scenePath = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath, state.project);
+            OpenScene(scenePath.c_str());
+        }
+        FileDialogs::SetDefaultPath(ProjectManager::GetAssetPath(state.project));
     }
 
     void OnUpdate()
@@ -273,6 +274,8 @@ namespace CharmApp
         state.editorScene = Scenes::Copy(newScene);
         Scenes::ClearRegistry(newScene);
         SceneSerializer::SetContext(state.editorScene);
+
+        ScriptManager::ReloadModule();
 
         INFO("Loaded scene %s", path);
     }

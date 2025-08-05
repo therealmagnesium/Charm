@@ -3,7 +3,7 @@
 struct VertexData
 {
     vec3 position;
-    vec3 color;
+    vec4 color;
     vec2 texCoord;
 };
 
@@ -18,9 +18,9 @@ uniform sampler2D textures[32];
 
 void main()
 {
-    vec3 result = texture(textures[v_texIndex], data.texCoord).xyz * data.color;
-    result = pow(result, vec3(1.f / 2.2f));
+    vec4 result = texture(textures[v_texIndex], data.texCoord) * data.color;
+    result = pow(result, vec4(1.f / 2.2f));
 
-    finalColor = vec4(result, 1.f);
+    finalColor = result;
     entityID = v_entityID;
 }

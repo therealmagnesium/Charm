@@ -26,7 +26,8 @@ namespace Charm
     {
         const char* BoolToCString(bool value) { return (value) ? "true" : "false"; }
         u32 TextureFilterToGL(Graphics::TextureFilter filter) { return (filter == TextureFilter::Linear) ? GL_LINEAR : GL_NEAREST; }
-        std::string TextureFilterToString(Graphics::TextureFilter filter) { return (filter == TextureFilter::Linear) ? "Linear" : "Nearest"; }
+        std::string TextureFilterToString(Graphics::TextureFilter filter) { return filter == TextureFilter::Linear ? "Linear" : "Nearest"; }
+        TextureFilter StringToTextureFilter(const std::string& str) { return str == "Linear" ? TextureFilter::Linear : TextureFilter::Nearest; }
 
         bool IsDepthFormat(TextureFormat format)
         {
@@ -63,15 +64,22 @@ namespace Charm
 
         AssetType StringToAssetType(const std::string& str)
         {
-            AssetType type = AssetType::Invalid;
+            std::unordered_map<std::string, AssetType> list;
+            list["Texture"] = AssetType::Texture;
+            list["Shader"] = AssetType::Shader;
 
-            if (str == "Texture")
-                type = AssetType::Texture;
+            return list.find(str) != list.end() ? list[str] : AssetType::Invalid;
+        }
 
-            if (str == "Shader")
-                type = AssetType::Shader;
+        AssetType ExtensionToAssetType(const std::string& extension)
+        {
+            std::unordered_map<std::string, AssetType> list;
+            list[".png"] = AssetType::Texture;
+            list[".jpg"] = AssetType::Texture;
+            list[".jpeg"] = AssetType::Texture;
+            list[".glsl"] = AssetType::Shader;
 
-            return type;
+            return list.find(extension) != list.end() ? list[extension] : AssetType::Invalid;
         }
 
         PhysicsBodyType StringToBodyType(const std::string& str)

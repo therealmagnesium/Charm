@@ -22,6 +22,9 @@ namespace Charm
             Scene* context = NULL;
             entt::entity handle = entt::null;
 
+            Entity() = default;
+            Entity(const Entity& other) = default;
+
             template <typename T>
             inline bool HasComponent()
             {
@@ -66,12 +69,14 @@ namespace Charm
             virtual void OnCreate() {};
             virtual void OnDestroy() {};
             virtual void OnUpdate() {};
+            virtual void OnCollisionEnter(Entity& other) {}
+            virtual void OnCollisionExit(Entity& other) {}
 
             inline Entity FindEntityWithTag(const char* tag) { return Entities::FindWithTag(tag, m_entity.context); }
             inline std::vector<Entity> FindEntitiesWithTag(const char* tag) { return Entities::FindEntitiesWithTag(tag, m_entity.context); }
 
             template <typename T>
-            inline T& HasComponent()
+            inline bool HasComponent()
             {
                 return m_entity.HasComponent<T>();
             }
@@ -108,4 +113,18 @@ namespace Charm
         };
 
     }
+}
+
+namespace std
+{
+    template <>
+    struct hash<Charm::ECS::Entity>
+    {
+        size_t operator()(const Charm::ECS::Entity& entity) const
+        {
+            size_t h1 = hash<u32>()((u32)entity.handle);
+            size_t h2 = hash<Charm::ECS::Scene*>()(entity.context);
+            return h1 ^ (h2 << 1); // Combine the hash values
+        }
+    };
 }

@@ -21,10 +21,12 @@ namespace CharmApp
     namespace InspectorPanel
     {
         void DrawComponents(Entity& entity);
-        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth = 80.f);
-        void DrawVec2Control(const char* label, glm::vec2& v, float speed, float resetValue = 0.f, float columnWidth = 70.f);
-        void DrawVec3Control(const char* label, glm::vec3& v, float speed, float resetValue = 0.f, float columnWidth = 70.f);
-        void DrawColorControl(const char* label, glm::vec3& v, float columnWidth = 50.f);
+        void DrawBoolControl(const char* label, bool* b, float columnWidth);
+        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth);
+        void DrawVec2Control(const char* label, glm::vec2& v, float speed, float resetValue, float columnWidth);
+        void DrawVec3Control(const char* label, glm::vec3& v, float speed, float resetValue, float columnWidth);
+        void DrawColorControl(const char* label, glm::vec3& v, float columnWidth);
+        void DrawColorControl(const char* label, glm::vec4& v, float columnWidth);
 
         template <typename T, typename UIFunction>
         void DrawComponent(const char* name, Entity entity, UIFunction callback);
@@ -83,7 +85,10 @@ namespace CharmApp
             if (!isAssetValid && !selectedEntity && !stringPath.empty())
             {
                 if (ImGui::Button("Add To Asset Registry"))
-                    state.selectedAssetHandle = AssetManager::Import(stringPath.c_str(), AssetType::Texture);
+                {
+                    const std::string extension = path.extension().string();
+                    state.selectedAssetHandle = AssetManager::Import(stringPath.c_str(), Utils::ExtensionToAssetType(extension));
+                }
             }
 
             ImGui::End();
@@ -169,11 +174,28 @@ namespace CharmApp
             });
 
             DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
-                const float columnWidth = 90.f;
+                const float columnWidth = 110.f;
                 DrawFloatControl("Radius", &component.radius, 0.f, 100.f, columnWidth);
                 DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, columnWidth);
                 DrawFloatControl("Fade", &component.fade, 0.f, 1.f, columnWidth);
                 DrawColorControl("Color", component.color, columnWidth);
+
+                ImGui::PushID("Sorting Layer");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, columnWidth);
+                ImGui::Text("Sorting Layer");
+                ImGui::NextColumn();
+                ImGui::SetNextItemWidth(-1.f);
+                if (ImGui::InputInt("##Sorting Layer", &component.sortingLayer))
+                {
+                    if (component.sortingLayer < 0)
+                        component.sortingLayer = 0;
+
+                    if (component.sortingLayer >= MAX_SORTING_LAYERS)
+                        component.sortingLayer = MAX_SORTING_LAYERS - 1;
+                }
+                ImGui::Columns(1);
+                ImGui::PopID();
             });
 
             DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
@@ -288,16 +310,7 @@ namespace CharmApp
                 const float columnWidth = 100.f;
                 DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, columnWidth);
                 DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, columnWidth);
-
-                ImGui::PushID("Is Primary?");
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Is Primary?");
-                ImGui::NextColumn();
-
-                ImGui::Checkbox("##", &component.isPrimary);
-                ImGui::Columns(1);
-                ImGui::PopID();
+                DrawBoolControl("Is Primary?", &component.isPrimary, columnWidth);
             });
 
             DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](Rigidbody2DComponent& component) {
@@ -347,6 +360,7 @@ namespace CharmApp
                 const float columnWidth = 100.f;
                 DrawVec2Control("Offset", component.offset, 0.1f, 0.f, columnWidth);
                 DrawVec2Control("Size", component.size, 0.1f, 0.f, columnWidth);
+                DrawBoolControl("Is Trigger?", &component.isTrigger, columnWidth);
                 DrawFloatControl("Density", &component.density, 0.f, 0.f, columnWidth);
                 DrawFloatControl("Friction", &component.friction, 0.f, 1.f, columnWidth);
                 DrawFloatControl("Restitution", &component.restitution, 0.f, 1.f, columnWidth);
@@ -425,10 +439,22 @@ namespace CharmApp
             }
         }
 
+        void DrawBoolControl(const char* label, bool* b, float columnWidth)
+        {
+            ImGui::PushID(label);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            ImGui::Checkbox("##", b);
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
         void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth)
         {
             ImGui::PushID(label);
-
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, columnWidth);
             ImGui::Text("%s", label);
@@ -542,6 +568,22 @@ namespace CharmApp
         }
 
         void DrawColorControl(const char* label, glm::vec3& v, float columnWidth)
+        {
+            ImGui::PushID(label);
+
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::ColorEdit3("##", glm::value_ptr(v));
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        void DrawColorControl(const char* label, glm::vec4& v, float columnWidth)
         {
             ImGui::PushID(label);
 

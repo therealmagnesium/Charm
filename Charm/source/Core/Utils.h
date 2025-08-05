@@ -19,9 +19,11 @@ namespace Charm
         bool IsDepthFormat(Graphics::TextureFormat format);
         u32 TextureFilterToGL(Graphics::TextureFilter filter);
         std::string TextureFilterToString(Graphics::TextureFilter filter);
+        Graphics::TextureFilter StringToTextureFilter(const std::string& str);
         std::string GetFileName(const char* path, bool hasExtension = false);
         std::string AssetTypeToString(Core::AssetType type);
         Core::AssetType StringToAssetType(const std::string& str);
+        Core::AssetType ExtensionToAssetType(const std::string& extension);
         ECS::PhysicsBodyType StringToBodyType(const std::string& str);
         std::string BodyTypeToString(ECS::PhysicsBodyType type);
         u32 BodyTypeToB2BodyType(ECS::PhysicsBodyType type);

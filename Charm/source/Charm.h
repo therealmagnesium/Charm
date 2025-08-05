@@ -14,6 +14,7 @@
 
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
+#include "ECS/PhysicsWorld.h"
 #include "ECS/Scene.h"
 #include "ECS/SceneSerializer.h"
 #include "ECS/ScriptManager.h"

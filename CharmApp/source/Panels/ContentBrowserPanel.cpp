@@ -89,7 +89,7 @@ namespace CharmApp
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(V3_OPEN(buttonHovered), 0.5f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(V3_OPEN(buttonActive), 0.5f));
                 if (ImGui::ImageButton("##Icon", icon, buttonSize,
-                                       ImVec2(0.f, 1.f), ImVec2(1.f, 0.f)))
+                                       ImVec2(0.f, 0.f), ImVec2(1.f, 1.f)))
                 {
                     if (entry.is_directory())
                     {

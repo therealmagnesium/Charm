@@ -28,8 +28,6 @@ namespace Charm
             Camera2D editorCamera2D;
             Camera3D editorCamera3D;
             entt::registry registry;
-            // b2WorldDef physicsWorld;
-            // b2WorldId physicsWorldID;
             PhysicsWorld physicsWorld;
             PhysicsWorldID physicsWorldID;
 
