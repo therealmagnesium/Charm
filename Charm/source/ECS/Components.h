@@ -25,6 +25,7 @@ namespace Charm
             UUID id = 0;
             bool isActive = false;
             std::string tag = "Entity";
+            Entity parent;
 
             InternalComponent()
             {

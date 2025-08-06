@@ -11,6 +11,9 @@ void Bird::OnUpdate()
 
     if (Input::IsKeyPressed(KEY_SPACE) && !_isDead)
         Jump();
+
+    if (_isDead && !_testEntity)
+        _testEntity = Instantiate("Test Entity");
 }
 
 void Bird::OnCollisionEnter(Entity& other)

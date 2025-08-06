@@ -1,0 +1,48 @@
+Scene: Untitled
+Entities:
+  - Entity: 11654950303771714840
+    Internal Component:
+      Tag: B
+      Is Active?: true
+    Transform Component:
+      Position: [3, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [3, 3, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 0
+      Origin: [1.5, 1.5]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.46332043, 0.08586633, 0.08586633, 1]
+  - Entity: 10279393235643528084
+    Internal Component:
+      Tag: A
+      Is Active?: true
+    Transform Component:
+      Position: [-3, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [3, 3, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 0
+      Origin: [1.5, 1.5]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.10136999, 0.32818532, 0.11012732, 1]
+  - Entity: 5631947805895046950
+    Internal Component:
+      Tag: Main Camera
+      Is Active?: true
+    Transform Component:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Camera2D Component:
+      Is Primary?: true
+      Target: [0, 0]
+      Offset: [10, 5.625]
+      Rotation: 0
+      Zoom: 1
+Asset Registry:
+  []

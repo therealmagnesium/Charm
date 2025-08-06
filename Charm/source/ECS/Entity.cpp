@@ -29,9 +29,33 @@ namespace Charm
                 return (entities.size() >= 1) ? entities[0] : (Entity){};
             }
 
+            Entity FindWithUUID(UUID uuid, Scene* scene)
+            {
+                auto entities = scene->registry.view<InternalComponent>();
+                Entity match;
+
+                for (auto entityID : entities)
+                {
+                    Entity entity = Entities::Create(entityID, scene);
+                    auto& internal = entity.GetComponent<InternalComponent>();
+
+                    if (internal.id == uuid)
+                    {
+                        match = entity;
+                        break;
+                    }
+                }
+
+                if (!match)
+                    ERROR("Entities::FindWithUUID - Could not find entity with UUID %ld", uuid);
+
+                return match;
+            }
+
             std::vector<Entity> FindEntitiesWithTag(const char* tag, Scene* scene)
             {
                 std::vector<Entity> tagged;
+                tagged.reserve(scene->entityCount);
 
                 if (scene == NULL)
                 {

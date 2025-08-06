@@ -2,16 +2,17 @@
 
 void TopDownController::OnCreate()
 {
+    ASSERT_ERROR(HasComponent<Rigidbody2DComponent>(), "TopDownController::OnCreate - No Rigidbody2D attached!");
 }
 
 void TopDownController::OnUpdate()
 {
-    auto transform = TryGetComponent<TransformComponent>();
-    auto rb2D = TryGetComponent<Rigidbody2DComponent>();
+    auto& transform = GetComponent<TransformComponent>();
+    auto& body = GetComponent<Rigidbody2DComponent>();
 
-    if (rb2D == NULL)
-        return;
+    glm::vec2 movement;
+    movement.x = Input::GetAxis(InputAxis::Horizontal) * _speed;
+    movement.y = Input::GetAxis(InputAxis::Vertical) * _speed;
 
-    rb2D->linearVelocity.x = Input::GetInputAxis(InputAxis::Horizontal) * m_speed;
-    rb2D->linearVelocity.y = Input::GetInputAxis(InputAxis::Vertical) * m_speed;
+    body.AddForce(movement, ForceMode::Impulse);
 }

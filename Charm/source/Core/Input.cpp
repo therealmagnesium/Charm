@@ -37,7 +37,7 @@ namespace Charm
             bool IsKeyDown(u32 scancode) { return (state.shouldCapture) ? state.keyboard.keysHeld[scancode] : false; }
             bool IsKeyPressed(u32 scancode) { return (state.shouldCapture) ? state.keyboard.keysPressed[scancode] : false; }
 
-            float GetInputAxis(InputAxis axis)
+            float GetAxis(InputAxis axis)
             {
                 float value = 0.f;
                 switch (axis)
@@ -54,7 +54,7 @@ namespace Charm
                 return value;
             }
 
-            float GetInputAxisAlt(InputAxis axis)
+            float GetAxisAlt(InputAxis axis)
             {
                 float value = 0.f;
                 switch (axis)

@@ -14,6 +14,7 @@ namespace Charm
         {
             Entity Create(entt::entity handle, Scene* context);
             Entity FindWithTag(const char* tag, Scene* scene);
+            Entity FindWithUUID(UUID uuid, Scene* scene);
             std::vector<Entity> FindEntitiesWithTag(const char* tag, Scene* scene);
         }
 
@@ -72,6 +73,7 @@ namespace Charm
             virtual void OnCollisionEnter(Entity& other) {}
             virtual void OnCollisionExit(Entity& other) {}
 
+            inline Entity Instantiate(const char* tag) { return Scenes::CreateEntity(*m_entity.context, tag); }
             inline Entity FindEntityWithTag(const char* tag) { return Entities::FindWithTag(tag, m_entity.context); }
             inline std::vector<Entity> FindEntitiesWithTag(const char* tag) { return Entities::FindEntitiesWithTag(tag, m_entity.context); }
 

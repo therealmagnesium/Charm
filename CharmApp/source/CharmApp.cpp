@@ -42,7 +42,7 @@ namespace CharmApp
         ContentBrowserPanel::Init();
         ToolbarPanel::Init();
 
-        const std::filesystem::path scriptModulePath = ProjectManager::GetAssetFileSystemPath("scripts/binaries/libCharmScriptModule.so", state.project);
+        const std::filesystem::path scriptModulePath = ProjectManager::GetAssetFileSystemPath(state.project.scriptModulePath, state.project);
         ScriptManager::LoadModule(scriptModulePath.c_str());
 
         if (!state.project.startScenePath.empty())
@@ -50,6 +50,7 @@ namespace CharmApp
             std::filesystem::path scenePath = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath, state.project);
             OpenScene(scenePath.c_str());
         }
+
         FileDialogs::SetDefaultPath(ProjectManager::GetAssetPath(state.project));
     }
 

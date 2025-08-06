@@ -51,8 +51,8 @@ namespace Charm
 
             bool IsKeyDown(u32 scancode);
             bool IsKeyPressed(u32 scancode);
-            float GetInputAxis(InputAxis axis);
-            float GetInputAxisAlt(InputAxis axis);
+            float GetAxis(InputAxis axis);
+            float GetAxisAlt(InputAxis axis);
         }
     }
 }

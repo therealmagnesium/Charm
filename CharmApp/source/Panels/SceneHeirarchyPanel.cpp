@@ -1,4 +1,5 @@
 #include "SceneHeirarchyPanel.h"
+#include "../CharmApp.h"
 
 #include <Core/AssetManager.h>
 #include <ECS/Components.h>
@@ -66,6 +67,26 @@ namespace CharmApp
             if (ImGui::IsItemClicked())
                 state.selectionContext = entity;
 
+            if (ImGui::BeginDragDropSource() && state.selectionContext == entity)
+            {
+                auto& internal = entity.GetComponent<InternalComponent>();
+                ImGui::SetDragDropPayload("Content Browser Item", &internal.id, sizeof(UUID));
+                ImGui::EndDragDropSource();
+            }
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content Browser Item");
+                if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
+                {
+                    auto& internal = entity.GetComponent<InternalComponent>();
+                    UUID uuid = *(UUID*)payload->Data;
+                    Entity parent = Entities::FindWithUUID(uuid, state.context);
+                    internal.parent = parent;
+                }
+                ImGui::EndDragDropTarget();
+            }
+
             bool shouldDeleteEntity = false;
             if (ImGui::BeginPopupContextItem())
             {
@@ -74,6 +95,7 @@ namespace CharmApp
 
                 ImGui::EndPopup();
             }
+
             if (isOpen)
                 ImGui::TreePop();
 

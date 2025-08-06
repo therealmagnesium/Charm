@@ -83,6 +83,7 @@ namespace Charm
                 entity.AddComponent<InternalComponent>(Random::GenerateUUID(), tag);
                 entity.AddComponent<TransformComponent>();
 
+                scene.entityCount++;
                 return entity;
             }
 
@@ -92,6 +93,7 @@ namespace Charm
                 entity.AddComponent<InternalComponent>(id, tag);
                 entity.AddComponent<TransformComponent>();
 
+                scene.entityCount++;
                 return entity;
             }
 
@@ -120,6 +122,7 @@ namespace Charm
                 scene.registry.destroy(entity.handle);
                 entity.context = NULL;
                 entity.handle = entt::null;
+                scene.entityCount--;
             }
 
             void AddEntityToSortingLayer(Scene& scene, Entity& entity, u32 layer)
@@ -141,6 +144,7 @@ namespace Charm
                 }
 
                 scene.registry.clear();
+                scene.entityCount = 0;
             }
 
             void OnRuntimeStart(Scene& scene)
@@ -282,10 +286,20 @@ namespace Charm
                     const auto& transform = selectionContext.GetComponent<TransformComponent>();
                     const glm::vec3 selectionColor = glm::vec3(0.8f, 0.4f, 0.2f);
 
+                    auto& internal = selectionContext.GetComponent<InternalComponent>();
+
                     if (selectionContext.HasComponent<SpriteRendererComponent>())
                     {
                         const auto& spriteRenderer = selectionContext.GetComponent<SpriteRendererComponent>();
-                        const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale, transform.rotation.z, spriteRenderer.origin);
+                        glm::mat4 transformMatrix = glm::mat4(1.f);
+
+                        if (!internal.parent)
+                            transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale, transform.rotation.z, spriteRenderer.origin);
+                        else
+                        {
+                            auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
+                            transformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, transform.scale, transform.rotation.z, spriteRenderer.origin);
+                        }
 
                         Renderer::DrawRectangleLines(transformMatrix, selectionColor);
                     }
@@ -315,6 +329,9 @@ namespace Charm
                 b2World_Step(*(b2WorldId*)&scene.physicsWorldID, Time::GetDelta(), 4);
                 std::unordered_map<Entity, Entity> contactBeginEntities;
                 std::unordered_map<Entity, Entity> contactEndEntities;
+
+                contactBeginEntities.reserve(scene.entityCount);
+                contactEndEntities.reserve(scene.entityCount);
 
                 for (auto entityID : rigidbodies)
                 {
@@ -530,8 +547,16 @@ namespace Charm
                             if (!internal.isActive)
                                 continue;
 
-                            const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale,
-                                                                                         transform.rotation.z, spriteRenderer.origin);
+                            glm::mat4 transformMatrix = glm::mat4(1.f);
+                            if (!internal.parent)
+                                transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale,
+                                                                             transform.rotation.z, spriteRenderer.origin);
+                            else
+                            {
+                                auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
+                                transformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, transform.scale,
+                                                                             transform.rotation.z, spriteRenderer.origin);
+                            }
 
                             Renderer::DrawEntity(transformMatrix, spriteRenderer, (s32)entity.handle);
 
@@ -543,8 +568,18 @@ namespace Charm
                                 origin.x = bc2D.offset.x + bc2D.size.x;
                                 origin.y = bc2D.offset.y + bc2D.size.y;
 
-                                const glm::mat4 colliderTransformMatrix = Utils::GetTransfomMatrix2D(transform.position, bc2D.size * 2.f,
-                                                                                                     transform.rotation.z, origin);
+                                glm::mat4 colliderTransformMatrix = glm::mat4(1.f);
+
+                                if (!internal.parent)
+                                    colliderTransformMatrix = Utils::GetTransfomMatrix2D(transform.position, bc2D.size * 2.f,
+                                                                                         transform.rotation.z, origin);
+                                else
+                                {
+                                    const auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
+                                    colliderTransformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, bc2D.size * 2.f,
+                                                                                         transform.rotation.z, origin);
+                                }
+
                                 Renderer::DrawRectangleLines(colliderTransformMatrix, glm::vec3(0.f, 1.f, 0.f));
                             }
                         }

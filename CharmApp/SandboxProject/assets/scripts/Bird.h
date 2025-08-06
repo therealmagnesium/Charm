@@ -19,4 +19,5 @@ private:
 private:
     float _jumpForce = 3.f;
     bool _isDead = false;
+    Entity _testEntity;
 };

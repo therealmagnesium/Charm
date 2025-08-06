@@ -25,12 +25,12 @@ namespace Charm
         struct Scene
         {
             bool isDebugRenderingEnabled = false;
+            u64 entityCount = 0;
             Camera2D editorCamera2D;
             Camera3D editorCamera3D;
             entt::registry registry;
             PhysicsWorld physicsWorld;
             PhysicsWorldID physicsWorldID;
-
             std::vector<Entity> sortingLayers[MAX_SORTING_LAYERS];
         };
 
