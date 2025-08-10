@@ -1,5 +1,5 @@
 Project:
   Name: Sandbox
-  Start Scene: scenes/Test.charm
+  Start Scene: scenes/ChildEntityTest.charm
   Assets Directory: assets
   Script Module: scripts/binaries/libCharmScriptModule.so

@@ -37,6 +37,7 @@ namespace Charm
         namespace Scenes
         {
             Scene Create();
+            Scene Swap(Scene& scene);
             Scene Copy(Scene& scene);
 
             Entity CreateEntity(Scene& scene, const char* tag = "Entity");
@@ -57,6 +58,7 @@ namespace Charm
             void RenderRuntime(Scene& scene);
 
             void ResetEditorCameras(Scene& scene);
+            void AlignParentsAndChildren(Scene& scene);
         }
     }
 }

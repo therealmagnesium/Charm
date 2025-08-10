@@ -4,6 +4,7 @@ Entities:
     Internal Component:
       Tag: Ground
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [0, -5, 0]
       Rotation: [0, 0, 0]
@@ -24,9 +25,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [12.5, 1]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -34,6 +35,7 @@ Entities:
     Internal Component:
       Tag: Top Pipe
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [5, 6.6, 0]
       Rotation: [0, 0, 0]
@@ -49,6 +51,7 @@ Entities:
     Internal Component:
       Tag: Bottom Pipe
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [5, -10, 0]
       Rotation: [0, 0, 0]
@@ -64,6 +67,7 @@ Entities:
     Internal Component:
       Tag: Background
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -79,6 +83,7 @@ Entities:
     Internal Component:
       Tag: Bird
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [-5, 0, 0]
       Rotation: [0, 0, 0]
@@ -99,9 +104,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [0.4, 0.3]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -111,6 +116,7 @@ Entities:
     Internal Component:
       Tag: Main Camera
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]

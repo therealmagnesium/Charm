@@ -26,14 +26,14 @@ namespace Charm
             Entity FindWithTag(const char* tag, Scene* scene)
             {
                 std::vector<Entity> entities = FindEntitiesWithTag(tag, scene);
-                return (entities.size() >= 1) ? entities[0] : (Entity){};
+                return entities.size() > 0 ? entities[0] : Entity_Null;
             }
 
             Entity FindWithUUID(UUID uuid, Scene* scene)
             {
-                auto entities = scene->registry.view<InternalComponent>();
-                Entity match;
+                Entity match = Entity_Null;
 
+                auto entities = scene->registry.view<InternalComponent>();
                 for (auto entityID : entities)
                 {
                     Entity entity = Entities::Create(entityID, scene);
@@ -47,7 +47,7 @@ namespace Charm
                 }
 
                 if (!match)
-                    ERROR("Entities::FindWithUUID - Could not find entity with UUID %ld", uuid);
+                    ERROR("Entities::FindWithUUID - Could not find entity with UUID %lu", uuid);
 
                 return match;
             }
@@ -75,6 +75,30 @@ namespace Charm
 
                 return tagged;
             }
+
+            std::vector<Entity> GetChildEntities(Entity& parent)
+            {
+                std::vector<Entity> children;
+                children.reserve(parent.context->entityCount);
+
+                if (!parent.IsHandleValid())
+                    return children;
+
+                auto& parentInternal = parent.GetComponent<InternalComponent>();
+
+                auto entities = parent.context->registry.view<InternalComponent>();
+                for (auto entityID : entities)
+                {
+                    Entity child = Entities::Create(entityID, parent.context);
+                    auto& childInternal = child.GetComponent<InternalComponent>();
+
+                    if (childInternal.parent == parent)
+                        children.emplace_back(child);
+                }
+
+                return children;
+            }
+
         }
     }
 }

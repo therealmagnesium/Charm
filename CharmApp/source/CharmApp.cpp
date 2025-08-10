@@ -108,7 +108,7 @@ namespace CharmApp
                     SceneHeirarchyPanel::SetSelectedEntity(entity);
                 }
                 else if (state.pixelData == -1 && SceneViewportPanel::IsFocused() && SceneViewportPanel::IsHovered())
-                    SceneHeirarchyPanel::SetSelectedEntity((Entity){});
+                    SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
             }
 
             Scenes::UpdateEditor(*state.activeScene);
@@ -160,35 +160,33 @@ namespace CharmApp
         state.sceneState = SceneState::Runtime;
         state.runtimeScene = Scenes::Copy(state.editorScene);
         state.activeScene = &state.runtimeScene;
-        Scenes::OnRuntimeStart(*state.activeScene);
-        SceneHeirarchyPanel::SetContext(*state.activeScene);
 
-        if (prev)
+        SceneHeirarchyPanel::SetContext(*state.activeScene);
+        Scenes::AlignParentsAndChildren(*state.activeScene);
+        Scenes::OnRuntimeStart(*state.activeScene);
+
+        if (prev.IsHandleValid())
         {
             auto& prevInternal = prev.GetComponent<InternalComponent>();
-            SceneHeirarchyPanel::SetSelectedEntity(Entities::FindWithTag(prevInternal.tag.c_str(), state.activeScene));
+            SceneHeirarchyPanel::SetSelectedEntity(Entities::FindWithUUID(prevInternal.id, state.activeScene));
         }
     }
 
     void OnSceneStop()
     {
         Entity prev = SceneHeirarchyPanel::GetSelectedEntity();
-        const char* prevTag = "";
 
-        if (prev)
-        {
-            auto& prevInternal = prev.GetComponent<InternalComponent>();
-            prevTag = prevInternal.tag.c_str();
-        }
-
-        Scenes::OnRuntimeStop(*state.activeScene);
         SceneHeirarchyPanel::SetContext(state.editorScene);
         state.sceneState = SceneState::Editor;
         state.activeScene = &state.editorScene;
 
-        if (prev)
-            SceneHeirarchyPanel::SetSelectedEntity(Entities::FindWithTag(prevTag, state.activeScene));
+        if (prev.IsHandleValid())
+        {
+            auto& prevInternal = prev.GetComponent<InternalComponent>();
+            SceneHeirarchyPanel::SetSelectedEntity(Entities::FindWithUUID(prevInternal.id, state.activeScene));
+        }
 
+        Scenes::OnRuntimeStop(state.runtimeScene);
         state.runtimeScene = Scenes::Create();
     }
 
@@ -197,7 +195,7 @@ namespace CharmApp
         if (state.sceneState != SceneState::Editor)
             return;
 
-        SceneHeirarchyPanel::SetSelectedEntity((Entity){});
+        SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
         AssetManager::Clean();
         ScriptManager::ClearBindings();
         Scenes::ClearRegistry(state.editorScene);
@@ -266,16 +264,9 @@ namespace CharmApp
     {
         OnSceneNew(false);
 
-        Scene newScene = Scenes::Create();
-        SceneSerializer::SetContext(newScene);
-        SceneSerializer::Deserialize(path);
-
-        state.currentScenePath = path;
-
-        state.editorScene = Scenes::Copy(newScene);
-        Scenes::ClearRegistry(newScene);
         SceneSerializer::SetContext(state.editorScene);
-
+        SceneSerializer::Deserialize(path);
+        state.currentScenePath = path;
         ScriptManager::ReloadModule();
 
         INFO("Loaded scene %s", path);

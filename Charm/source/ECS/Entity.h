@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Scene.h"
+#include "Core/Log.h"
 
 #include <entt/entt.hpp>
 #include <utility>
@@ -16,6 +17,7 @@ namespace Charm
             Entity FindWithTag(const char* tag, Scene* scene);
             Entity FindWithUUID(UUID uuid, Scene* scene);
             std::vector<Entity> FindEntitiesWithTag(const char* tag, Scene* scene);
+            std::vector<Entity> GetChildEntities(Entity& parent);
         }
 
         struct Entity
@@ -26,10 +28,12 @@ namespace Charm
             Entity() = default;
             Entity(const Entity& other) = default;
 
+            inline bool IsHandleValid() const { return (*this) ? context->registry.valid(handle) : false; }
+
             template <typename T>
             inline bool HasComponent()
             {
-                return context->registry.all_of<T>(handle);
+                return IsHandleValid() && context->registry.all_of<T>(handle);
             }
 
             template <typename T>
@@ -41,7 +45,7 @@ namespace Charm
             template <typename T>
             inline T* TryGetComponent()
             {
-                return context->registry.try_get<T>(handle);
+                return IsHandleValid() ? context->registry.try_get<T>(handle) : NULL;
             }
 
             template <typename T, typename... Args>
@@ -53,7 +57,8 @@ namespace Charm
             template <typename T>
             inline void RemoveComponent()
             {
-                context->registry.remove<T>(handle);
+                if (IsHandleValid())
+                    context->registry.remove<T>(handle);
             }
 
             inline operator bool() const { return handle != entt::null && context != NULL; }
@@ -114,6 +119,7 @@ namespace Charm
             friend void Scenes::OnRuntimeStop(Scene&);
         };
 
+        inline const Entity Entity_Null;
     }
 }
 

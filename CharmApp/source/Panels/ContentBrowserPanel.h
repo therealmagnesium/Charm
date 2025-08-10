@@ -12,7 +12,7 @@ namespace CharmApp
         std::filesystem::path selectedFilePath;
         Graphics::Texture iconFile;
         Graphics::Texture iconFolder;
-        float padding = 32.f;
+        float padding = 64.f;
         float thumbnailSize = 64.f;
     };
 

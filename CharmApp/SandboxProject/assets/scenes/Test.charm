@@ -4,6 +4,7 @@ Entities:
     Internal Component:
       Tag: Target
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [30, 0, 0]
       Rotation: [0, 0, 0]
@@ -24,9 +25,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [1, 1]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -34,6 +35,7 @@ Entities:
     Internal Component:
       Tag: Ceiling
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [15, 23, 0]
       Rotation: [0, 0, 0]
@@ -54,9 +56,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [30, 1]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -64,6 +66,7 @@ Entities:
     Internal Component:
       Tag: Wall
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [15, 0, 0]
       Rotation: [0, 0, 0]
@@ -84,9 +87,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [1, 5]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -94,6 +97,7 @@ Entities:
     Internal Component:
       Tag: Wall
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [-15, 9, 0]
       Rotation: [0, 0, 0]
@@ -114,9 +118,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [1, 15]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -124,6 +128,7 @@ Entities:
     Internal Component:
       Tag: Wall
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [45, 9, 0]
       Rotation: [0, 0, 0]
@@ -144,9 +149,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [1, 15]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -154,6 +159,7 @@ Entities:
     Internal Component:
       Tag: Ground
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [30, -5, 0]
       Rotation: [0, 0, 0]
@@ -174,9 +180,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [15, 1]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -184,6 +190,7 @@ Entities:
     Internal Component:
       Tag: Ground
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [0, -5, 0]
       Rotation: [0, 0, 0]
@@ -204,9 +211,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [15, 1]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -214,6 +221,7 @@ Entities:
     Internal Component:
       Tag: Blue Square
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [2, 0, 0]
       Rotation: [0, 0, 0]
@@ -234,9 +242,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [1, 1]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0.4
@@ -244,6 +252,7 @@ Entities:
     Internal Component:
       Tag: Yellow Square
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [-2, 0, 0]
       Rotation: [0, 0, 0]
@@ -264,9 +273,9 @@ Entities:
       Linear Velocity: [0, 0]
       Angular Velocity: 0
     Box Collider2D Component:
-      Is Trigger?: false
       Offset: [0, 0]
       Size: [1, 1]
+      Is Trigger?: false
       Density: 1
       Friction: 0.5
       Restitution: 0
@@ -276,6 +285,7 @@ Entities:
     Internal Component:
       Tag: Main Camera
       Is Active?: true
+      Parent: 0
     Transform Component:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -289,11 +299,11 @@ Entities:
     Native Script Component:
       Script Name: Camera Controller
 Asset Registry:
-  - Asset: 12010784612224126692
-    Path: SandboxProject/assets/textures/flappy-bird.png
-    Type: Texture
-    Texture Filter: Nearest
   - Asset: 12407763205547256233
     Path: SandboxProject/assets/textures/small_checker.png
     Type: Texture
     Texture Filter: Linear
+  - Asset: 12010784612224126692
+    Path: SandboxProject/assets/textures/flappy-bird.png
+    Type: Texture
+    Texture Filter: Nearest

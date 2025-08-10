@@ -230,16 +230,37 @@ namespace Charm
                     return;
                 }
 
-                std::string sceneName = data["Scene"].as<std::string>();
-
                 YAML::Node entities = data["Entities"];
+                std::vector<std::pair<UUID, UUID>> parentChildRelationships;
+
                 if (entities)
                 {
                     for (auto entity : entities)
                     {
                         UUID uuid = entity["Entity"].as<UUID>();
                         Entity deserializedEntity = Scenes::CreateEntity(*context, uuid);
+
+                        YAML::Node internalNode = entity["Internal Component"];
+                        UUID parentUUID = internalNode["Parent"].as<UUID>();
+                        if (parentUUID != 0)
+                            parentChildRelationships.emplace_back(uuid, parentUUID);
+
                         DeserializeEntity(deserializedEntity, entity);
+                    }
+
+                    for (const auto& [childUUID, parentUUID] : parentChildRelationships)
+                    {
+                        Entity child = Entities::FindWithUUID(childUUID, context);
+                        Entity parent = Entities::FindWithUUID(parentUUID, context);
+
+                        if (!child.IsHandleValid() || !parent.IsHandleValid())
+                        {
+                            ERROR("SceneSerializer::Deserialize - Failed to establish parent-child relationship between UUIDs %lu and %lu", parentUUID, childUUID);
+                            continue;
+                        }
+
+                        auto& childInternal = child.GetComponent<InternalComponent>();
+                        childInternal.parent = parent;
                     }
                 }
 
@@ -279,6 +300,7 @@ namespace Charm
                 out << YAML::Key << "Internal Component" << YAML::BeginMap;
                 out << YAML::Key << "Tag" << YAML::Value << internal.tag;
                 out << YAML::Key << "Is Active?" << YAML::Value << internal.isActive;
+                out << YAML::Key << "Parent" << YAML::Value << ((internal.parent) ? internal.parent.GetComponent<InternalComponent>().id : 0);
                 out << YAML::EndMap;
 
                 out << YAML::Key << "Transform Component" << YAML::BeginMap;

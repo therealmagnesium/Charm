@@ -20,7 +20,7 @@ namespace CharmApp
 
         void Display()
         {
-            ASSERT(state.context != NULL, "The scene heirarchy must have a context to display!");
+            ASSERT(state.context != NULL, "SceneHierarchyPanel::Display - The scene heirarchy must have a context to display!");
 
             ImGui::ShowDemoWindow();
             ImGui::Begin("Scene Heirarchy");
@@ -28,18 +28,51 @@ namespace CharmApp
             for (auto entityID : state.context->registry.view<entt::entity>())
             {
                 Entity entity = Entities::Create(entityID, state.context);
-                DrawEntityNode(entity);
+                auto& internal = entity.GetComponent<InternalComponent>();
+                if (!internal.parent)
+                    DrawEntityNode(entity);
             }
 
-            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered())
-                state.selectionContext = (Entity){};
+            ImVec2 windowSize = ImGui::GetWindowSize();
+            ImVec2 currentCursor = ImGui::GetCursorPos();
+            ImVec2 availableSpace = ImVec2(windowSize.x, windowSize.y - currentCursor.y);
 
-            if (ImGui::BeginPopupContextWindow(NULL, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+            if (availableSpace.y > 0)
             {
-                if (ImGui::MenuItem("Create a blank entity"))
-                    Scenes::CreateEntity(*state.context);
+                ImGui::InvisibleButton("##empty_space", availableSpace);
 
-                ImGui::EndPopup();
+                if (ImGui::IsItemClicked())
+                    state.selectionContext = Entity_Null;
+
+                if (ImGui::BeginPopupContextItem("Create Entity Popup", ImGuiPopupFlags_MouseButtonRight))
+                {
+                    if (ImGui::MenuItem("Create a blank entity"))
+                        Scenes::CreateEntity(*state.context);
+
+                    ImGui::EndPopup();
+                }
+
+                if (ImGui::BeginDragDropTarget())
+                {
+                    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Scene Heirarchy Entity");
+                    if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
+                    {
+                        UUID childUUID = *(UUID*)payload->Data;
+                        Entity child = Entities::FindWithUUID(childUUID, state.context);
+
+                        if (child.IsHandleValid())
+                        {
+                            auto& childInternal = child.GetComponent<InternalComponent>();
+                            childInternal.parent = Entity_Null; // Remove parent
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+            }
+            else
+            {
+                if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered())
+                    state.selectionContext = Entity_Null;
             }
 
             ImGui::End();
@@ -64,31 +97,8 @@ namespace CharmApp
             ImGuiTreeNodeFlags flags = ((state.selectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
             bool isOpen = ImGui::TreeNodeEx(internal.tag.c_str(), flags);
 
-            if (ImGui::IsItemClicked())
-                state.selectionContext = entity;
-
-            if (ImGui::BeginDragDropSource() && state.selectionContext == entity)
-            {
-                auto& internal = entity.GetComponent<InternalComponent>();
-                ImGui::SetDragDropPayload("Content Browser Item", &internal.id, sizeof(UUID));
-                ImGui::EndDragDropSource();
-            }
-
-            if (ImGui::BeginDragDropTarget())
-            {
-                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content Browser Item");
-                if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
-                {
-                    auto& internal = entity.GetComponent<InternalComponent>();
-                    UUID uuid = *(UUID*)payload->Data;
-                    Entity parent = Entities::FindWithUUID(uuid, state.context);
-                    internal.parent = parent;
-                }
-                ImGui::EndDragDropTarget();
-            }
-
             bool shouldDeleteEntity = false;
-            if (ImGui::BeginPopupContextItem())
+            if (ImGui::BeginPopupContextItem("Delete Entity Popup"))
             {
                 if (ImGui::MenuItem("Delete"))
                     shouldDeleteEntity = true;
@@ -96,17 +106,66 @@ namespace CharmApp
                 ImGui::EndPopup();
             }
 
+            if (ImGui::IsItemClicked())
+                state.selectionContext = entity;
+
+            ImGui::PopID();
+
+            if (ImGui::BeginDragDropSource())
+            {
+                if (state.selectionContext == entity)
+                    ImGui::SetDragDropPayload("Scene Heirarchy Entity", &internal.id, sizeof(UUID));
+
+                ImGui::EndDragDropSource();
+            }
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Scene Heirarchy Entity");
+                if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
+                {
+                    UUID childUUID = *(UUID*)payload->Data;
+                    UUID parentUUID = 0;
+
+                    if (internal.parent)
+                    {
+                        auto& parentInternal = internal.parent.GetComponent<InternalComponent>();
+                        parentUUID = parentInternal.id;
+                    }
+
+                    if (childUUID != internal.id && childUUID != parentUUID)
+                    {
+                        Entity child = Entities::FindWithUUID(childUUID, state.context);
+                        auto& childInternal = child.GetComponent<InternalComponent>();
+                        childInternal.parent = entity;
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+
             if (isOpen)
+            {
+                if (!shouldDeleteEntity)
+                {
+                    auto children = Entities::GetChildEntities(entity);
+                    for (Entity& child : children)
+                        DrawEntityNode(child);
+                }
+
                 ImGui::TreePop();
+            }
 
             if (shouldDeleteEntity)
             {
                 if (state.selectionContext == entity)
-                    state.selectionContext = (Entity){};
+                    state.selectionContext = Entity_Null;
+
+                auto children = Entities::GetChildEntities(entity);
+                for (auto& child : children)
+                    Scenes::DestroyEntity(*state.context, child);
 
                 Scenes::DestroyEntity(*state.context, entity);
             }
-            ImGui::PopID();
         }
     }
 }

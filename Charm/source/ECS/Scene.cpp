@@ -29,7 +29,7 @@ namespace Charm
             float GetHighlightThickness(float radius);
 
             template <typename T>
-            void CopyComponent(entt::registry& dest, entt::registry& source, const std::unordered_map<UUID, entt::entity>& enttMap);
+            void CopyComponent(Scene& dest, Scene& source, const std::unordered_map<UUID, entt::entity>& enttMap);
 
             template <typename T>
             void CopyComponentIfExists(Entity& dest, Entity& source);
@@ -38,12 +38,25 @@ namespace Charm
             {
                 Scene scene;
                 scene.physicsWorldID = Physics_NullWorldID;
-                Scenes::ResetEditorCameras(scene);
 
                 for (u8 i = 0; i < LEN(scene.sortingLayers); i++)
                     scene.sortingLayers[i].reserve(1);
 
+                Scenes::ResetEditorCameras(scene);
+
                 return scene;
+            }
+
+            Scene Swap(Scene& scene)
+            {
+                Scene newScene = Scenes::Create();
+
+                auto& sourceRegistry = scene.registry;
+                auto& destRegistry = newScene.registry;
+
+                sourceRegistry.swap(destRegistry);
+
+                return newScene;
             }
 
             Scene Copy(Scene& scene)
@@ -54,8 +67,8 @@ namespace Charm
                 auto& destRegistry = newScene.registry;
                 std::unordered_map<UUID, entt::entity> enttMap;
 
-                auto idView = sourceRegistry.view<InternalComponent>();
-                for (auto entityID : idView)
+                auto entities = sourceRegistry.view<InternalComponent>();
+                for (auto entityID : entities)
                 {
                     const auto& sourceInternal = sourceRegistry.get<InternalComponent>(entityID);
                     const std::string& tag = sourceInternal.tag;
@@ -65,14 +78,14 @@ namespace Charm
                     enttMap[id] = newEntity.handle;
                 }
 
-                CopyComponent<InternalComponent>(destRegistry, sourceRegistry, enttMap);
-                CopyComponent<TransformComponent>(destRegistry, sourceRegistry, enttMap);
-                CopyComponent<SpriteRendererComponent>(destRegistry, sourceRegistry, enttMap);
-                CopyComponent<CircleRendererComponent>(destRegistry, sourceRegistry, enttMap);
-                CopyComponent<Camera2DComponent>(destRegistry, sourceRegistry, enttMap);
-                CopyComponent<Rigidbody2DComponent>(destRegistry, sourceRegistry, enttMap);
-                CopyComponent<BoxCollider2DComponent>(destRegistry, sourceRegistry, enttMap);
-                CopyComponent<NativeScriptComponent>(destRegistry, sourceRegistry, enttMap);
+                CopyComponent<InternalComponent>(newScene, scene, enttMap);
+                CopyComponent<TransformComponent>(newScene, scene, enttMap);
+                CopyComponent<SpriteRendererComponent>(newScene, scene, enttMap);
+                CopyComponent<CircleRendererComponent>(newScene, scene, enttMap);
+                CopyComponent<Camera2DComponent>(newScene, scene, enttMap);
+                CopyComponent<Rigidbody2DComponent>(newScene, scene, enttMap);
+                CopyComponent<BoxCollider2DComponent>(newScene, scene, enttMap);
+                CopyComponent<NativeScriptComponent>(newScene, scene, enttMap);
 
                 return newScene;
             }
@@ -145,6 +158,8 @@ namespace Charm
 
                 scene.registry.clear();
                 scene.entityCount = 0;
+
+                scene = Scenes::Create();
             }
 
             void OnRuntimeStart(Scene& scene)
@@ -486,6 +501,22 @@ namespace Charm
                 scene.editorCamera3D.fov = 45.f;
             }
 
+            void AlignParentsAndChildren(Scene& scene)
+            {
+                auto entities = scene.registry.view<InternalComponent>();
+                for (auto entityID : entities)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& internal = entity.GetComponent<InternalComponent>();
+
+                    if (internal.parent)
+                    {
+                        const UUID parentUUID = internal.parent.GetComponent<InternalComponent>().id;
+                        internal.parent = Entities::FindWithUUID(parentUUID, &scene);
+                    }
+                }
+            }
+
             void ApplyCircleSortingLayers(Scene& scene)
             {
                 auto circles = scene.registry.view<CircleRendererComponent>();
@@ -529,6 +560,9 @@ namespace Charm
 
                     for (Entity& entity : scene.sortingLayers[i])
                     {
+                        if (!entity.IsHandleValid())
+                            continue;
+
                         auto& internal = entity.GetComponent<InternalComponent>();
                         auto& transform = entity.GetComponent<TransformComponent>();
 
@@ -588,18 +622,22 @@ namespace Charm
             }
 
             template <typename T>
-            void CopyComponent(entt::registry& dest, entt::registry& source, const std::unordered_map<UUID, entt::entity>& enttMap)
+            void CopyComponent(Scene& dest, Scene& source, const std::unordered_map<UUID, entt::entity>& enttMap)
             {
-                auto view = source.view<T>();
+                auto view = source.registry.view<T>();
                 for (auto entityID : view)
                 {
-                    const UUID id = source.get<InternalComponent>(entityID).id;
+                    const UUID id = source.registry.get<InternalComponent>(entityID).id;
 
                     ASSERT(enttMap.find(id) != enttMap.end(), "Scenes::CopyComponent - Entity map could not find entity with UUID %ld", id);
-                    entt::entity destEnttID = enttMap.at(id);
 
-                    auto& component = source.get<T>(entityID);
-                    dest.emplace_or_replace<T>(destEnttID, component);
+                    entt::entity destEnttID = enttMap.at(id);
+                    Entity sourceEntity = Entities::Create(entityID, &source);
+                    Entity destEntity = Entities::Create(destEnttID, &dest);
+                    auto& sourceInternal = sourceEntity.GetComponent<InternalComponent>();
+
+                    auto& component = sourceEntity.GetComponent<T>();
+                    destEntity.AddComponent<T>(component);
                 }
             }
 

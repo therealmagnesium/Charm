@@ -64,8 +64,8 @@ namespace CharmApp
             if (SceneHeirarchyPanel::GetSelectedEntity())
                 state.selectedFilePath = "";
 
-            float cellSize = state.thumbnailSize + state.padding;
-            float panelWidth = ImGui::GetContentRegionAvail().x;
+            const float cellSize = state.thumbnailSize + state.padding;
+            const float panelWidth = ImGui::GetContentRegionAvail().x;
             u32 columnCount = (u32)(panelWidth / cellSize);
             if (columnCount < 1)
                 columnCount = 1;

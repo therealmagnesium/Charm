@@ -410,7 +410,7 @@ namespace CharmApp
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.f, 4.f));
 
                 float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
-                ImGui::Separator();
+                // ImGui::Separator();
 
                 bool isOpen = ImGui::TreeNodeEx(name, flags);
                 ImGui::PopStyleVar();
@@ -524,7 +524,7 @@ namespace CharmApp
             ImVec2 buttonSize = ImVec2(lineHeight + 3.f, lineHeight);
 
             ImGui::PushMultiItemsWidths(3, ImGui::GetContentRegionAvail().x - buttonSize.x * 3.f);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 4.f));
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 2.f));
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.f, 0.05f, 1.f));
