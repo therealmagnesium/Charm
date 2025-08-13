@@ -6,6 +6,7 @@
 #include "Core/AssetManager.h"
 #include "Core/Random.h"
 
+#include "Graphics/Animation.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
@@ -105,6 +106,15 @@ namespace Charm
                 this->fade = fade;
                 this->color = color;
             }
+        };
+
+        struct Animator2DComponent
+        {
+            AssetHandle animation;
+            // AnimationController controller;
+
+            Animator2DComponent() = default;
+            Animator2DComponent(const Animator2DComponent&) = default;
         };
 
         struct Camera2DComponent

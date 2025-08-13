@@ -26,6 +26,15 @@
         }                                      \
     }
 
+#define ASSERT_RETURN(expression, returnVal, message, ...) \
+    {                                                      \
+        if (!(expression))                                 \
+        {                                                  \
+            ERROR(message, ##__VA_ARGS__);                 \
+            return returnVal;                              \
+        }                                                  \
+    }
+
 namespace Charm
 {
     namespace Core

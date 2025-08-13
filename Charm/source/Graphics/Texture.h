@@ -34,7 +34,7 @@ namespace Charm
             u8* data = NULL;
 
             inline bool operator==(const Texture& other) const { return id == other.id; }
-            inline Core::AssetType GetType() override { return Core::AssetType::Texture; }
+            inline Core::AssetType GetType() const override { return Core::AssetType::Texture; }
         };
 
         namespace Textures

@@ -1,4 +1,5 @@
 #pragma once
+#include "Graphics/Animation.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 #include "ECS/PhysicsWorld.h"
@@ -20,6 +21,8 @@ namespace Charm
         u32 TextureFilterToGL(Graphics::TextureFilter filter);
         std::string TextureFilterToString(Graphics::TextureFilter filter);
         Graphics::TextureFilter StringToTextureFilter(const std::string& str);
+        std::string SpriteSheetAnimTypeToString(const Graphics::SpriteSheetAnimType type);
+        Graphics::SpriteSheetAnimType StringToSpriteSheetAnimType(const std::string& str);
         std::string GetFileName(const char* path, bool hasExtension = false);
         std::string AssetTypeToString(Core::AssetType type);
         Core::AssetType StringToAssetType(const std::string& str);

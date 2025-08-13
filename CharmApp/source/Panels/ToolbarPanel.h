@@ -9,6 +9,7 @@ namespace CharmApp
     {
         Texture iconPlay;
         Texture iconStop;
+        u32 windowFlags = 0;
     };
 
     namespace ToolbarPanel

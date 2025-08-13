@@ -19,6 +19,7 @@
 #include "ECS/SceneSerializer.h"
 #include "ECS/ScriptManager.h"
 
+#include "Graphics/Animation.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Framebuffer.h"
 #include "Graphics/RenderCommand.h"

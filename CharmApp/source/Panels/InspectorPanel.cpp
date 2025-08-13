@@ -27,6 +27,7 @@ namespace CharmApp
         void DrawVec3Control(const char* label, glm::vec3& v, float speed, float resetValue, float columnWidth);
         void DrawColorControl(const char* label, glm::vec3& v, float columnWidth);
         void DrawColorControl(const char* label, glm::vec4& v, float columnWidth);
+        void DrawIntInputControl(const char* label, s32* v, s32 min, s32 max, float columnWidth);
 
         template <typename T, typename UIFunction>
         void DrawComponent(const char* name, Entity entity, UIFunction callback);
@@ -46,39 +47,92 @@ namespace CharmApp
 
             if (isAssetValid && !selectedEntity && !stringPath.empty())
             {
-                if (state.selectedAsset->GetType() == AssetType::Texture)
+                switch (state.selectedAsset->GetType())
                 {
-                    const float columnWidth = 110.f;
-                    Texture* texture = (Texture*)state.selectedAsset;
-
-                    ImGui::PushID("Texture Filter");
-                    ImGui::Columns(2);
-                    ImGui::SetColumnWidth(0, columnWidth);
-                    ImGui::Text("Texture Filter");
-                    ImGui::NextColumn();
-
-                    std::string filterAsString = Utils::TextureFilterToString(texture->filter);
-                    std::string placeholder = filterAsString;
-                    ImGui::SetNextItemWidth(-1.f);
-                    if (ImGui::BeginCombo("##Texture Filter", placeholder.c_str()))
+                    case AssetType::Texture:
                     {
-                        const char* filters[2] = {"Linear", "Nearest"};
+                        const float columnWidth = 120.f;
+                        Texture* texture = (Texture*)state.selectedAsset;
 
-                        for (u8 i = 0; i < 2; i++)
+                        ImGui::PushID("Texture Filter");
+                        ImGui::Columns(2);
+                        ImGui::SetColumnWidth(0, columnWidth);
+                        ImGui::Text("Texture Filter");
+                        ImGui::NextColumn();
+
+                        std::string filterAsString = Utils::TextureFilterToString(texture->filter);
+                        std::string placeholder = filterAsString;
+                        ImGui::SetNextItemWidth(-1.f);
+                        if (ImGui::BeginCombo("##Texture Filter", placeholder.c_str()))
                         {
-                            bool isSelected = filterAsString == filters[i];
+                            const char* filters[2] = {"Linear", "Nearest"};
 
-                            if (ImGui::Selectable(filters[i], isSelected))
-                                texture->filter = (TextureFilter)i;
+                            for (u8 i = 0; i < 2; i++)
+                            {
+                                bool isSelected = filterAsString == filters[i];
+
+                                if (ImGui::Selectable(filters[i], isSelected))
+                                    texture->filter = (TextureFilter)i;
+                            }
+                            ImGui::EndCombo();
                         }
-                        ImGui::EndCombo();
+
+                        ImGui::Columns(1);
+                        ImGui::PopID();
+
+                        if (ImGui::Button("Apply"))
+                            Textures::Invalidate(*texture);
+
+                        break;
                     }
 
-                    ImGui::Columns(1);
-                    ImGui::PopID();
+                    case AssetType::Animation:
+                    {
+                        const float columnWidth = 150.f;
+                        Animation* animation = (Animation*)state.selectedAsset;
 
-                    if (ImGui::Button("Apply"))
-                        Textures::Invalidate(*texture);
+                        DrawIntInputControl("Speed", (s32*)&animation->speed, 0, 0, columnWidth);
+                        DrawIntInputControl("Frame Count", (s32*)&animation->frameCount, 0, 0, columnWidth);
+                        DrawIntInputControl("Row Count", (s32*)&animation->rowCount, 0, 0, columnWidth);
+                        DrawIntInputControl("Row Offset", (s32*)&animation->rowOffset, 0, 0, columnWidth);
+                        DrawIntInputControl("Column Count", (s32*)&animation->columnCount, 0, 0, columnWidth);
+                        DrawIntInputControl("Column Offset", (s32*)&animation->columnOffset, 0, 0, columnWidth);
+                        DrawBoolControl("Should Loop?", &animation->shouldLoop, columnWidth);
+
+                        ImGui::PushID("Sprite Sheet Type");
+                        ImGui::Columns(2);
+                        ImGui::SetColumnWidth(0, columnWidth);
+                        ImGui::Text("Sprite Sheet Type");
+                        ImGui::NextColumn();
+
+                        std::string typeAsString = Utils::SpriteSheetAnimTypeToString(animation->spriteSheetType);
+                        std::string placeholder = typeAsString;
+                        ImGui::SetNextItemWidth(-1.f);
+                        if (ImGui::BeginCombo("##", placeholder.c_str()))
+                        {
+                            const char* types[2] = {"Horizontal", "Vertical"};
+
+                            for (u8 i = 0; i < 2; i++)
+                            {
+                                bool isSelected = typeAsString == types[i];
+
+                                if (ImGui::Selectable(types[i], isSelected))
+                                    animation->spriteSheetType = (SpriteSheetAnimType)i;
+                            }
+                            ImGui::EndCombo();
+                        }
+
+                        ImGui::Columns(1);
+                        ImGui::PopID();
+
+                        if (ImGui::Button("Save"))
+                            Animations::Save(stringPath.c_str(), *animation);
+
+                        break;
+                    }
+
+                    default:
+                        break;
                 }
             }
 
@@ -136,6 +190,12 @@ namespace CharmApp
                 if (ImGui::MenuItem("Sprite Renderer"))
                 {
                     entity.AddComponent<SpriteRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Animator 2D"))
+                {
+                    entity.AddComponent<Animator2DComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
@@ -215,9 +275,13 @@ namespace CharmApp
 
                     for (auto& [handle, metadata] : registry)
                     {
-                        const bool isSelected = (component.sprite == handle);
-                        if (ImGui::Selectable(metadata.path.c_str(), isSelected))
-                            component.sprite = handle;
+                        Asset* asset = AssetManager::GetAsset(handle);
+                        if (asset->GetType() == AssetType::Texture)
+                        {
+                            const bool isSelected = (component.sprite == handle);
+                            if (ImGui::Selectable(metadata.path.c_str(), isSelected))
+                                component.sprite = handle;
+                        }
                     }
 
                     ImGui::EndCombo();
@@ -276,22 +340,7 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
-                ImGui::PushID("Sorting Layer");
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Sorting Layer");
-                ImGui::NextColumn();
-                ImGui::SetNextItemWidth(-1.f);
-                if (ImGui::InputInt("##Sorting Layer", &component.sortingLayer))
-                {
-                    if (component.sortingLayer < 0)
-                        component.sortingLayer = 0;
-
-                    if (component.sortingLayer >= MAX_SORTING_LAYERS)
-                        component.sortingLayer = MAX_SORTING_LAYERS - 1;
-                }
-                ImGui::Columns(1);
-                ImGui::PopID();
+                DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
 
                 ImGui::PushID("Crop");
                 ImGui::Columns(2);
@@ -304,6 +353,40 @@ namespace CharmApp
                 ImGui::PopID();
 
                 DrawColorControl("Tint", component.tint, columnWidth);
+            });
+
+            DrawComponent<Animator2DComponent>("Animator 2D", entity, [](Animator2DComponent& component) {
+                const float columnWidth = 120.f;
+
+                ImGui::PushID("Animation");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, columnWidth);
+                ImGui::Text("Animation");
+                ImGui::NextColumn();
+                const AssetRegistry& registry = AssetManager::GetRegistry();
+                std::string placeholder = (AssetManager::GetAsset<Animation>(component.animation) != NULL) ? registry.at(component.animation).path.c_str() : "Select animation";
+                ImGui::SetNextItemWidth(-1.f);
+                if (ImGui::BeginCombo("##", placeholder.c_str()))
+                {
+                    if (ImGui::Selectable("None", component.animation == 0))
+                        component.animation = 0;
+
+                    for (auto& [handle, metadata] : registry)
+                    {
+                        Asset* asset = AssetManager::GetAsset(handle);
+                        if (asset->GetType() == AssetType::Animation)
+                        {
+                            const bool isSelected = (component.animation == handle);
+                            if (ImGui::Selectable(metadata.path.c_str(), isSelected))
+                                component.animation = handle;
+                        }
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                ImGui::Columns(1);
+                ImGui::PopID();
             });
 
             DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {
@@ -479,8 +562,8 @@ namespace CharmApp
             float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             ImVec2 buttonSize = ImVec2(lineHeight + 3.f, lineHeight);
 
-            ImGui::PushMultiItemsWidths(2, ImGui::GetContentRegionAvail().x - buttonSize.x * 2.f);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 4.f));
+            ImGui::PushMultiItemsWidths(2, ImGui::GetContentRegionAvail().x - buttonSize.x * 3.f);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 2.f));
 
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.f, 0.05f, 1.f));
@@ -594,6 +677,28 @@ namespace CharmApp
 
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
             ImGui::ColorEdit3("##", glm::value_ptr(v));
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        void DrawIntInputControl(const char* label, s32* v, s32 min, s32 max, float columnWidth)
+        {
+            ImGui::PushID(label);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+            ImGui::SetNextItemWidth(-1.f);
+
+            if (ImGui::InputInt("##Sorting Layer", v))
+            {
+                if (*v < min)
+                    *v = min;
+
+                if (*v >= max && min != max)
+                    *v = max;
+            }
 
             ImGui::Columns(1);
             ImGui::PopID();

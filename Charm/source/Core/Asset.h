@@ -14,15 +14,16 @@ namespace Charm
         enum class AssetType : u8
         {
             Invalid = 0,
-            Texture,
+            Animation,
             Shader,
+            Texture,
         };
 
         struct Asset
         {
             AssetHandle handle = 0;
 
-            virtual AssetType GetType() { return AssetType::Invalid; }
+            virtual AssetType GetType() const { return AssetType::Invalid; }
         };
 
         struct AssetMetadata

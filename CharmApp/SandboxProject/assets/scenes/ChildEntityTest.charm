@@ -1,23 +1,23 @@
 Scene: Untitled
 Entities:
-  - Entity: 11654950303771714840
+  - Entity: 5194552443019161987
     Internal Component:
-      Tag: Player
+      Tag: Ground
       Is Active?: true
-      Parent: 0
+      Parent: 10318122248500355676
     Transform Component:
-      Position: [-6.4, 4.4, 0]
+      Position: [0, -6, 0]
       Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Scale: [25, 3, 1]
     Sprite Renderer Component:
       Texture Asset Handle: 0
       Sorting Layer: 1
-      Origin: [0.5, 0.5]
+      Origin: [12.5, 1.5]
       Origin Mode: Center
       Crop: [0, 0, 0, 0]
-      Tint: [0.46332043, 0.08586633, 0.08586633, 1]
+      Tint: [0.10136999, 0.32818532, 0.11012732, 1]
     Rigidbody2D Component:
-      Type: Dynamic
+      Type: Static
       Fixed Rotation?: false
       Gravity Scale: 1
       Linear Damping: 0
@@ -26,7 +26,307 @@ Entities:
       Angular Velocity: 0
     Box Collider2D Component:
       Offset: [0, 0]
-      Size: [0.5, 0.5]
+      Size: [12.5, 1.5]
+      Is Trigger?: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 0
+  - Entity: 16663398566235673225
+    Internal Component:
+      Tag: Mini Ground
+      Is Active?: true
+      Parent: 10318122248500355676
+    Transform Component:
+      Position: [-6.5, 1, 0]
+      Rotation: [0, 0, -33.5]
+      Scale: [3, 0.5, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [1.5, 0.25]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.4646346, 0.19845003, 0.0942342, 1]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+      Gravity Scale: 1
+      Linear Damping: 0
+      Angular Damping: 0
+      Linear Velocity: [0, 0]
+      Angular Velocity: 0
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [1.5, 0.25]
+      Is Trigger?: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 1
+  - Entity: 4886022471260464434
+    Internal Component:
+      Tag: Mini Ground
+      Is Active?: true
+      Parent: 10318122248500355676
+    Transform Component:
+      Position: [-1.5, -1.6, 0]
+      Rotation: [0, 0, -9.9]
+      Scale: [3, 0.5, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [1.5, 0.25]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.4646346, 0.19845003, 0.0942342, 1]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+      Gravity Scale: 1
+      Linear Damping: 0
+      Angular Damping: 0
+      Linear Velocity: [0, 0]
+      Angular Velocity: 0
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [1.5, 0.25]
+      Is Trigger?: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 1
+  - Entity: 13783983428700744507
+    Internal Component:
+      Tag: Mini Ground
+      Is Active?: true
+      Parent: 10318122248500355676
+    Transform Component:
+      Position: [4, 1, 0]
+      Rotation: [0, 0, 44]
+      Scale: [3, 0.5, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [1.5, 0.25]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.4646346, 0.19845003, 0.0942342, 1]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+      Gravity Scale: 1
+      Linear Damping: 0
+      Angular Damping: 0
+      Linear Velocity: [0, 0]
+      Angular Velocity: 0
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [1.5, 0.25]
+      Is Trigger?: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 1
+  - Entity: 8638110208058322692
+    Internal Component:
+      Tag: Background
+      Is Active?: true
+      Parent: 10318122248500355676
+    Transform Component:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [25, 25, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 0
+      Origin: [12.5, 12.5]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.013299408, 0.03500473, 0.04259473, 1]
+  - Entity: 10318122248500355676
+    Internal Component:
+      Tag: Environment
+      Is Active?: true
+      Parent: 0
+    Transform Component:
+      Position: [24.6, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 4172562480735371984
+    Internal Component:
+      Tag: Background
+      Is Active?: true
+      Parent: 16706619934062028346
+    Transform Component:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [25, 25, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 0
+      Origin: [12.5, 12.5]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.013299408, 0.03500473, 0.04259473, 1]
+  - Entity: 17389153337455709
+    Internal Component:
+      Tag: Mini Ground
+      Is Active?: true
+      Parent: 16706619934062028346
+    Transform Component:
+      Position: [4, 1, 0]
+      Rotation: [0, 0, 44]
+      Scale: [3, 0.5, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [1.5, 0.25]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.4646346, 0.19845003, 0.0942342, 1]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+      Gravity Scale: 1
+      Linear Damping: 0
+      Angular Damping: 0
+      Linear Velocity: [0, 0]
+      Angular Velocity: 0
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [1.5, 0.25]
+      Is Trigger?: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 1
+  - Entity: 8315550800332452349
+    Internal Component:
+      Tag: Mini Ground
+      Is Active?: true
+      Parent: 16706619934062028346
+    Transform Component:
+      Position: [-1.5, -1.6, 0]
+      Rotation: [0, 0, -9.9]
+      Scale: [3, 0.5, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [1.5, 0.25]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.4646346, 0.19845003, 0.0942342, 1]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+      Gravity Scale: 1
+      Linear Damping: 0
+      Angular Damping: 0
+      Linear Velocity: [0, 0]
+      Angular Velocity: 0
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [1.5, 0.25]
+      Is Trigger?: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 1
+  - Entity: 5221844491061550207
+    Internal Component:
+      Tag: Mini Ground
+      Is Active?: true
+      Parent: 16706619934062028346
+    Transform Component:
+      Position: [-6.5, 1, 0]
+      Rotation: [0, 0, -33.5]
+      Scale: [3, 0.5, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [1.5, 0.25]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.4646346, 0.19845003, 0.0942342, 1]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+      Gravity Scale: 1
+      Linear Damping: 0
+      Angular Damping: 0
+      Linear Velocity: [0, 0]
+      Angular Velocity: 0
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [1.5, 0.25]
+      Is Trigger?: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 1
+  - Entity: 4031005916001371897
+    Internal Component:
+      Tag: Ground
+      Is Active?: true
+      Parent: 16706619934062028346
+    Transform Component:
+      Position: [0, -6, 0]
+      Rotation: [0, 0, 0]
+      Scale: [25, 3, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 0
+      Sorting Layer: 1
+      Origin: [12.5, 1.5]
+      Origin Mode: Center
+      Crop: [0, 0, 0, 0]
+      Tint: [0.10136999, 0.32818532, 0.11012732, 1]
+    Rigidbody2D Component:
+      Type: Static
+      Fixed Rotation?: false
+      Gravity Scale: 1
+      Linear Damping: 0
+      Angular Damping: 0
+      Linear Velocity: [0, 0]
+      Angular Velocity: 0
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [12.5, 1.5]
+      Is Trigger?: false
+      Density: 1
+      Friction: 0.5
+      Restitution: 0
+  - Entity: 16706619934062028346
+    Internal Component:
+      Tag: Environment
+      Is Active?: true
+      Parent: 0
+    Transform Component:
+      Position: [-24.9, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 11654950303771714840
+    Internal Component:
+      Tag: Player
+      Is Active?: true
+      Parent: 0
+    Transform Component:
+      Position: [-5.7, 4.4, 0]
+      Rotation: [0, 0, 0]
+      Scale: [2, 2, 1]
+    Sprite Renderer Component:
+      Texture Asset Handle: 5516896130401600452
+      Sorting Layer: 1
+      Origin: [1, 1]
+      Origin Mode: Center
+      Crop: [0, 0, 24, 24]
+      Tint: [1, 1, 1, 1]
+    Animator2D Component:
+      Animation: 15179463915103717565
+    Rigidbody2D Component:
+      Type: Dynamic
+      Fixed Rotation?: true
+      Gravity Scale: 1
+      Linear Damping: 0
+      Angular Damping: 0.05
+      Linear Velocity: [0, 0]
+      Angular Velocity: 0
+    Box Collider2D Component:
+      Offset: [0, 0]
+      Size: [0.5, 0.75]
       Is Trigger?: false
       Density: 1
       Friction: 0.5
@@ -66,7 +366,7 @@ Entities:
     Internal Component:
       Tag: Main Camera
       Is Active?: true
-      Parent: 0
+      Parent: 11654950303771714840
     Transform Component:
       Position: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -154,7 +454,7 @@ Entities:
       Is Active?: true
       Parent: 8861492817937275687
     Transform Component:
-      Position: [4.5, 1, 0]
+      Position: [4, 1, 0]
       Rotation: [0, 0, 44]
       Scale: [3, 0.5, 1]
     Sprite Renderer Component:
@@ -196,4 +496,21 @@ Entities:
       Crop: [0, 0, 0, 0]
       Tint: [0.013299408, 0.03500473, 0.04259473, 1]
 Asset Registry:
-  []
+  - Asset: 5516896130401600452
+    Path: SandboxProject/assets/extern/dino/sheets/DinoSprites - mort.png
+    Type: Texture
+    Texture Filter: Nearest
+  - Asset: 17798581334213600358
+    Path: SandboxProject/assets/extern/dino/sheets/DinoSprites - doux.png
+    Type: Texture
+    Texture Filter: Nearest
+  - Asset: 1032423037899173400
+    Path: SandboxProject/assets/textures/texel_checker.png
+    Type: Texture
+    Texture Filter: Linear
+  - Asset: 17288850075062157363
+    Path: SandboxProject/assets/animations/Player_Idle.anim
+    Type: Animation
+  - Asset: 15179463915103717565
+    Path: SandboxProject/assets/animations/Player_Run.anim
+    Type: Animation

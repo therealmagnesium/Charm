@@ -20,6 +20,10 @@ namespace CharmApp
             {
                 ImGui::PushID(handle);
 
+                std::string extension = metadata.path.extension().string();
+                AssetType type = Utils::ExtensionToAssetType(extension);
+                std::string typeAsString = Utils::AssetTypeToString(type);
+
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Handle");
@@ -30,7 +34,7 @@ namespace CharmApp
 
                 ImGui::PopID();
 
-                ImGui::PushID(metadata.path.c_str());
+                ImGui::PushID(metadata.path.string().c_str());
 
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0, columnWidth);
@@ -48,7 +52,7 @@ namespace CharmApp
                 ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Type");
                 ImGui::NextColumn();
-                ImGui::Text("%s", "Texture");
+                ImGui::Text("%s", typeAsString.c_str());
                 ImGui::Columns(1);
                 ImGui::Separator();
 

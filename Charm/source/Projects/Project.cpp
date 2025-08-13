@@ -38,8 +38,8 @@ namespace Charm
                 project.directory = std::filesystem::path(path).parent_path();
             }
 
-            std::filesystem::path GetAssetPath(Project& project) { return project.directory / project.assetsDirectory; }
-            std::filesystem::path GetAssetFileSystemPath(const std::filesystem::path& path, Project& project) { return project.directory / project.assetsDirectory / path; }
+            std::filesystem::path GetAssetPath(const Project& project) { return project.directory / project.assetsDirectory; }
+            std::filesystem::path GetAssetFileSystemPath(const std::filesystem::path& path, const Project& project) { return project.directory / project.assetsDirectory / path; }
         }
     }
 }

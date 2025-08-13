@@ -31,8 +31,13 @@ namespace Charm
                 out << YAML::EndMap;
 
                 std::ofstream fout(path);
-                fout << out.c_str() << "\n";
-                fout.close();
+                if (fout.is_open())
+                {
+                    fout << out.c_str() << "\n";
+                    fout.close();
+                }
+                else
+                    ERROR("ProjectSerializer::Serialize - Failed to save project %s, the path may be invalid!", path);
             }
 
             void SerializeRuntime(const char* path) {}
@@ -41,8 +46,7 @@ namespace Charm
             {
                 ASSERT_ERROR(context != NULL, "ProjectSerializer::Deserialize - The context has not been set!");
 
-                YAML::Node data;
-                data = YAML::LoadFile(path);
+                YAML::Node data = YAML::LoadFile(path);
                 ASSERT_ERROR(data, "ProjectSerialzier::Deserialize - Failed to load project %s!", path);
 
                 YAML::Node projectNode = data["Project"];

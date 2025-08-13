@@ -52,6 +52,32 @@ namespace CharmApp
 
             ImGui::Separator();
 
+            if (ImGui::BeginPopupContextWindow("Create Asset Popup"))
+            {
+                if (ImGui::BeginMenu("Create"))
+                {
+                    if (ImGui::MenuItem("Animation"))
+                    {
+                        FileDialogs::SetDefaultPath(state.currentDirectory);
+                        if (FileDialogs::Save())
+                        {
+                            const Project& project = CharmApp::GetProject();
+                            const std::string& path = FileDialogs::GetSelectedPath();
+                            const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
+                            const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
+
+                            Animations::Save(projectPath.string().c_str(), Animation_Null);
+                            AssetHandle handle = AssetManager::Import(projectPath.string().c_str(), AssetType::Animation);
+                            SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
+                            InspectorPanel::SetSelectedAsset(handle);
+                        }
+                    }
+
+                    ImGui::EndMenu();
+                }
+                ImGui::EndPopup();
+            }
+
             if (state.currentDirectory != ProjectManager::GetAssetPath(CharmApp::GetProject()))
             {
                 if (ImGui::Button("Back"))
@@ -100,7 +126,7 @@ namespace CharmApp
                     {
                         state.selectedFilePath = path;
                         AssetHandle handle = AssetManager::FindAssetHandle(path.string());
-                        SceneHeirarchyPanel::SetSelectedEntity((Entity){});
+                        SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                         InspectorPanel::SetSelectedAsset(handle);
                     }
                 }

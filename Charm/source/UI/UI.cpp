@@ -130,7 +130,7 @@ namespace Charm
             style.WindowBorderSize = 0.0f;
             style.WindowMinSize = ImVec2(20.0f, 20.0f);
             style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-            style.WindowMenuButtonPosition = ImGuiDir_None;
+            style.WindowMenuButtonPosition = ImGuiDir_Right;
             style.ChildRounding = 20.0f;
             style.ChildBorderSize = 1.0f;
             style.PopupRounding = 17.39999961853027f;

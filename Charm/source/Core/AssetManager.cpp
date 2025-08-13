@@ -3,6 +3,7 @@
 #include "Core/Log.h"
 #include "Core/Random.h"
 
+#include "Graphics/Animation.h"
 #include "Graphics/Texture.h"
 
 using namespace Charm::Graphics;
@@ -151,6 +152,13 @@ namespace Charm
                         asset = new Texture(std::move(texture));
                         asset->handle = handle;
                         break;
+                    }
+
+                    case AssetType::Animation:
+                    {
+                        Animation animation = Animations::Load(metadata.path.c_str());
+                        asset = new Animation(std::move(animation));
+                        asset->handle = handle;
                     }
 
                     default:

@@ -13,6 +13,7 @@ namespace CharmApp
         {
             state.iconPlay = Textures::Load("assets/textures/play_button.png");
             state.iconStop = Textures::Load("assets/textures/stop_button.png");
+            state.windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
         }
 
         void Shutdown()
@@ -35,7 +36,7 @@ namespace CharmApp
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(V3_OPEN(buttonHovered), 0.5f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(V3_OPEN(buttonActive), 0.5f));
 
-            ImGui::Begin("##Toolbar", NULL, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+            ImGui::Begin("##Toolbar", NULL, state.windowFlags);
             float iconSize = ImGui::GetWindowHeight() - 12.f;
             ImTextureID icon = (sceneState == SceneState::Editor) ? state.iconPlay.id : state.iconStop.id;
             ImGui::SetCursorPosX((ImGui::GetContentRegionMax().x * 0.5f) - (iconSize * 0.5f));

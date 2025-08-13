@@ -333,6 +333,24 @@ namespace Charm
                     out << YAML::EndMap;
                 }
 
+                if (entity.HasComponent<Animator2DComponent>())
+                {
+                    auto& animator2D = entity.GetComponent<Animator2DComponent>();
+                    out << YAML::Key << "Animator2D Component" << YAML::Value << YAML::BeginMap;
+                    out << YAML::Key << "Animation" << YAML::Value << animator2D.animation;
+                    /*
+                                out << YAML::Key << "Active Slot" << YAML::Value << animator2D.controller.activeSlot;
+                                out << YAML::Key << "Animation Count" << YAML::Value << animator2D.controller.animations.size();
+
+                                for (u32 i = 0; i < animator2D.controller.animations.size(); i++)
+                                {
+                                    AssetHandle handle = animator2D.controller.animations[i];
+                                    out << YAML::Key << "Animation " + std::to_string(i) << YAML::Value << handle;
+                                }*/
+
+                    out << YAML::EndMap;
+                }
+
                 if (entity.HasComponent<Camera2DComponent>())
                 {
                     auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
@@ -416,6 +434,20 @@ namespace Charm
                     spriteRenderer.originMode = Utils::StringToOriginMode(spriteRendererNode["Origin Mode"].as<std::string>());
                     spriteRenderer.crop = spriteRendererNode["Crop"].as<Rectangle>();
                     spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec4>();
+                }
+
+                auto animator2DNode = node["Animator2D Component"];
+                if (animator2DNode)
+                {
+                    auto& animator2D = entity.AddComponent<Animator2DComponent>();
+                    animator2D.animation = animator2DNode["Animation"].as<AssetHandle>();
+                    // animator2D.controller.activeSlot = animator2DNode["Active Slot"].as<s32>();
+
+                    /*
+                                u32 animationCount = animator2DNode["Animation Count"].as<u32>();
+                                animator2D.controller.animations.resize(animationCount);
+                                for (u32 i = 0; i < animationCount; i++)
+                                    animator2D.controller.animations[i] = animator2DNode["Animation " + std::to_string(i)].as<AssetHandle>();*/
                 }
 
                 auto camera2DNode = node["Camera2D Component"];

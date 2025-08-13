@@ -19,7 +19,7 @@ namespace CharmApp
 
         void Display(Texture& displayTexture)
         {
-            ImGui::Begin("Scene Viewport", NULL, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+            ImGui::Begin("Scene Viewport", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
             state.isHovered = ImGui::IsWindowHovered();
             state.isFocused = ImGui::IsWindowFocused();
