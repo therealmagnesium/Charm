@@ -42,6 +42,7 @@ namespace Charm
 
                 glGenTextures(1, &texture.id);
                 Invalidate(texture);
+                texture.isValid = true;
 
                 INFO("Texture \"%s\" was loaded successfully with an ID of %d", path, texture.id);
                 return texture;
@@ -92,6 +93,7 @@ namespace Charm
                 glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
                              texture.height, 0, texture.dataFormat, formatSize, NULL);
 
+                texture.isValid = true;
                 INFO("Empty texture loaded successfully with an ID of %d", texture.id);
                 return texture;
             }
@@ -116,6 +118,7 @@ namespace Charm
                 glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
                              texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, &color);
 
+                texture.isValid = true;
                 INFO("Default white texture was loaded successfully with an ID of %d", texture.id);
                 return texture;
             }

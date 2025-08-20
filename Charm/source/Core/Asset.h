@@ -15,6 +15,7 @@ namespace Charm
         {
             Invalid = 0,
             Animation,
+            AnimationController,
             Shader,
             Texture,
         };
@@ -22,6 +23,7 @@ namespace Charm
         struct Asset
         {
             AssetHandle handle = 0;
+            bool isValid = false;
 
             virtual AssetType GetType() const { return AssetType::Invalid; }
         };

@@ -22,6 +22,6 @@ namespace CharmApp
         void Shutdown();
         void Display();
 
-        std::filesystem::path& GetSelectedFilePath();
+        const std::filesystem::path& GetSelectedFilePath();
     }
 }

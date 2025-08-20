@@ -24,6 +24,7 @@ namespace Charm
             const AssetRegistry& GetRegistry();
 
             Asset* GetAsset(AssetHandle handle);
+            std::filesystem::path GetAssetPath(AssetHandle handle);
             bool IsHandleValid(AssetHandle handle);
             bool IsAssetLoaded(AssetHandle handle);
             bool IsAssetRegistered(const std::string& path);

@@ -347,6 +347,9 @@ namespace Charm
                 auto nativeScripts = scene.registry.view<NativeScriptComponent>();
                 auto rigidbodies = scene.registry.view<Rigidbody2DComponent>();
 
+                std::vector<Animation*> updatedAnimations;
+                updatedAnimations.reserve(scene.entityCount / 2);
+
                 b2World_Step(*(b2WorldId*)&scene.physicsWorldID, Time::GetDelta(), 4);
                 std::unordered_map<Entity, Entity> contactBeginEntities;
                 std::unordered_map<Entity, Entity> contactEndEntities;
@@ -465,24 +468,51 @@ namespace Charm
                 {
                     Entity entity = Entities::Create(entityID, &scene);
                     auto& animator2D = entity.GetComponent<Animator2DComponent>();
+                    AnimationController* controller = AssetManager::GetAsset<AnimationController>(animator2D.controller);
                     Animation* animation = NULL;
 
-                    if (AssetManager::IsHandleValid(animator2D.animation) && entity.HasComponent<SpriteRendererComponent>())
+                    if (controller == NULL)
+                        continue;
+
+                    if (animator2D.activeSlot < 0 || controller->animations.size() < 1 || animator2D.activeSlot > controller->animations.size() - 1)
+                        continue;
+
+                    animation = controller->animations[animator2D.activeSlot];
+                    if (animation == NULL)
+                        continue;
+
+                    auto it = std::find(updatedAnimations.begin(), updatedAnimations.end(), animation);
+                    if (it == updatedAnimations.end())
                     {
-                        auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
-                        Animation* animation = AssetManager::GetAsset<Animation>(animator2D.animation);
-                        Animations::Update(*animation, spriteRenderer);
+                        Animations::Update(*animation);
+                        updatedAnimations.emplace_back(animation);
                     }
+                }
 
-                    /*
-                                if (animator2D.controller.activeSlot != -1 && animator2D.controller.animations.size() > 0)
-                                    animation = AssetManager::GetAsset<Animation>(animator2D.controller.animations[animator2D.controller.activeSlot]);
+                for (auto entityID : animators)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& animator2D = entity.GetComponent<Animator2DComponent>();
+                    AnimationController* controller = AssetManager::GetAsset<AnimationController>(animator2D.controller);
+                    Animation* animation = NULL;
 
-                                if (animation != NULL && entity.HasComponent<SpriteRendererComponent>())
-                                {
-                                    auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
-                                    Animations::Update(*animation, spriteRenderer);
-                                }*/
+                    if (controller == NULL)
+                        continue;
+
+                    if (animator2D.activeSlot < 0 || controller->animations.size() < 1 || animator2D.activeSlot > controller->animations.size() - 1)
+                        continue;
+
+                    animation = controller->animations[animator2D.activeSlot];
+                    if (animation == NULL || !entity.HasComponent<SpriteRendererComponent>())
+                        continue;
+
+                    auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                    Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
+
+                    if (texture == NULL)
+                        continue;
+
+                    Animations::Apply(*animation, spriteRenderer.crop, *texture);
                 }
 
                 for (auto entityID : cameras)

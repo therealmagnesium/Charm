@@ -197,6 +197,12 @@ namespace Charm
                             out << YAML::Key << "Texture Filter" << YAML::Value << Utils::TextureFilterToString(texture->filter);
                             break;
                         }
+                        case AssetType::AnimationController:
+                        {
+                            AnimationController* controller = (AnimationController*)asset;
+                            Animations::SaveController(metadata.path.string().c_str(), *controller);
+                            break;
+                        }
 
                         default:
                             break;
@@ -230,6 +236,27 @@ namespace Charm
                     return;
                 }
 
+                YAML::Node assets = data["Asset Registry"];
+                if (assets)
+                {
+                    for (auto asset : assets)
+                    {
+                        AssetHandle handle = asset["Asset"].as<AssetHandle>();
+                        std::string path = asset["Path"].as<std::string>();
+                        AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
+
+                        AssetManager::Import(path.c_str(), type, handle);
+
+                        YAML::Node textureFilterNode = asset["Texture Filter"];
+                        if (textureFilterNode)
+                        {
+                            Texture* texture = AssetManager::GetAsset<Texture>(handle);
+                            texture->filter = Utils::StringToTextureFilter(textureFilterNode.as<std::string>());
+                            Textures::Invalidate(*texture);
+                        }
+                    }
+                }
+
                 YAML::Node entities = data["Entities"];
                 std::vector<std::pair<UUID, UUID>> parentChildRelationships;
 
@@ -261,27 +288,6 @@ namespace Charm
 
                         auto& childInternal = child.GetComponent<InternalComponent>();
                         childInternal.parent = parent;
-                    }
-                }
-
-                YAML::Node assets = data["Asset Registry"];
-                if (assets)
-                {
-                    for (auto asset : assets)
-                    {
-                        AssetHandle handle = asset["Asset"].as<AssetHandle>();
-                        std::string path = asset["Path"].as<std::string>();
-                        AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
-
-                        AssetManager::Import(path.c_str(), type, handle);
-
-                        YAML::Node textureFilterNode = asset["Texture Filter"];
-                        if (textureFilterNode)
-                        {
-                            Texture* texture = AssetManager::GetAsset<Texture>(handle);
-                            texture->filter = Utils::StringToTextureFilter(textureFilterNode.as<std::string>());
-                            Textures::Invalidate(*texture);
-                        }
                     }
                 }
             }
@@ -337,16 +343,8 @@ namespace Charm
                 {
                     auto& animator2D = entity.GetComponent<Animator2DComponent>();
                     out << YAML::Key << "Animator2D Component" << YAML::Value << YAML::BeginMap;
-                    out << YAML::Key << "Animation" << YAML::Value << animator2D.animation;
-                    /*
-                                out << YAML::Key << "Active Slot" << YAML::Value << animator2D.controller.activeSlot;
-                                out << YAML::Key << "Animation Count" << YAML::Value << animator2D.controller.animations.size();
-
-                                for (u32 i = 0; i < animator2D.controller.animations.size(); i++)
-                                {
-                                    AssetHandle handle = animator2D.controller.animations[i];
-                                    out << YAML::Key << "Animation " + std::to_string(i) << YAML::Value << handle;
-                                }*/
+                    out << YAML::Key << "Controller" << YAML::Value << animator2D.controller;
+                    out << YAML::Key << "Active Slot" << YAML::Value << animator2D.activeSlot;
 
                     out << YAML::EndMap;
                 }
@@ -440,14 +438,8 @@ namespace Charm
                 if (animator2DNode)
                 {
                     auto& animator2D = entity.AddComponent<Animator2DComponent>();
-                    animator2D.animation = animator2DNode["Animation"].as<AssetHandle>();
-                    // animator2D.controller.activeSlot = animator2DNode["Active Slot"].as<s32>();
-
-                    /*
-                                u32 animationCount = animator2DNode["Animation Count"].as<u32>();
-                                animator2D.controller.animations.resize(animationCount);
-                                for (u32 i = 0; i < animationCount; i++)
-                                    animator2D.controller.animations[i] = animator2DNode["Animation " + std::to_string(i)].as<AssetHandle>();*/
+                    animator2D.controller = animator2DNode["Controller"].as<AssetHandle>();
+                    animator2D.activeSlot = animator2DNode["Active Slot"].as<s32>();
                 }
 
                 auto camera2DNode = node["Camera2D Component"];

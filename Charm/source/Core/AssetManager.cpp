@@ -90,6 +90,8 @@ namespace Charm
                 return asset;
             }
 
+            std::filesystem::path GetAssetPath(AssetHandle handle) { return assets->registry.at(handle).path; }
+
             bool IsHandleValid(AssetHandle handle)
             {
                 return handle != 0 && assets->registry.find(handle) != assets->registry.end();
@@ -157,8 +159,23 @@ namespace Charm
                     case AssetType::Animation:
                     {
                         Animation animation = Animations::Load(metadata.path.c_str());
-                        asset = new Animation(std::move(animation));
-                        asset->handle = handle;
+                        if (animation.isValid)
+                        {
+                            asset = new Animation(std::move(animation));
+                            asset->handle = handle;
+                        }
+                        break;
+                    }
+
+                    case AssetType::AnimationController:
+                    {
+                        AnimationController controller = Animations::LoadController(metadata.path.c_str());
+                        if (controller.isValid)
+                        {
+                            asset = new AnimationController(std::move(controller));
+                            asset->handle = handle;
+                        }
+                        break;
                     }
 
                     default:

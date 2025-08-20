@@ -110,8 +110,8 @@ namespace Charm
 
         struct Animator2DComponent
         {
-            AssetHandle animation;
-            // AnimationController controller;
+            s32 activeSlot = -1;
+            AssetHandle controller;
 
             Animator2DComponent() = default;
             Animator2DComponent(const Animator2DComponent&) = default;

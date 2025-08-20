@@ -1,7 +1,8 @@
 #include "Graphics/Animation.h"
+#include "Graphics/Texture.h"
+
 #include "Core/AssetManager.h"
 #include "Core/Log.h"
-#include "ECS/Components.h"
 #include "Core/Utils.h"
 
 #include <fstream>
@@ -19,8 +20,8 @@ namespace Charm
             {
                 Animation animation;
                 YAML::Node data = YAML::LoadFile(path);
-                ASSERT_RETURN(data, animation, "Animations::Load - Failed to load animation %s, the path may be invalid!", path);
-                ASSERT_RETURN(data["Animation"], animation, "Animations::Load - Failed to load animation %s, the path may be an invalid animation file!", path);
+                ASSERT_RETURN(data, animation, "Animations::Load - Failed to load animation \"%s\", the path may be invalid!", path);
+                ASSERT_RETURN(data["Animation"], animation, "Animations::Load - Failed to load animation \"%s\", the path may be an invalid animation file!", path);
 
                 YAML::Node properties = data["Properties"];
                 animation.speed = properties["Speed"].as<u32>();
@@ -31,6 +32,7 @@ namespace Charm
                 animation.columnOffset = properties["Column Offset"].as<u32>();
                 animation.shouldLoop = properties["Should Loop"].as<bool>();
                 animation.spriteSheetType = Utils::StringToSpriteSheetAnimType(properties["Sprite Sheet Type"].as<std::string>());
+                animation.isValid = true;
 
                 INFO("Animation \"%s\" was loaded successfully", path);
                 return animation;
@@ -65,26 +67,18 @@ namespace Charm
                     INFO("Animation \"%s\" was saved successfully", path);
                 }
                 else
-                    ERROR("Animations::Save - Failed to save animation %s, the path may be invalid!", path);
+                    ERROR("Animations::Save - Failed to save animation \"%s\", the path may be invalid!", path);
             }
 
             void Reset(Animation& animation)
             {
                 animation.currentFrame = 0;
                 animation.counter = 0;
+                animation.hasFinished = false;
             }
 
-            void Update(Animation& animation, ECS::SpriteRendererComponent& spriteRenderer)
+            void Update(Animation& animation)
             {
-                Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
-                ASSERT_ERROR(texture != NULL, "Animations::Update - Caannot update animation because the attached sprite renderer has no texture!");
-
-                spriteRenderer.crop.width = (float)texture->width / animation.columnCount;
-                spriteRenderer.crop.height = (float)texture->height / animation.rowCount;
-
-                const u32 horizontalOffset = animation.columnOffset * spriteRenderer.crop.width;
-                const u32 verticalOffset = animation.rowOffset * spriteRenderer.crop.height;
-
                 animation.counter++;
 
                 if (animation.counter >= (60 / animation.speed))
@@ -94,21 +88,119 @@ namespace Charm
 
                     if (animation.currentFrame > animation.frameCount - 1)
                         animation.currentFrame = (!animation.shouldLoop && animation.hasFinished) ? animation.frameCount - 1 : 0;
-
-                    switch (animation.spriteSheetType)
-                    {
-                        case SpriteSheetAnimType::Horizontal:
-                            spriteRenderer.crop.x = (float)animation.currentFrame * spriteRenderer.crop.width + horizontalOffset;
-                            break;
-
-                        case SpriteSheetAnimType::Vertical:
-                            spriteRenderer.crop.y = (float)animation.currentFrame * spriteRenderer.crop.height + verticalOffset;
-                            break;
-                    }
                 }
 
                 if (!animation.shouldLoop && animation.currentFrame == animation.frameCount - 1)
                     animation.hasFinished = true;
+            }
+
+            void Apply(Animation& animation, Rectangle& rect, const Texture& texture)
+            {
+                rect.width = (float)texture.width / animation.columnCount;
+                rect.height = (float)texture.height / animation.rowCount;
+
+                const u32 horizontalOffset = animation.columnOffset * rect.width;
+                const u32 verticalOffset = animation.rowOffset * rect.height;
+
+                switch (animation.spriteSheetType)
+                {
+                    case SpriteSheetAnimType::Horizontal:
+                        rect.x = (float)animation.currentFrame * rect.width + horizontalOffset;
+                        break;
+
+                    case SpriteSheetAnimType::Vertical:
+                        rect.y = (float)animation.currentFrame * rect.height + verticalOffset;
+                        break;
+                }
+            }
+
+            AnimationController LoadController(const char* path)
+            {
+                AnimationController controller;
+                YAML::Node data;
+
+                try
+                {
+                    data = YAML::LoadFile(path);
+                }
+                catch (const YAML::BadFile& e)
+                {
+                    ERROR("Animations::LoadController - Could not load the file \"%s\"", path);
+                }
+
+                ASSERT_RETURN(data, controller, "Animations::LoadController - Failed to load animation controller \"%s\", the path may be invalid!", path);
+                ASSERT_RETURN(data["Animation Controller"], controller, "Animations::LoadController - Failed to load animation controller \"%s\", the path may be an invalid animation file!", path);
+
+                u32 animationCount = data["Animation Count"].as<u32>();
+
+                if (animationCount > 0)
+                {
+                    controller.animations.reserve(animationCount);
+                    YAML::Node animations = data["Animations"];
+
+                    for (auto animationNode : animations)
+                    {
+                        const YAML::Node animation = animationNode["Animation"];
+                        const AssetHandle animHandle = animation["Handle"].as<AssetHandle>();
+                        const std::string animPath = animation["Path"].as<std::string>();
+                        Animation* anim = AssetManager::GetAsset<Animation>(animHandle);
+
+                        if (anim != NULL)
+                        {
+                            controller.animations.emplace_back(anim);
+                            continue;
+                        }
+
+                        AssetManager::Import(animPath.c_str(), AssetType::Animation, animHandle);
+                        anim = AssetManager::GetAsset<Animation>(animHandle);
+                        controller.animations.emplace_back(anim);
+                    }
+                }
+
+                controller.isValid = true;
+                INFO("Animation Controller \"%s\" was loaded successfully", path);
+                return controller;
+            }
+
+            void SaveController(const char* path, const AnimationController& controller)
+            {
+                YAML::Emitter out;
+                out << YAML::BeginMap; // Root
+
+                out << YAML::Key << "Animation Controller" << YAML::Value << controller.handle;
+                out << YAML::Key << "Animation Count" << YAML::Value << controller.animations.size();
+
+                out << YAML::Key << "Animations" << YAML::Value << YAML::BeginSeq;
+
+                for (Animation* animation : controller.animations)
+                {
+                    const std::filesystem::path animPath = AssetManager::GetAssetPath(animation->handle);
+
+                    out << YAML::BeginMap;
+
+                    out << YAML::Key << "Animation" << YAML::Value << YAML::BeginMap;
+                    out << YAML::Key << "Handle" << YAML::Value << animation->handle;
+                    out << YAML::Key << "Path" << YAML::Value << animPath;
+                    out << YAML::EndMap;
+
+                    out << YAML::EndMap;
+                }
+
+                out << YAML::EndSeq;
+
+                out << YAML::EndMap;
+
+                std::ofstream fout(path);
+                if (!fout.is_open())
+                {
+                    ERROR("Animations::SaveController - Failed to save animation controller \"%s\", the path may be invalid!", path);
+                    return;
+                }
+
+                fout << out.c_str() << "\n";
+                fout.close();
+
+                INFO("Animation Controller \"%s\" was saved successfully", path);
             }
         }
     }

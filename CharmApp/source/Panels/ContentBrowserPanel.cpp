@@ -73,6 +73,23 @@ namespace CharmApp
                         }
                     }
 
+                    if (ImGui::MenuItem("Animation Controller"))
+                    {
+                        FileDialogs::SetDefaultPath(state.currentDirectory);
+                        if (FileDialogs::Save())
+                        {
+                            const Project& project = CharmApp::GetProject();
+                            const std::string& path = FileDialogs::GetSelectedPath();
+                            const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
+                            const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
+
+                            Animations::SaveController(projectPath.string().c_str(), AnimationController_Null);
+                            AssetHandle handle = AssetManager::Import(projectPath.string().c_str(), AssetType::AnimationController);
+                            SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
+                            InspectorPanel::SetSelectedAsset(handle);
+                        }
+                    }
+
                     ImGui::EndMenu();
                 }
                 ImGui::EndPopup();
@@ -150,6 +167,6 @@ namespace CharmApp
             ImGui::End();
         }
 
-        std::filesystem::path& GetSelectedFilePath() { return state.selectedFilePath; }
+        const std::filesystem::path& GetSelectedFilePath() { return state.selectedFilePath; }
     }
 }

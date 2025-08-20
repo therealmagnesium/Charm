@@ -60,7 +60,11 @@ namespace Charm
 
         std::string AssetTypeToString(AssetType type)
         {
-            const char* types[4] = {"Invalid", "Animation", "Shader", "Texture"};
+            const char* types[5] = {"Invalid",
+                                    "Animation",
+                                    "Animation Controller",
+                                    "Shader",
+                                    "Texture"};
             return types[(u8)type];
         }
 
@@ -71,6 +75,7 @@ namespace Charm
             list["Shader"] = AssetType::Shader;
             list["Texture"] = AssetType::Texture;
             list["Animation"] = AssetType::Animation;
+            list["Animation Controller"] = AssetType::AnimationController;
 
             return list.find(str) != list.end() ? list[str] : AssetType::Invalid;
         }
@@ -83,6 +88,7 @@ namespace Charm
             list[".jpeg"] = AssetType::Texture;
             list[".glsl"] = AssetType::Shader;
             list[".anim"] = AssetType::Animation;
+            list[".ac"] = AssetType::AnimationController;
 
             return list.find(extension) != list.end() ? list[extension] : AssetType::Invalid;
         }

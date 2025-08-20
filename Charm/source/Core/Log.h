@@ -5,36 +5,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#define INFO(message, ...) Charm::Core::Log("Info:", message, Charm::Core::TextColor::Green, ##__VA_ARGS__)
-#define WARN(message, ...) Charm::Core::Log("Warn:", message, Charm::Core::TextColor::Yellow, ##__VA_ARGS__)
-#define ERROR(message, ...) Charm::Core::Log("Error:", message, Charm::Core::TextColor::LightRed, ##__VA_ARGS__)
-#define FATAL(message, ...) Charm::Core::Log("Fatal:", message, Charm::Core::TextColor::Red, ##__VA_ARGS__)
-#define ASSERT(expression, message, ...)   \
-    {                                      \
-        if (!(expression))                 \
-        {                                  \
-            FATAL(message, ##__VA_ARGS__); \
-            exit(420);                     \
-        }                                  \
-    }
-#define ASSERT_ERROR(expression, message, ...) \
-    {                                          \
-        if (!(expression))                     \
-        {                                      \
-            ERROR(message, ##__VA_ARGS__);     \
-            return;                            \
-        }                                      \
-    }
-
-#define ASSERT_RETURN(expression, returnVal, message, ...) \
-    {                                                      \
-        if (!(expression))                                 \
-        {                                                  \
-            ERROR(message, ##__VA_ARGS__);                 \
-            return returnVal;                              \
-        }                                                  \
-    }
-
 namespace Charm
 {
     namespace Core
@@ -92,3 +62,33 @@ namespace Charm
         }
     }
 }
+
+#define INFO(message, ...) Charm::Core::Log("Info:", message, Charm::Core::TextColor::Green, ##__VA_ARGS__)
+#define WARN(message, ...) Charm::Core::Log("Warn:", message, Charm::Core::TextColor::Yellow, ##__VA_ARGS__)
+#define ERROR(message, ...) Charm::Core::Log("Error:", message, Charm::Core::TextColor::LightRed, ##__VA_ARGS__)
+#define FATAL(message, ...) Charm::Core::Log("Fatal:", message, Charm::Core::TextColor::Red, ##__VA_ARGS__)
+#define ASSERT(expression, message, ...)   \
+    {                                      \
+        if (!(expression))                 \
+        {                                  \
+            FATAL(message, ##__VA_ARGS__); \
+            exit(420);                     \
+        }                                  \
+    }
+#define ASSERT_ERROR(expression, message, ...) \
+    {                                          \
+        if (!(expression))                     \
+        {                                      \
+            ERROR(message, ##__VA_ARGS__);     \
+            return;                            \
+        }                                      \
+    }
+
+#define ASSERT_RETURN(expression, returnVal, message, ...) \
+    {                                                      \
+        if (!(expression))                                 \
+        {                                                  \
+            ERROR(message, ##__VA_ARGS__);                 \
+            return returnVal;                              \
+        }                                                  \
+    }

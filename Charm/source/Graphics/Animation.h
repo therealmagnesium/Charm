@@ -1,6 +1,9 @@
 #pragma once
 #include "Core/Base.h"
 #include "Core/Asset.h"
+#include "Graphics/Shapes.h"
+
+#include <vector>
 
 namespace Charm
 {
@@ -11,6 +14,8 @@ namespace Charm
 
     namespace Graphics
     {
+        struct Texture;
+
         enum class SpriteSheetAnimType : u8
         {
             Horizontal = 0,
@@ -34,21 +39,25 @@ namespace Charm
             Core::AssetType GetType() const override { return Core::AssetType::Animation; }
         };
 
-        /*
-                struct AnimationController : Core::Asset
-                {
-                    std::vector<Core::AssetHandle> animations;
-                    s32 activeSlot = -1;
-                };*/
+        struct AnimationController : Core::Asset
+        {
+            std::vector<Animation*> animations;
+            Core::AssetType GetType() const override { return Core::AssetType::AnimationController; }
+        };
 
         inline const Animation Animation_Null;
+        inline const AnimationController AnimationController_Null;
 
         namespace Animations
         {
             Animation Load(const char* path);
             void Save(const char* path, const Animation& animation);
             void Reset(Animation& animation);
-            void Update(Animation& animation, ECS::SpriteRendererComponent& spriteRenderer);
+            void Update(Animation& animation);
+            void Apply(Animation& animation, Rectangle& rect, const Texture& texture);
+
+            AnimationController LoadController(const char* path);
+            void SaveController(const char* path, const AnimationController& controller);
         }
     }
 }
