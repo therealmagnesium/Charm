@@ -25,16 +25,14 @@ namespace Charm
 
             void UnloadModule()
             {
-                INFO("Script Manager is unloading module %s...", state.modulePath.c_str());
-
                 if (state.moduleHandle != NULL)
                 {
+                    INFO("Script Manager is unloading module %s...", state.modulePath.c_str());
                     dlclose(state.moduleHandle);
                     state.moduleHandle = NULL;
                     state.RegisterScripts = NULL;
+                    state.bindings.clear();
                 }
-
-                state.bindings.clear();
             }
 
             void ReloadModule()

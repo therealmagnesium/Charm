@@ -61,9 +61,12 @@ namespace Charm
             void Shutdown()
             {
                 INFO("Application \"%s\" is shutting down...", state.config.name.c_str());
+
                 FileDialogs::Shutdown();
                 UI::DestroyContext();
                 Renderer::Shutdown();
+
+                isInitialized = false;
             }
 
             void Run()

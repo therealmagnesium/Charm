@@ -54,8 +54,11 @@ namespace Charm
             void Shutdown()
             {
                 INFO("Window \"%s\" is shutting down...", state.title.c_str());
+
                 SDL_DestroyWindow((SDL_Window*)state.handle);
                 SDL_GL_DestroyContext((SDL_GLContext)state.context);
+
+                isInitialized = false;
             }
 
             void HandleEvents()

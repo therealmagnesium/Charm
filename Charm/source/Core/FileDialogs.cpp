@@ -39,8 +39,11 @@ namespace Charm
             void Shutdown()
             {
                 INFO("NFD is shutting down...");
+
                 state.selectedPaths.clear();
                 NFD::Quit();
+
+                isInitialized = false;
             }
 
             bool Open()
@@ -83,7 +86,7 @@ namespace Charm
                 return true;
             }
 
-            const std::filesystem::path& GetSelectedPath() { return state.selectedPaths[0]; }
+            std::filesystem::path GetSelectedPath() { return state.selectedPaths[0]; }
             const std::vector<std::filesystem::path>& GetSelectedPathMulti() { return state.selectedPaths; }
 
             void SetDefaultPath(const std::filesystem::path& path) { state.defaultPath = path; }

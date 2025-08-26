@@ -7,7 +7,7 @@ namespace Charm
     {
         namespace SceneSerializer
         {
-            void SetContext(Scene& scene);
+            void SetContext(Scene* scene);
 
             void Serialize(const char* path);
             void SerializeRuntime(const char* path);

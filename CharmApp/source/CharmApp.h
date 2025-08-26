@@ -3,7 +3,7 @@
 
 using namespace Charm::Core;
 using namespace Charm::Graphics;
-using namespace Charm::ECS;
+
 using namespace Charm::Projects;
 
 namespace CharmApp

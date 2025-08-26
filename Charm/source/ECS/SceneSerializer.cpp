@@ -158,7 +158,7 @@ namespace Charm
             void SerializeEntity(YAML::Emitter& out, Entity& entity);
             void DeserializeEntity(Entity& entity, YAML::Node& node);
 
-            void SetContext(Scene& scene) { context = &scene; }
+            void SetContext(Scene* scene) { context = scene; }
 
             void Serialize(const char* path)
             {
@@ -226,6 +226,9 @@ namespace Charm
 
                 std::stringstream stream;
                 std::ifstream in(path);
+
+                ASSERT_ERROR(in.is_open(), "SceneSerializer::Deserialize - Failed to load scene \"%s\"", path);
+
                 stream << in.rdbuf();
                 in.close();
 

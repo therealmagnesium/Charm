@@ -116,6 +116,8 @@ namespace Charm
                 Shaders::CreateUniform(state.lineShader, "viewMatrix");
                 Shaders::CreateUniform(state.lineShader, "projectionMatrix");
 
+                state.clearColor = glm::vec3(0.91f);
+
                 SetupBatchRendering();
 
                 INFO("The renderer was successfully initialized");
@@ -125,12 +127,15 @@ namespace Charm
             void Shutdown()
             {
                 INFO("The renderer is shutting down...");
+
                 CleanUpBatchRendering();
                 Shaders::Unload(state.quadShader);
                 Shaders::Unload(state.circleShader);
                 Shaders::Unload(state.lineShader);
                 Window::Shutdown();
                 SDL_Quit();
+
+                isInitialized = false;
             }
 
             void BeginScene2D(const Camera2D& camera)

@@ -15,6 +15,8 @@ namespace Charm
             std::filesystem::path scriptModulePath;
         };
 
+        inline const Project Project_Null;
+
         namespace ProjectManager
         {
             Project New();

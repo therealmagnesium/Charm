@@ -99,17 +99,7 @@ namespace Charm
 
             bool IsAssetLoaded(AssetHandle handle)
             {
-                bool isLoaded = false;
-                for (auto& [loadedHandle, asset] : assets->loadedAssets)
-                {
-                    if (loadedHandle == handle)
-                    {
-                        isLoaded = true;
-                        break;
-                    }
-                }
-
-                return isLoaded;
+                return assets->loadedAssets.find(handle) != assets->loadedAssets.end();
             }
 
             bool IsAssetRegistered(const std::string& path)
@@ -151,8 +141,11 @@ namespace Charm
                     case AssetType::Texture:
                     {
                         Texture texture = Textures::Load(metadata.path.c_str());
-                        asset = new Texture(std::move(texture));
-                        asset->handle = handle;
+                        if (texture.isValid)
+                        {
+                            asset = new Texture(std::move(texture));
+                            asset->handle = handle;
+                        }
                         break;
                     }
 

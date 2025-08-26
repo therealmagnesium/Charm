@@ -5,6 +5,7 @@
 
 #include <Core/Utils.h>
 #include <ECS/Components.h>
+#include <UI/UI.h>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -21,16 +22,6 @@ namespace CharmApp
     namespace InspectorPanel
     {
         void DrawComponents(Entity& entity);
-        void DrawBoolControl(const char* label, bool* b, float columnWidth);
-        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth);
-        void DrawVec2Control(const char* label, glm::vec2& v, float speed, float resetValue, float columnWidth);
-        void DrawVec3Control(const char* label, glm::vec3& v, float speed, float resetValue, float columnWidth);
-        void DrawColorControl(const char* label, glm::vec3& v, float columnWidth);
-        void DrawColorControl(const char* label, glm::vec4& v, float columnWidth);
-        void DrawIntInputControl(const char* label, s32* v, s32 min, s32 max, float columnWidth);
-        void DrawAssetControls_Animation(Animation* animation);
-        void DrawAssetControls_AnimationController(AnimationController* controller);
-        void DrawAssetControls_Texture(Texture* texture);
 
         template <typename T, typename UIFunction>
         void DrawComponent(const char* name, Entity entity, UIFunction callback);
@@ -56,21 +47,21 @@ namespace CharmApp
                     case AssetType::Texture:
                     {
                         Texture* texture = (Texture*)state.selectedAsset;
-                        DrawAssetControls_Texture(texture);
+                        UI::DrawAssetControls_Texture(texture);
                         break;
                     }
 
                     case AssetType::Animation:
                     {
                         Animation* animation = (Animation*)state.selectedAsset;
-                        DrawAssetControls_Animation(animation);
+                        UI::DrawAssetControls_Animation(animation);
                         break;
                     }
 
                     case AssetType::AnimationController:
                     {
                         AnimationController* controller = (AnimationController*)state.selectedAsset;
-                        DrawAssetControls_AnimationController(controller);
+                        UI::DrawAssetControls_AnimationController(controller);
                         break;
                     }
 
@@ -98,7 +89,6 @@ namespace CharmApp
             auto& internal = entity.GetComponent<InternalComponent>();
 
             char tagBuffer[256];
-            memset(tagBuffer, 0, sizeof(tagBuffer));
             strncpy(tagBuffer, internal.tag.c_str(), internal.tag.size());
 
             ImGui::PushID("Is Active?");
@@ -112,7 +102,7 @@ namespace CharmApp
 
             ImGui::SameLine();
 
-            float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
+            const float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             if (ImGui::Button("Add component", ImVec2(-1.f, lineHeight)))
                 ImGui::OpenPopup("Add Component");
 
@@ -171,34 +161,18 @@ namespace CharmApp
 
             DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component) {
                 const float columnWidth = 80.f;
-                DrawVec3Control("Position", component.position, 0.1f, 0.f, columnWidth);
-                DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, columnWidth);
-                DrawVec3Control("Scale", component.scale, 0.1f, 1.f, columnWidth);
+                UI::DrawVec3Control("Position", component.position, 0.1f, 0.f, columnWidth);
+                UI::DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, columnWidth);
+                UI::DrawVec3Control("Scale", component.scale, 0.1f, 1.f, columnWidth);
             });
 
             DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
                 const float columnWidth = 110.f;
-                DrawFloatControl("Radius", &component.radius, 0.f, 100.f, columnWidth);
-                DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, columnWidth);
-                DrawFloatControl("Fade", &component.fade, 0.f, 1.f, columnWidth);
-                DrawColorControl("Color", component.color, columnWidth);
-
-                ImGui::PushID("Sorting Layer");
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Sorting Layer");
-                ImGui::NextColumn();
-                ImGui::SetNextItemWidth(-1.f);
-                if (ImGui::InputInt("##Sorting Layer", &component.sortingLayer))
-                {
-                    if (component.sortingLayer < 0)
-                        component.sortingLayer = 0;
-
-                    if (component.sortingLayer >= MAX_SORTING_LAYERS)
-                        component.sortingLayer = MAX_SORTING_LAYERS - 1;
-                }
-                ImGui::Columns(1);
-                ImGui::PopID();
+                UI::DrawFloatControl("Radius", &component.radius, 0.f, 100.f, columnWidth);
+                UI::DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, columnWidth);
+                UI::DrawFloatControl("Fade", &component.fade, 0.f, 1.f, columnWidth);
+                UI::DrawColorControl("Color", component.color, columnWidth);
+                UI::DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
             });
 
             DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
@@ -284,7 +258,7 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
-                DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
+                UI::DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
 
                 ImGui::PushID("Crop");
                 ImGui::Columns(2);
@@ -296,7 +270,7 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
-                DrawColorControl("Tint", component.tint, columnWidth);
+                UI::DrawColorControl("Tint", component.tint, columnWidth);
             });
 
             DrawComponent<Animator2DComponent>("Animator 2D", entity, [](Animator2DComponent& component) {
@@ -336,14 +310,14 @@ namespace CharmApp
                 ImGui::PopID();
 
                 if (controller != NULL)
-                    DrawIntInputControl("Active Slot", &component.activeSlot, -1, controller->animations.size() - 1, columnWidth);
+                    UI::DrawIntInputControl("Active Slot", &component.activeSlot, -1, controller->animations.size() - 1, columnWidth);
             });
 
             DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {
                 const float columnWidth = 100.f;
-                DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, columnWidth);
-                DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, columnWidth);
-                DrawBoolControl("Is Primary?", &component.isPrimary, columnWidth);
+                UI::DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, columnWidth);
+                UI::DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, columnWidth);
+                UI::DrawBoolControl("Is Primary?", &component.isPrimary, columnWidth);
             });
 
             DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](Rigidbody2DComponent& component) {
@@ -384,19 +358,19 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
-                DrawFloatControl("Gravity Scale", &component.gravityScale, 0.f, 0.f, columnWidth);
-                DrawFloatControl("Linear Damping", &component.linearDamping, 0.f, 0.f, columnWidth);
-                DrawFloatControl("Angular Damping", &component.angularDamping, 0.f, 0.f, columnWidth);
+                UI::DrawFloatControl("Gravity Scale", &component.gravityScale, 0.f, 0.f, columnWidth);
+                UI::DrawFloatControl("Linear Damping", &component.linearDamping, 0.f, 0.f, columnWidth);
+                UI::DrawFloatControl("Angular Damping", &component.angularDamping, 0.f, 0.f, columnWidth);
             });
 
             DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {
                 const float columnWidth = 100.f;
-                DrawVec2Control("Offset", component.offset, 0.1f, 0.f, columnWidth);
-                DrawVec2Control("Size", component.size, 0.1f, 0.f, columnWidth);
-                DrawBoolControl("Is Trigger?", &component.isTrigger, columnWidth);
-                DrawFloatControl("Density", &component.density, 0.f, 0.f, columnWidth);
-                DrawFloatControl("Friction", &component.friction, 0.f, 1.f, columnWidth);
-                DrawFloatControl("Restitution", &component.restitution, 0.f, 1.f, columnWidth);
+                UI::DrawVec2Control("Offset", component.offset, 0.1f, 0.f, columnWidth);
+                UI::DrawVec2Control("Size", component.size, 0.1f, 0.f, columnWidth);
+                UI::DrawBoolControl("Is Trigger?", &component.isTrigger, columnWidth);
+                UI::DrawFloatControl("Density", &component.density, 0.f, 0.f, columnWidth);
+                UI::DrawFloatControl("Friction", &component.friction, 0.f, 1.f, columnWidth);
+                UI::DrawFloatControl("Restitution", &component.restitution, 0.f, 1.f, columnWidth);
             });
 
             DrawComponent<NativeScriptComponent>("Native Script", entity, [](NativeScriptComponent& component) {
@@ -405,7 +379,6 @@ namespace CharmApp
                 ImGui::SetColumnWidth(0, 110.f);
                 ImGui::Text("Script Name");
                 ImGui::NextColumn();
-
                 std::string placeholder = (component.scriptName.empty()) ? "None" : component.scriptName;
                 ImGui::SetNextItemWidth(-1.f);
                 if (ImGui::BeginCombo("##Script Name", placeholder.c_str()))
@@ -442,7 +415,7 @@ namespace CharmApp
 
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.f, 4.f));
 
-                float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
+                const float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
                 // ImGui::Separator();
 
                 bool isOpen = ImGui::TreeNodeEx(name, flags);
@@ -470,361 +443,6 @@ namespace CharmApp
                 if (removeComponent)
                     entity.RemoveComponent<T>();
             }
-        }
-
-        void DrawBoolControl(const char* label, bool* b, float columnWidth)
-        {
-            ImGui::PushID(label);
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("%s", label);
-            ImGui::NextColumn();
-
-            ImGui::Checkbox("##", b);
-            ImGui::Columns(1);
-            ImGui::PopID();
-        }
-
-        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth)
-        {
-            ImGui::PushID(label);
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("%s", label);
-            ImGui::NextColumn();
-
-            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::DragFloat("##", v, 0.01f, min, max);
-
-            ImGui::Columns(1);
-            ImGui::PopID();
-        }
-
-        void DrawVec2Control(const char* label, glm::vec2& v, float speed, float resetValue, float columnWidth)
-        {
-            ImGui::PushID(label);
-
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("%s", label);
-            ImGui::NextColumn();
-
-            float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
-            ImVec2 buttonSize = ImVec2(lineHeight + 3.f, lineHeight);
-
-            ImGui::PushMultiItemsWidths(2, ImGui::GetContentRegionAvail().x - buttonSize.x * 3.f);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 2.f));
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.f, 0.05f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.f, 0.f, 1.f));
-            if (ImGui::Button("X", buttonSize))
-                v.x = resetValue;
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f);
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.1f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.6f, 0.f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.5f, 0.f, 1.f));
-            if (ImGui::Button("Y", buttonSize))
-                v.y = resetValue;
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f);
-            ImGui::PopItemWidth();
-
-            ImGui::PopStyleVar();
-            ImGui::Columns(1);
-
-            ImGui::PopID();
-        }
-
-        void DrawVec3Control(const char* label, glm::vec3& v, float speed, float resetValue, float columnWidth)
-        {
-            ImGui::PushID(label);
-
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("%s", label);
-            ImGui::NextColumn();
-
-            float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
-            ImVec2 buttonSize = ImVec2(lineHeight + 3.f, lineHeight);
-
-            ImGui::PushMultiItemsWidths(3, ImGui::GetContentRegionAvail().x - buttonSize.x * 3.f);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 2.f));
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.f, 0.05f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.f, 0.f, 1.f));
-            if (ImGui::Button("X", buttonSize))
-                v.x = resetValue;
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f);
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.1f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.6f, 0.f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.5f, 0.f, 1.f));
-            if (ImGui::Button("Y", buttonSize))
-                v.y = resetValue;
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f);
-            ImGui::PopItemWidth();
-            ImGui::SameLine();
-
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.8f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.05f, 0.7f, 1.f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.6f, 1.f));
-            if (ImGui::Button("Z", buttonSize))
-                v.z = resetValue;
-            ImGui::PopStyleColor(3);
-
-            ImGui::SameLine();
-            ImGui::DragFloat("##Z", &v.z, speed, 0.f, 0.f);
-            ImGui::PopItemWidth();
-
-            ImGui::PopStyleVar();
-            ImGui::Columns(1);
-
-            ImGui::PopID();
-        }
-
-        void DrawColorControl(const char* label, glm::vec3& v, float columnWidth)
-        {
-            ImGui::PushID(label);
-
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("%s", label);
-            ImGui::NextColumn();
-
-            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::ColorEdit3("##", glm::value_ptr(v));
-
-            ImGui::Columns(1);
-            ImGui::PopID();
-        }
-
-        void DrawColorControl(const char* label, glm::vec4& v, float columnWidth)
-        {
-            ImGui::PushID(label);
-
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("%s", label);
-            ImGui::NextColumn();
-
-            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::ColorEdit3("##", glm::value_ptr(v));
-
-            ImGui::Columns(1);
-            ImGui::PopID();
-        }
-
-        void DrawIntInputControl(const char* label, s32* v, s32 min, s32 max, float columnWidth)
-        {
-            ImGui::PushID(label);
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("%s", label);
-            ImGui::NextColumn();
-            ImGui::SetNextItemWidth(-1.f);
-
-            if (ImGui::InputInt("##Sorting Layer", v))
-            {
-                if (*v < min)
-                    *v = min;
-
-                if (*v >= max && min != max)
-                    *v = max;
-            }
-
-            ImGui::Columns(1);
-            ImGui::PopID();
-        }
-
-        void DrawAssetControls_Animation(Animation* animation)
-        {
-            const float columnWidth = 150.f;
-            const std::filesystem::path& path = ContentBrowserPanel::GetSelectedFilePath();
-            const std::string stringPath = path.string();
-            const std::string fileName = path.filename().string();
-            const char* name = fileName.c_str();
-
-            ImGui::PushID("Name");
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("Name");
-            ImGui::NextColumn();
-            ImGui::Text("%s", name);
-            ImGui::Columns(1);
-            ImGui::PopID();
-
-            ImGui::PushID("Sprite Sheet Type");
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("Sprite Sheet Type");
-            ImGui::NextColumn();
-
-            std::string typeAsString = Utils::SpriteSheetAnimTypeToString(animation->spriteSheetType);
-            std::string placeholder = typeAsString;
-            ImGui::SetNextItemWidth(-1.f);
-            if (ImGui::BeginCombo("##", placeholder.c_str()))
-            {
-                const char* types[2] = {"Horizontal", "Vertical"};
-
-                for (u8 i = 0; i < 2; i++)
-                {
-                    bool isSelected = typeAsString == types[i];
-
-                    if (ImGui::Selectable(types[i], isSelected))
-                        animation->spriteSheetType = (SpriteSheetAnimType)i;
-                }
-                ImGui::EndCombo();
-            }
-
-            ImGui::Columns(1);
-            ImGui::PopID();
-
-            DrawIntInputControl("Speed", (s32*)&animation->speed, 0, 0, columnWidth);
-            DrawIntInputControl("Frame Count", (s32*)&animation->frameCount, 0, 0, columnWidth);
-            DrawIntInputControl("Row Count", (s32*)&animation->rowCount, 0, 0, columnWidth);
-            DrawIntInputControl("Row Offset", (s32*)&animation->rowOffset, 0, 0, columnWidth);
-            DrawIntInputControl("Column Count", (s32*)&animation->columnCount, 0, 0, columnWidth);
-            DrawIntInputControl("Column Offset", (s32*)&animation->columnOffset, 0, 0, columnWidth);
-            DrawBoolControl("Should Loop?", &animation->shouldLoop, columnWidth);
-
-            if (ImGui::Button("Save"))
-                Animations::Save(stringPath.c_str(), *animation);
-        }
-
-        void DrawAssetControls_AnimationController(AnimationController* controller)
-        {
-            if (ImGui::Button("Add Animation"))
-            {
-                if (FileDialogs::Open())
-                {
-                    const Project& project = CharmApp::GetProject();
-                    const std::filesystem::path path = FileDialogs::GetSelectedPath();
-                    const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
-                    std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
-                    AssetHandle handle = AssetManager::FindAssetHandle(projectPath.string());
-
-                    if (AssetManager::IsHandleValid(handle))
-                    {
-                        Animation* animation = AssetManager::GetAsset<Animation>(handle);
-                        controller->animations.emplace_back(animation);
-                    }
-                }
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("Save"))
-            {
-                const std::filesystem::path& path = ContentBrowserPanel::GetSelectedFilePath();
-                Animations::SaveController(path.string().c_str(), *controller);
-            }
-
-            const ImGuiTableFlags flags =
-                ImGuiTableFlags_Resizable |
-                ImGuiTableFlags_Reorderable |
-                //  ImGuiTableFlags_Hideable |
-                ImGuiTableFlags_Sortable |
-                ImGuiTableFlags_SortMulti |
-                ImGuiTableFlags_RowBg |
-                ImGuiTableFlags_Borders |
-                ImGuiTableFlags_NoBordersInBody;
-            // ImGuiTableFlags_SizingFixedFit |
-            // ImGuiTableFlags_ScrollX |
-            // ImGuiTableFlags_ScrollY;
-
-            if (ImGui::BeginTable("Animations", 4, flags))
-            {
-                ImGui::TableSetupColumn("Slot", 0, 0.f, 0);
-                ImGui::TableSetupColumn("Animation", 0, 0.f, 1);
-                ImGui::TableSetupColumn("Reorder", 0, 0.f, 2);
-                ImGui::TableSetupColumn("Remove", 0, 0.f, 3);
-                ImGui::TableHeadersRow();
-
-                for (u32 i = 0; i < controller->animations.size(); i++)
-                {
-                    Animation* animation = controller->animations[i];
-                    const std::filesystem::path path = AssetManager::GetAssetPath(animation->handle);
-                    const std::string stemName = path.stem().string();
-
-                    ImGui::PushID(animation->handle + i);
-                    ImGui::TableNextRow();
-
-                    if (ImGui::TableSetColumnIndex(0))
-                        ImGui::Text("%d", i);
-
-                    if (ImGui::TableSetColumnIndex(1))
-                        ImGui::Text("%s", stemName.c_str());
-
-                    if (ImGui::TableSetColumnIndex(2))
-                    {
-                        if (ImGui::SmallButton("Move Up") && i != 0)
-                            std::swap(controller->animations[i], controller->animations[i - 1]);
-
-                        if (ImGui::SmallButton("Move Down") && i != controller->animations.size() - 1)
-                            std::swap(controller->animations[i], controller->animations[i + 1]);
-                    }
-
-                    if (ImGui::TableSetColumnIndex(3))
-                        if (ImGui::Button("Remove"))
-                            controller->animations.erase(controller->animations.begin() + i);
-
-                    ImGui::PopID();
-                }
-
-                ImGui::EndTable();
-            }
-        }
-
-        void DrawAssetControls_Texture(Texture* texture)
-        {
-            const float columnWidth = 120.f;
-
-            ImGui::PushID("Texture Filter");
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("Texture Filter");
-            ImGui::NextColumn();
-
-            std::string filterAsString = Utils::TextureFilterToString(texture->filter);
-            std::string placeholder = filterAsString;
-            ImGui::SetNextItemWidth(-1.f);
-            if (ImGui::BeginCombo("##Texture Filter", placeholder.c_str()))
-            {
-                const char* filters[2] = {"Linear", "Nearest"};
-
-                for (u8 i = 0; i < 2; i++)
-                {
-                    bool isSelected = filterAsString == filters[i];
-
-                    if (ImGui::Selectable(filters[i], isSelected))
-                        texture->filter = (TextureFilter)i;
-                }
-                ImGui::EndCombo();
-            }
-
-            ImGui::Columns(1);
-            ImGui::PopID();
-
-            if (ImGui::Button("Apply"))
-                Textures::Invalidate(*texture);
         }
     }
 }

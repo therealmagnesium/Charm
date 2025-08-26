@@ -1,4 +1,5 @@
 #include "CharmApp.h"
+#include "CharmHub.h"
 #include "Panels/AssetRegistryPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/DebugStatsPanel.h"
@@ -35,9 +36,10 @@ namespace CharmApp
         state.runtimeScene = Scenes::Create();
         state.activeScene = &state.editorScene;
 
-        state.project = ProjectManager::Load("SandboxProject/Sandbox.chprj");
+        state.project = CharmHub::GetProject();
 
-        SceneSerializer::SetContext(state.editorScene);
+        ProjectSerializer::SetContext(&state.project);
+        SceneSerializer::SetContext(&state.editorScene);
         SceneHeirarchyPanel::SetContext(state.editorScene);
         ContentBrowserPanel::Init();
         ToolbarPanel::Init();
@@ -57,6 +59,7 @@ namespace CharmApp
     void OnUpdate()
     {
         ASSERT(state.activeScene != NULL, "CharmApp::OnUpdate - The currently active scene is null!");
+
         Input::Capture(true);
 
         if (Input::IsKeyPressed(KEY_ESCAPE))
@@ -218,7 +221,7 @@ namespace CharmApp
 
         if (FileDialogs::Open())
         {
-            const std::string& path = FileDialogs::GetSelectedPath();
+            std::string path = FileDialogs::GetSelectedPath().string();
             CharmApp::OpenScene(path.c_str());
         }
     }
@@ -231,7 +234,7 @@ namespace CharmApp
             return;
         }
 
-        SceneSerializer::SetContext(state.editorScene);
+        SceneSerializer::SetContext(&state.editorScene);
         SceneSerializer::Serialize(state.currentScenePath.c_str());
         INFO("Saved scene %s", state.currentScenePath.c_str());
     }
@@ -240,8 +243,8 @@ namespace CharmApp
     {
         if (FileDialogs::Save())
         {
-            const std::string& path = FileDialogs::GetSelectedPath();
-            SceneSerializer::SetContext(state.editorScene);
+            std::string path = FileDialogs::GetSelectedPath().string();
+            SceneSerializer::SetContext(&state.editorScene);
             SceneSerializer::Serialize(path.c_str());
             INFO("Saved scene to %s", path.c_str());
         }
@@ -264,12 +267,13 @@ namespace CharmApp
     {
         OnSceneNew(false);
 
-        SceneSerializer::SetContext(state.editorScene);
+        SceneSerializer::SetContext(&state.editorScene);
         SceneSerializer::Deserialize(path);
         state.currentScenePath = path;
         ScriptManager::ReloadModule();
 
-        INFO("Loaded scene %s", path);
+        if (std::filesystem::exists(state.currentScenePath))
+            INFO("Loaded scene %s", path);
     }
 
     s32 GetPixelData() { return state.pixelData; }

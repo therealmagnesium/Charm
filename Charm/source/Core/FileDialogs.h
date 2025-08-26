@@ -21,7 +21,7 @@ namespace Charm
             bool OpenMultiple();
             bool Save();
 
-            const std::filesystem::path& GetSelectedPath();
+            std::filesystem::path GetSelectedPath();
             const std::vector<std::filesystem::path>& GetSelectedPathMulti();
 
             void SetDefaultPath(const std::filesystem::path& path);

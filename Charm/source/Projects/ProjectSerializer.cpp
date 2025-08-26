@@ -12,7 +12,8 @@ namespace Charm
 
         namespace ProjectSerializer
         {
-            void SetContext(Project& project) { context = &project; }
+            void SetContext(Project* project) { context = project; }
+            const Project& GetContext() { return (context != NULL) ? *context : Project_Null; }
 
             void Serialize(const char* path)
             {
@@ -46,11 +47,19 @@ namespace Charm
             {
                 ASSERT_ERROR(context != NULL, "ProjectSerializer::Deserialize - The context has not been set!");
 
-                YAML::Node data = YAML::LoadFile(path);
-                ASSERT_ERROR(data, "ProjectSerialzier::Deserialize - Failed to load project %s!", path);
+                std::stringstream stream;
+                std::ifstream in(path);
+
+                ASSERT_ERROR(in.is_open(), "ProjectSerializer::Deserialize - Failed to load project \"%s\"!", path);
+
+                stream << in.rdbuf();
+                in.close();
+
+                YAML::Node data = YAML::Load(stream.str());
+                ASSERT_ERROR(data, "ProjectSerialzier::Deserialize - Failed to load project \"%s\"!", path);
 
                 YAML::Node projectNode = data["Project"];
-                ASSERT_ERROR(projectNode, "ProjectSerialzier::Deserialize - Invalid project file %s!", path);
+                ASSERT_ERROR(projectNode, "ProjectSerialzier::Deserialize - Invalid project file \"%s\"!", path);
 
                 context->name = projectNode["Name"].as<std::string>();
                 context->startScenePath = projectNode["Start Scene"].as<std::string>();

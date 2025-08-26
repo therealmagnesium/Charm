@@ -10,9 +10,9 @@ namespace Charm
             Project New()
             {
                 Project project;
-                project.name = "Untitled";
+                project.name = "New Project";
+                project.assetsDirectory = "Assets";
                 project.directory = "";
-                project.assetsDirectory = "";
                 project.startScenePath = "";
                 project.scriptModulePath = "";
 
@@ -24,18 +24,20 @@ namespace Charm
                 Project project;
                 project.directory = std::filesystem::path(path).parent_path();
 
-                ProjectSerializer::SetContext(project);
+                ProjectSerializer::SetContext(&project);
                 ProjectSerializer::Deserialize(path);
+                ProjectSerializer::SetContext(NULL);
 
                 return project;
             }
 
             void Save(const char* path, Project& project)
             {
-                ProjectSerializer::SetContext(project);
-                ProjectSerializer::Serialize(path);
-
                 project.directory = std::filesystem::path(path).parent_path();
+
+                ProjectSerializer::SetContext(&project);
+                ProjectSerializer::Serialize(path);
+                ProjectSerializer::SetContext(NULL);
             }
 
             std::filesystem::path GetAssetPath(const Project& project) { return project.directory / project.assetsDirectory; }

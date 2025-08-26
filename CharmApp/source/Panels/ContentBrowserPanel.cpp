@@ -52,49 +52,6 @@ namespace CharmApp
 
             ImGui::Separator();
 
-            if (ImGui::BeginPopupContextWindow("Create Asset Popup"))
-            {
-                if (ImGui::BeginMenu("Create"))
-                {
-                    if (ImGui::MenuItem("Animation"))
-                    {
-                        FileDialogs::SetDefaultPath(state.currentDirectory);
-                        if (FileDialogs::Save())
-                        {
-                            const Project& project = CharmApp::GetProject();
-                            const std::string& path = FileDialogs::GetSelectedPath();
-                            const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
-                            const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
-
-                            Animations::Save(projectPath.string().c_str(), Animation_Null);
-                            AssetHandle handle = AssetManager::Import(projectPath.string().c_str(), AssetType::Animation);
-                            SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
-                            InspectorPanel::SetSelectedAsset(handle);
-                        }
-                    }
-
-                    if (ImGui::MenuItem("Animation Controller"))
-                    {
-                        FileDialogs::SetDefaultPath(state.currentDirectory);
-                        if (FileDialogs::Save())
-                        {
-                            const Project& project = CharmApp::GetProject();
-                            const std::string& path = FileDialogs::GetSelectedPath();
-                            const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
-                            const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
-
-                            Animations::SaveController(projectPath.string().c_str(), AnimationController_Null);
-                            AssetHandle handle = AssetManager::Import(projectPath.string().c_str(), AssetType::AnimationController);
-                            SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
-                            InspectorPanel::SetSelectedAsset(handle);
-                        }
-                    }
-
-                    ImGui::EndMenu();
-                }
-                ImGui::EndPopup();
-            }
-
             if (state.currentDirectory != ProjectManager::GetAssetPath(CharmApp::GetProject()))
             {
                 if (ImGui::Button("Back"))
@@ -115,55 +72,107 @@ namespace CharmApp
 
             ImGui::Columns(columnCount, NULL, false);
 
-            for (auto& entry : std::filesystem::directory_iterator(state.currentDirectory))
+            if (std::filesystem::exists(state.currentDirectory))
             {
-                std::filesystem::path path = entry.path();
-                std::string filename = path.filename().string();
-
-                ImGui::PushID(path.c_str());
-
-                ImTextureID icon = (entry.is_directory()) ? state.iconFolder.id : state.iconFile.id;
-                ImVec2 buttonSize = ImVec2(state.thumbnailSize, state.thumbnailSize);
-
-                const auto& colors = ImGui::GetStyle().Colors;
-                const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
-                const auto& buttonActive = colors[ImGuiCol_ButtonActive];
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(V3_OPEN(buttonHovered), 0.5f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(V3_OPEN(buttonActive), 0.5f));
-                if (ImGui::ImageButton("##Icon", icon, buttonSize,
-                                       ImVec2(0.f, 0.f), ImVec2(1.f, 1.f)))
+                for (auto& entry : std::filesystem::directory_iterator(state.currentDirectory))
                 {
-                    if (entry.is_directory())
-                    {
-                        state.currentDirectory /= path.filename();
-                        state.selectedFilePath = "";
-                    }
-                    else
-                    {
-                        state.selectedFilePath = path;
-                        AssetHandle handle = AssetManager::FindAssetHandle(path.string());
-                        SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
-                        InspectorPanel::SetSelectedAsset(handle);
-                    }
-                }
+                    std::filesystem::path path = entry.path();
+                    std::string filename = path.filename().string();
 
-                if (ImGui::BeginDragDropSource())
+                    ImGui::PushID(path.c_str());
+
+                    ImTextureID icon = (entry.is_directory()) ? state.iconFolder.id : state.iconFile.id;
+                    ImVec2 buttonSize = ImVec2(state.thumbnailSize, state.thumbnailSize);
+
+                    const auto& colors = ImGui::GetStyle().Colors;
+                    const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+                    const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(V3_OPEN(buttonHovered), 0.5f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(V3_OPEN(buttonActive), 0.5f));
+                    if (ImGui::ImageButton("##Icon", icon, buttonSize,
+                                           ImVec2(0.f, 0.f), ImVec2(1.f, 1.f)))
+                    {
+                        if (entry.is_directory())
+                        {
+                            state.currentDirectory /= path.filename();
+                            state.selectedFilePath = "";
+                        }
+                        else
+                        {
+                            state.selectedFilePath = path;
+                            AssetHandle handle = AssetManager::FindAssetHandle(path.string());
+                            SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
+                            InspectorPanel::SetSelectedAsset(handle);
+                        }
+                    }
+
+                    if (ImGui::BeginPopupContextItem("Asset Options Popup"))
+                    {
+                        ImGui::MenuItem("Rename");
+                        ImGui::MenuItem("Delete");
+                        ImGui::EndPopup();
+                    }
+
+                    if (ImGui::BeginDragDropSource())
+                    {
+                        std::string relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(CharmApp::GetProject()));
+                        const char* itemPath = relativePath.c_str();
+                        ImGui::SetDragDropPayload("Content Browser Item", itemPath, (strnlen(itemPath, 1024) + 1) * sizeof(char));
+                        ImGui::EndDragDropSource();
+                    }
+                    ImGui::PopStyleColor(3);
+
+                    ImGui::TextWrapped("%s", filename.c_str());
+                    ImGui::NextColumn();
+                    ImGui::PopID();
+                }
+            }
+
+            if (ImGui::BeginPopupContextWindow("Create Asset Popup", ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight))
+            {
+                if (ImGui::BeginMenu("Create"))
                 {
-                    std::string relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(CharmApp::GetProject()));
-                    const char* itemPath = relativePath.c_str();
-                    ImGui::SetDragDropPayload("Content Browser Item", itemPath, (strnlen(itemPath, 1024) + 1) * sizeof(char));
-                    ImGui::EndDragDropSource();
-                }
-                ImGui::PopStyleColor(3);
+                    if (ImGui::MenuItem("Animation"))
+                    {
+                        FileDialogs::SetDefaultPath(state.currentDirectory);
+                        if (FileDialogs::Save())
+                        {
+                            const Project& project = CharmApp::GetProject();
+                            const std::filesystem::path path = FileDialogs::GetSelectedPath();
+                            const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
+                            const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
 
-                ImGui::TextWrapped("%s", filename.c_str());
-                ImGui::NextColumn();
-                ImGui::PopID();
+                            Animations::Save(projectPath.string().c_str(), Animation_Null);
+                            AssetHandle handle = AssetManager::Import(projectPath.string().c_str(), AssetType::Animation);
+                            SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
+                            InspectorPanel::SetSelectedAsset(handle);
+                        }
+                    }
+
+                    if (ImGui::MenuItem("Animation Controller"))
+                    {
+                        FileDialogs::SetDefaultPath(state.currentDirectory);
+                        if (FileDialogs::Save())
+                        {
+                            const Project& project = CharmApp::GetProject();
+                            const std::filesystem::path path = FileDialogs::GetSelectedPath();
+                            const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
+                            const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
+
+                            Animations::SaveController(projectPath.string().c_str(), AnimationController_Null);
+                            AssetHandle handle = AssetManager::Import(projectPath.string().c_str(), AssetType::AnimationController);
+                            SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
+                            InspectorPanel::SetSelectedAsset(handle);
+                        }
+                    }
+
+                    ImGui::EndMenu();
+                }
+                ImGui::EndPopup();
             }
 
             ImGui::Columns(1);
-
             ImGui::End();
         }
 

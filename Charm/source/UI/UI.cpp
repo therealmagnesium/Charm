@@ -1,13 +1,28 @@
 #include "UI/UI.h"
+
+#include "Core/AssetManager.h"
+#include "Core/FileDialogs.h"
 #include "Core/Log.h"
+#include "Core/Utils.h"
+
+#include "Graphics/Animation.h"
+#include "Graphics/Texture.h"
 #include "Graphics/Window.h"
 
+#include "Projects/Project.h"
+#include "Projects/ProjectSerializer.h"
+
 #include <imgui.h>
+#include <imgui_stdlib.h>
+#include <imgui_internal.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
 #include <SDL3/SDL_video.h>
+#include <glm/gtc/type_ptr.hpp>
 
+using namespace Charm::Core;
 using namespace Charm::Graphics;
+using namespace Charm::Projects;
 
 namespace Charm
 {
@@ -79,6 +94,405 @@ namespace Charm
                 ImGui::UpdatePlatformWindows();
                 ImGui::RenderPlatformWindowsDefault();
             }
+        }
+
+        void DrawBoolControl(const char* label, bool* b, float columnWidth)
+        {
+            ImGui::PushID(label);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            ImGui::Checkbox("##", b);
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth)
+        {
+            ImGui::PushID(label);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::DragFloat("##", v, 0.01f, min, max);
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        void DrawVec2Control(const char* label, glm::vec2& v, float speed, float resetValue, float columnWidth)
+        {
+            ImGui::PushID(label);
+
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
+            ImVec2 buttonSize = ImVec2(lineHeight + 3.f, lineHeight);
+
+            ImGui::PushMultiItemsWidths(2, ImGui::GetContentRegionAvail().x - buttonSize.x * 3.f);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 2.f));
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.f, 0.05f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.f, 0.f, 1.f));
+            if (ImGui::Button("X", buttonSize))
+                v.x = resetValue;
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f);
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.1f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.6f, 0.f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.5f, 0.f, 1.f));
+            if (ImGui::Button("Y", buttonSize))
+                v.y = resetValue;
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f);
+            ImGui::PopItemWidth();
+
+            ImGui::PopStyleVar();
+            ImGui::Columns(1);
+
+            ImGui::PopID();
+        }
+
+        void DrawVec3Control(const char* label, glm::vec3& v, float speed, float resetValue, float columnWidth)
+        {
+            ImGui::PushID(label);
+
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
+            ImVec2 buttonSize = ImVec2(lineHeight + 3.f, lineHeight);
+
+            ImGui::PushMultiItemsWidths(3, ImGui::GetContentRegionAvail().x - buttonSize.x * 3.f);
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, ImGui::GetFontSize() / 2.f));
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.7f, 0.f, 0.05f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.f, 0.f, 1.f));
+            if (ImGui::Button("X", buttonSize))
+                v.x = resetValue;
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            ImGui::DragFloat("##X", &v.x, speed, 0.f, 0.f);
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.1f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.6f, 0.f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.05f, 0.5f, 0.f, 1.f));
+            if (ImGui::Button("Y", buttonSize))
+                v.y = resetValue;
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            ImGui::DragFloat("##Y", &v.y, speed, 0.f, 0.f);
+            ImGui::PopItemWidth();
+            ImGui::SameLine();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.15f, 0.8f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.05f, 0.7f, 1.f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.6f, 1.f));
+            if (ImGui::Button("Z", buttonSize))
+                v.z = resetValue;
+            ImGui::PopStyleColor(3);
+
+            ImGui::SameLine();
+            ImGui::DragFloat("##Z", &v.z, speed, 0.f, 0.f);
+            ImGui::PopItemWidth();
+
+            ImGui::PopStyleVar();
+            ImGui::Columns(1);
+
+            ImGui::PopID();
+        }
+
+        void DrawColorControl(const char* label, glm::vec3& v, float columnWidth)
+        {
+            ImGui::PushID(label);
+
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::ColorEdit3("##", glm::value_ptr(v));
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        void DrawColorControl(const char* label, glm::vec4& v, float columnWidth)
+        {
+            ImGui::PushID(label);
+
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+            ImGui::ColorEdit3("##", glm::value_ptr(v));
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        void DrawIntInputControl(const char* label, s32* v, s32 min, s32 max, float columnWidth)
+        {
+            ImGui::PushID(label);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+            ImGui::SetNextItemWidth(-1.f);
+
+            if (ImGui::InputInt("##", v))
+            {
+                if (*v < min)
+                    *v = min;
+
+                if (*v >= max && min != max)
+                    *v = max;
+            }
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        void DrawTextInputControl(const char* label, std::string* s, u32 flags, float columnWidth)
+        {
+            ImGui::PushID(label);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+            ImGui::SetNextItemWidth(-1.f);
+            ImGui::InputText("##", s, flags);
+            ImGui::Columns(1);
+            ImGui::PopID();
+        }
+
+        bool DrawFilesystemInputControl(const char* label, std::filesystem::path* p, u32 flags, float columnWidth)
+        {
+            if (p == NULL)
+                return false;
+
+            std::string stringPath = p->string();
+
+            ImGui::PushID(label);
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("%s", label);
+            ImGui::NextColumn();
+
+            const ImVec2 availRegion = ImGui::GetContentRegionAvail();
+            ImGui::SetNextItemAllowOverlap();
+            if (ImGui::InputText("##", &stringPath, flags))
+                *p = stringPath;
+
+            const float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
+            const ImVec2 buttonSize = ImVec2(150, lineHeight);
+            ImGui::SameLine();
+
+            bool showSaveDialog = ImGui::Button("Select Path", buttonSize);
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+
+            return showSaveDialog;
+        }
+
+        void DrawAssetControls_Animation(Animation* animation)
+        {
+            const float columnWidth = 150.f;
+            const std::filesystem::path path = AssetManager::GetAssetPath(animation->handle);
+            const std::string stringPath = path.string();
+            const std::string fileName = path.filename().string();
+            const char* name = fileName.c_str();
+
+            ImGui::PushID("Name");
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("Name");
+            ImGui::NextColumn();
+            ImGui::Text("%s", name);
+            ImGui::Columns(1);
+            ImGui::PopID();
+
+            ImGui::PushID("Sprite Sheet Type");
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("Sprite Sheet Type");
+            ImGui::NextColumn();
+
+            std::string typeAsString = Utils::SpriteSheetAnimTypeToString(animation->spriteSheetType);
+            std::string placeholder = typeAsString;
+            ImGui::SetNextItemWidth(-1.f);
+            if (ImGui::BeginCombo("##", placeholder.c_str()))
+            {
+                const char* types[2] = {"Horizontal", "Vertical"};
+
+                for (u8 i = 0; i < 2; i++)
+                {
+                    bool isSelected = typeAsString == types[i];
+
+                    if (ImGui::Selectable(types[i], isSelected))
+                        animation->spriteSheetType = (SpriteSheetAnimType)i;
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+
+            DrawIntInputControl("Speed", (s32*)&animation->speed, 0, 0, columnWidth);
+            DrawIntInputControl("Frame Count", (s32*)&animation->frameCount, 0, 0, columnWidth);
+            DrawIntInputControl("Row Count", (s32*)&animation->rowCount, 0, 0, columnWidth);
+            DrawIntInputControl("Row Offset", (s32*)&animation->rowOffset, 0, 0, columnWidth);
+            DrawIntInputControl("Column Count", (s32*)&animation->columnCount, 0, 0, columnWidth);
+            DrawIntInputControl("Column Offset", (s32*)&animation->columnOffset, 0, 0, columnWidth);
+            DrawBoolControl("Should Loop?", &animation->shouldLoop, columnWidth);
+
+            if (ImGui::Button("Save"))
+                Animations::Save(stringPath.c_str(), *animation);
+        }
+
+        void DrawAssetControls_AnimationController(AnimationController* controller)
+        {
+            if (ImGui::Button("Add Animation"))
+            {
+                if (FileDialogs::Open())
+                {
+                    const Project& project = ProjectSerializer::GetContext();
+                    const std::filesystem::path path = FileDialogs::GetSelectedPath();
+                    const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
+                    const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
+                    AssetHandle handle = AssetManager::FindAssetHandle(projectPath.string());
+
+                    if (AssetManager::IsHandleValid(handle))
+                    {
+                        Animation* animation = AssetManager::GetAsset<Animation>(handle);
+                        controller->animations.emplace_back(animation);
+                    }
+                }
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button("Save"))
+            {
+                // const std::filesystem::path& path = ContentBrowserPanel::GetSelectedFilePath();
+                const std::filesystem::path path = AssetManager::GetAssetPath(controller->handle);
+                Animations::SaveController(path.string().c_str(), *controller);
+            }
+
+            const ImGuiTableFlags flags =
+                ImGuiTableFlags_Resizable |
+                ImGuiTableFlags_Reorderable |
+                //  ImGuiTableFlags_Hideable |
+                ImGuiTableFlags_Sortable |
+                ImGuiTableFlags_SortMulti |
+                ImGuiTableFlags_RowBg |
+                ImGuiTableFlags_Borders |
+                ImGuiTableFlags_NoBordersInBody;
+            // ImGuiTableFlags_SizingFixedFit |
+            // ImGuiTableFlags_ScrollX |
+            // ImGuiTableFlags_ScrollY;
+
+            if (ImGui::BeginTable("Animations", 4, flags))
+            {
+                ImGui::TableSetupColumn("Slot", 0, 0.f, 0);
+                ImGui::TableSetupColumn("Animation", 0, 0.f, 1);
+                ImGui::TableSetupColumn("Reorder", 0, 0.f, 2);
+                ImGui::TableSetupColumn("Remove", 0, 0.f, 3);
+                ImGui::TableHeadersRow();
+
+                for (u32 i = 0; i < controller->animations.size(); i++)
+                {
+                    Animation* animation = controller->animations[i];
+                    const std::filesystem::path path = AssetManager::GetAssetPath(animation->handle);
+                    const std::string stemName = path.stem().string();
+
+                    ImGui::PushID(animation->handle + i);
+                    ImGui::TableNextRow();
+
+                    if (ImGui::TableSetColumnIndex(0))
+                        ImGui::Text("%d", i);
+
+                    if (ImGui::TableSetColumnIndex(1))
+                        ImGui::Text("%s", stemName.c_str());
+
+                    if (ImGui::TableSetColumnIndex(2))
+                    {
+                        if (ImGui::SmallButton("Move Up") && i != 0)
+                            std::swap(controller->animations[i], controller->animations[i - 1]);
+
+                        if (ImGui::SmallButton("Move Down") && i != controller->animations.size() - 1)
+                            std::swap(controller->animations[i], controller->animations[i + 1]);
+                    }
+
+                    if (ImGui::TableSetColumnIndex(3))
+                        if (ImGui::Button("Remove"))
+                            controller->animations.erase(controller->animations.begin() + i);
+
+                    ImGui::PopID();
+                }
+
+                ImGui::EndTable();
+            }
+        }
+
+        void DrawAssetControls_Texture(Texture* texture)
+        {
+            const float columnWidth = 120.f;
+
+            ImGui::PushID("Texture Filter");
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("Texture Filter");
+            ImGui::NextColumn();
+
+            std::string filterAsString = Utils::TextureFilterToString(texture->filter);
+            std::string placeholder = filterAsString;
+            ImGui::SetNextItemWidth(-1.f);
+            if (ImGui::BeginCombo("##Texture Filter", placeholder.c_str()))
+            {
+                const char* filters[2] = {"Linear", "Nearest"};
+
+                for (u8 i = 0; i < 2; i++)
+                {
+                    bool isSelected = filterAsString == filters[i];
+
+                    if (ImGui::Selectable(filters[i], isSelected))
+                        texture->filter = (TextureFilter)i;
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+
+            if (ImGui::Button("Apply"))
+                Textures::Invalidate(*texture);
         }
 
         void SetupTheme_MyPurple()
