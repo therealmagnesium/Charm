@@ -1,4 +1,5 @@
 #include "ECS/ScriptManager.h"
+#include "Core/Utils.h"
 #include <dlfcn.h>
 
 namespace Charm
@@ -20,7 +21,10 @@ namespace Charm
 
                 state.RegisterScripts();
 
-                INFO("Script Manager successfully loaded module \"%s\"", path);
+                const std::filesystem::path homeDirectory = Utils::GetHomeDirectory();
+                const std::filesystem::path absolutePath = homeDirectory / std::filesystem::relative(path, homeDirectory);
+
+                INFO("Script Manager successfully loaded module \"%s\"", absolutePath.c_str());
             }
 
             void UnloadModule()
@@ -37,12 +41,17 @@ namespace Charm
 
             void ReloadModule()
             {
-                std::string pathString = state.modulePath.string();
-                UnloadModule();
-                LoadModule(pathString.c_str());
+                if (IsModuleLoaded())
+                {
+                    std::string pathString = state.modulePath.string();
+                    UnloadModule();
+                    LoadModule(pathString.c_str());
+                }
             }
 
             void ClearBindings() { state.bindings.clear(); }
+
+            bool IsModuleLoaded() { return state.moduleHandle != NULL && !state.modulePath.empty(); }
 
             ScriptInitFunc GetScriptInitFunc(const std::string& name)
             {

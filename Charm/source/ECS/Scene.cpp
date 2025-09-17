@@ -304,7 +304,7 @@ namespace Charm
                 if (selectionContext)
                 {
                     const auto& transform = selectionContext.GetComponent<TransformComponent>();
-                    const glm::vec3 selectionColor = glm::vec3(0.8f, 0.4f, 0.2f);
+                    const glm::vec3 selectionColor = glm::vec3(0.84, 0.62, 0.47);
 
                     auto& internal = selectionContext.GetComponent<InternalComponent>();
 
@@ -346,6 +346,7 @@ namespace Charm
                 auto cameras = scene.registry.view<Camera2DComponent>();
                 auto nativeScripts = scene.registry.view<NativeScriptComponent>();
                 auto rigidbodies = scene.registry.view<Rigidbody2DComponent>();
+                auto spriteRenderers = scene.registry.view<Animator2DComponent>();
 
                 std::vector<Animation*> updatedAnimations;
                 updatedAnimations.reserve(scene.entityCount / 2);
@@ -537,6 +538,14 @@ namespace Charm
                         break;
                     }
                 }
+
+                for (auto entityID : spriteRenderers)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+                    auto& transform = entity.GetComponent<TransformComponent>();
+                    auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                    spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position, transform.scale);
+                }
             }
 
             void RenderRuntime(Scene& scene)
@@ -697,6 +706,7 @@ namespace Charm
                                 }
 
                                 Renderer::DrawRectangleLines(colliderTransformMatrix, glm::vec3(0.f, 1.f, 0.f));
+                                Renderer::DrawCircle(glm::vec2(transform.position), 0.5f, glm::vec3(0.f, 0.f, 1.f));
                             }
                         }
                     }

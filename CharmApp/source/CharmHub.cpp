@@ -88,6 +88,10 @@ namespace CharmHub
                 state.project.startScenePath = "Scenes/SampleScene.charm";
                 state.isProjectSelected = true;
 
+                const std::filesystem::path assetsDirectory = ProjectManager::GetAssetPath(state.project);
+                if (!std::filesystem::exists(assetsDirectory))
+                    std::filesystem::create_directory(assetsDirectory);
+
                 const std::filesystem::path sampleSceneRoot = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath.parent_path(), state.project);
                 if (!std::filesystem::exists(sampleSceneRoot))
                     std::filesystem::create_directory(sampleSceneRoot);

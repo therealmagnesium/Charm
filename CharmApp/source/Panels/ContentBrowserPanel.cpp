@@ -18,6 +18,7 @@ namespace CharmApp
             state.currentDirectory = ProjectManager::GetAssetPath(CharmApp::GetProject());
             state.iconFile = Textures::Load("assets/textures/file_icon.png");
             state.iconFolder = Textures::Load("assets/textures/folder_icon.png");
+            state.homeDirectory = Utils::GetHomeDirectory();
         }
 
         void Shutdown()
@@ -76,7 +77,7 @@ namespace CharmApp
             {
                 for (auto& entry : std::filesystem::directory_iterator(state.currentDirectory))
                 {
-                    std::filesystem::path path = entry.path();
+                    std::filesystem::path path = state.homeDirectory / std::filesystem::relative(entry.path(), state.homeDirectory);
                     std::string filename = path.filename().string();
 
                     ImGui::PushID(path.c_str());

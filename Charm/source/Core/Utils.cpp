@@ -24,6 +24,19 @@ namespace Charm
 {
     namespace Utils
     {
+        std::filesystem::path GetHomeDirectory()
+        {
+#ifdef CH_PLATFORM_LINUX
+            const char* environmentVariable = "HOME";
+#endif
+
+#ifdef CH_PLATFORM_WINDOWS
+            const char* environmentVariable = "USERPROFILE";
+#endif
+            std::filesystem::path homePath = std::getenv(environmentVariable);
+            return homePath;
+        }
+
         const char* BoolToCString(bool value) { return (value) ? "true" : "false"; }
         u32 TextureFilterToGL(Graphics::TextureFilter filter) { return (filter == TextureFilter::Linear) ? GL_LINEAR : GL_NEAREST; }
         std::string TextureFilterToString(Graphics::TextureFilter filter) { return filter == TextureFilter::Linear ? "Linear" : "Nearest"; }

@@ -12,8 +12,8 @@ layout (location = 1) out int entityID;
 
 void main()
 {
-    vec3 result = pow(data.color, vec3(1.f / 2.2f));
-    finalColor = vec4(result, 1.f);
+    //vec3 result = pow(data.color, vec3(1.f / 2.2f));
+    finalColor = vec4(data.color, 1.f);
     entityID = -1;
 }
 

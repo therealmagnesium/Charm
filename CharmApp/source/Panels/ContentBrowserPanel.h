@@ -10,6 +10,7 @@ namespace CharmApp
     {
         std::filesystem::path currentDirectory;
         std::filesystem::path selectedFilePath;
+        std::filesystem::path homeDirectory;
         Graphics::Texture iconFile;
         Graphics::Texture iconFolder;
         float padding = 64.f;

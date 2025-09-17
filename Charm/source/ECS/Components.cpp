@@ -21,5 +21,13 @@ namespace Charm
                     break;
             }
         }
+
+        void Animator2DComponent::SwitchToAnimation(s32 animSlot)
+        {
+            AnimationController* animController = AssetManager::GetAsset<AnimationController>(controller);
+
+            if (animController != NULL && animSlot >= 0 && animSlot <= animController->animations.size() - 1)
+                activeSlot = animSlot;
+        }
     }
 }

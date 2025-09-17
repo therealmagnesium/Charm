@@ -19,7 +19,7 @@ uniform sampler2D textures[32];
 void main()
 {
     vec4 result = texture(textures[v_texIndex], data.texCoord) * data.color;
-    result = pow(result, vec4(1.f / 2.2f));
+    //result = pow(result, vec4(1.f / 2.2f));
 
     finalColor = result;
     entityID = v_entityID;

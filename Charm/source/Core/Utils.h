@@ -5,6 +5,7 @@
 #include "ECS/PhysicsWorld.h"
 
 #include <string>
+#include <filesystem>
 #include <glm/glm.hpp>
 
 struct b2BodyId;
@@ -16,6 +17,7 @@ namespace Charm
 {
     namespace Utils
     {
+        std::filesystem::path GetHomeDirectory();
         const char* BoolToCString(bool value);
         bool IsDepthFormat(Graphics::TextureFormat format);
         u32 TextureFilterToGL(Graphics::TextureFilter filter);

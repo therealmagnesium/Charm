@@ -18,7 +18,9 @@ CopySandboxProject () {
 RunApplication () {
     cd "bin/$1-$2/$appName"
     LD_LIBRARY_PATH="." ./$appName
-    cp -r "SandboxProject/" "../../../CharmApp/"
+    cp "imgui.ini" "../../../"
+    cp "SandboxProject/Sandbox.chprj" "../../../$appName/SandboxProject/"
+    cp -r "SandboxProject/assets/scenes/" "../../../$appName/SandboxProject/assets/"
 }
 
 CleanProject () {

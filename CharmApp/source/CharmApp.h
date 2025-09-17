@@ -28,7 +28,7 @@ namespace CharmApp
 
     void OnScenePlay();
     void OnSceneStop();
-    void OnSceneNew(bool shouldCreateMainCamera);
+    void OnSceneNew();
     void OnSceneOpen();
     void OnSceneSave();
     void OnSceneSaveAs();

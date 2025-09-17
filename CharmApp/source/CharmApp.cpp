@@ -45,7 +45,8 @@ namespace CharmApp
         ToolbarPanel::Init();
 
         const std::filesystem::path scriptModulePath = ProjectManager::GetAssetFileSystemPath(state.project.scriptModulePath, state.project);
-        ScriptManager::LoadModule(scriptModulePath.c_str());
+        if (std::filesystem::exists(scriptModulePath))
+            ScriptManager::LoadModule(scriptModulePath.c_str());
 
         if (!state.project.startScenePath.empty())
         {
@@ -75,7 +76,7 @@ namespace CharmApp
             ScriptManager::ReloadModule();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_N))
-            OnSceneNew(true);
+            OnSceneNew();
 
         if (Input::IsKeyDown(KEY_LEFT_CTRL) && !Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
             OnSceneSave();
@@ -193,7 +194,7 @@ namespace CharmApp
         state.runtimeScene = Scenes::Create();
     }
 
-    void OnSceneNew(bool shouldCreateMainCamera)
+    void OnSceneNew()
     {
         if (state.sceneState != SceneState::Editor)
             return;
@@ -202,16 +203,6 @@ namespace CharmApp
         AssetManager::Clean();
         ScriptManager::ClearBindings();
         Scenes::ClearRegistry(state.editorScene);
-
-        if (shouldCreateMainCamera)
-        {
-            auto& config = Application::GetConfig();
-            Entity mainCamera = Scenes::CreateEntity(state.editorScene, "Main Camera");
-            auto& cameraComponent = mainCamera.AddComponent<Camera2DComponent>();
-            cameraComponent.camera.offset.x = (float)config.virtualWidth / (float)Application::GetPixelsPerUnit() / 2.f;
-            cameraComponent.camera.offset.y = (float)config.virtualHeight / (float)Application::GetPixelsPerUnit() / 2.f;
-            cameraComponent.isPrimary = true;
-        }
     }
 
     void OnSceneOpen()
@@ -265,15 +256,29 @@ namespace CharmApp
 
     void OpenScene(const char* path)
     {
-        OnSceneNew(false);
+        OnSceneNew();
 
         SceneSerializer::SetContext(&state.editorScene);
         SceneSerializer::Deserialize(path);
         state.currentScenePath = path;
         ScriptManager::ReloadModule();
 
+        if (Entities::FindWithTag("Main Camera", state.activeScene) == Entity_Null)
+        {
+            auto& config = Application::GetConfig();
+            Entity mainCamera = Scenes::CreateEntity(state.editorScene, "Main Camera");
+            auto& cameraComponent = mainCamera.AddComponent<Camera2DComponent>();
+            cameraComponent.camera.offset.x = (float)config.virtualWidth / (float)Application::GetPixelsPerUnit() / 2.f;
+            cameraComponent.camera.offset.y = (float)config.virtualHeight / (float)Application::GetPixelsPerUnit() / 2.f;
+            cameraComponent.isPrimary = true;
+        }
+
         if (std::filesystem::exists(state.currentScenePath))
-            INFO("Loaded scene %s", path);
+        {
+            const std::filesystem::path homeDirectory = Utils::GetHomeDirectory();
+            const std::filesystem::path absolutePath = homeDirectory / std::filesystem::relative(path, homeDirectory);
+            INFO("Loaded scene %s", absolutePath.c_str());
+        }
     }
 
     s32 GetPixelData() { return state.pixelData; }

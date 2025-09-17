@@ -19,7 +19,17 @@ namespace Charm
             Animation Load(const char* path)
             {
                 Animation animation;
-                YAML::Node data = YAML::LoadFile(path);
+
+                YAML::Node data;
+                try
+                {
+                    data = YAML::LoadFile(path);
+                }
+                catch (const YAML::BadFile& e)
+                {
+                    ERROR("Animations::Load - Could not load the file \"%s\"", path);
+                }
+
                 ASSERT_RETURN(data, animation, "Animations::Load - Failed to load animation \"%s\", the path may be invalid!", path);
                 ASSERT_RETURN(data["Animation"], animation, "Animations::Load - Failed to load animation \"%s\", the path may be an invalid animation file!", path);
 
@@ -79,6 +89,9 @@ namespace Charm
 
             void Update(Animation& animation)
             {
+                if (animation.speed == 0)
+                    return;
+
                 animation.counter++;
 
                 if (animation.counter >= (60 / animation.speed))

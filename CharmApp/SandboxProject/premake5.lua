@@ -21,11 +21,16 @@ includedirs({
 	"../../Charm/source",
 	"../../vendor/glm/",
 	"../../vendor/entt/",
+
+	"../../../../Charm/source",
+	"../../../../vendor/glm/",
+	"../../../../vendor/entt/",
 	--"vendor/charm/include",
 })
 
 libdirs({
 	"../../bin/" .. output_dir .. "Charm",
+	"../../../../bin/" .. output_dir .. "Charm",
 }) -- temp
 
 links({

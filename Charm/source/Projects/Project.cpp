@@ -13,8 +13,14 @@ namespace Charm
                 project.name = "New Project";
                 project.assetsDirectory = "Assets";
                 project.directory = "";
-                project.startScenePath = "";
-                project.scriptModulePath = "";
+                project.startScenePath = "Scenes/SampleScene.charm";
+
+#ifdef CH_PLATFORM_LINUX
+                project.scriptModulePath = "Scripts/Binaries/libCharmScriptModule.so";
+#endif
+#ifdef CH_PLATFORM_WINDOWS
+                project.scriptModulePath = "Scripts/Binaries/libCharmScriptModule.dll";
+#endif
 
                 return project;
             }
@@ -22,7 +28,7 @@ namespace Charm
             Project Load(const char* path)
             {
                 Project project;
-                project.directory = std::filesystem::path(path).parent_path();
+                project.directory = std::filesystem::absolute(std::filesystem::path(path).parent_path());
 
                 ProjectSerializer::SetContext(&project);
                 ProjectSerializer::Deserialize(path);
@@ -33,7 +39,7 @@ namespace Charm
 
             void Save(const char* path, Project& project)
             {
-                project.directory = std::filesystem::path(path).parent_path();
+                project.directory = std::filesystem::absolute(std::filesystem::path(path).parent_path());
 
                 ProjectSerializer::SetContext(&project);
                 ProjectSerializer::Serialize(path);

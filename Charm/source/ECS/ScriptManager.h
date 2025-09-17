@@ -35,6 +35,7 @@ namespace Charm
             void ReloadModule();
             void ClearBindings();
 
+            bool IsModuleLoaded();
             ScriptInitFunc GetScriptInitFunc(const std::string& name);
             ScriptShutdownFunc GetScriptDestroyFunc(const std::string& name);
             ScriptManagerState& GetState();

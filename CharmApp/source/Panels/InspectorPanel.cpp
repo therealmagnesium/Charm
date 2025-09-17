@@ -89,7 +89,7 @@ namespace CharmApp
             auto& internal = entity.GetComponent<InternalComponent>();
 
             char tagBuffer[256];
-            strncpy(tagBuffer, internal.tag.c_str(), internal.tag.size());
+            strncpy(tagBuffer, internal.tag.c_str(), internal.tag.size() + 1);
 
             ImGui::PushID("Is Active?");
             ImGui::Checkbox("##IsActive?", &internal.isActive);
@@ -281,7 +281,7 @@ namespace CharmApp
                 ImGui::PushID("Animation");
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Animation");
+                ImGui::Text("Controller");
                 ImGui::NextColumn();
 
                 ImGui::SetNextItemWidth(-1.f);

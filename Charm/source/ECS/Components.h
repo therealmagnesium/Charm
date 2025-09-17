@@ -115,6 +115,8 @@ namespace Charm
 
             Animator2DComponent() = default;
             Animator2DComponent(const Animator2DComponent&) = default;
+
+            void SwitchToAnimation(s32 animSlot);
         };
 
         struct Camera2DComponent

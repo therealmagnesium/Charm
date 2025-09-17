@@ -24,7 +24,7 @@ void main()
         discard;
 
     vec3 result = data.color;
-    result = pow(result, vec3(1.f / 2.2f));
+    //result = pow(result, vec3(1.f / 2.2f));
 
     finalColor = vec4(result, 1.f);
     finalColor.a *= alpha;

@@ -27,12 +27,12 @@ namespace Charm
                 switch (texture.channelCount)
                 {
                     case 3:
-                        texture.internalFormat = GL_SRGB8;
+                        texture.internalFormat = GL_RGB8;
                         texture.dataFormat = GL_RGB;
                         break;
 
                     case 4:
-                        texture.internalFormat = GL_SRGB8_ALPHA8;
+                        texture.internalFormat = GL_RGBA8;
                         texture.dataFormat = GL_RGBA;
                         break;
 
