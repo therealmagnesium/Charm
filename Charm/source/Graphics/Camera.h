@@ -7,15 +7,15 @@ namespace Charm
     {
         struct Camera2D
         {
-            glm::vec2 target;
-            glm::vec2 offset;
+            glm::vec2 target = glm::vec2(0.f);
+            glm::vec2 offset = glm::vec2(0.f);
             float rotation = 0.f;
             float zoom = 1.f;
         };
 
         struct Camera3D
         {
-            glm::vec3 target;
+            glm::vec3 target = glm::vec3(0.f);
             float fov = 45.f;
             float nearClip = 0.1f;
             float farClip = 500.f;
@@ -28,11 +28,11 @@ namespace Charm
 
         namespace Cameras
         {
+            void UpdateEditor(Camera2D& camera);
             void UpdateEditor(Camera3D& camera);
-            void UpdateRuntime(Camera3D& camera);
 
             glm::mat4 GetViewMatrix2D(const Camera2D& camera);
-            glm::mat4 GetProjectionMatrix2D();
+            glm::mat4 GetProjectionMatrix2D(const Camera2D& camera);
 
             glm::mat4 GetViewMatrix3D(const Camera3D& camera);
             glm::mat4 GetProjectionMatrix3D(const Camera3D& camera);
@@ -43,5 +43,8 @@ namespace Charm
             glm::vec3 CalculatePosition(const Camera3D& camera);
             glm::quat GetOrientation(const Camera3D& camera);
         }
+
+        inline const Camera2D Camera2D_Null;
+        inline const Camera3D Camera3D_Null;
     }
 }

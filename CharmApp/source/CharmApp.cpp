@@ -10,6 +10,7 @@
 
 #include <Charm.h>
 #include <imgui.h>
+#include <ImGuizmo.h>
 #include <glad/glad.h>
 
 using namespace Charm;
@@ -24,7 +25,6 @@ namespace CharmApp
     void OnCreate()
     {
         const ApplicationConfig& config = Application::GetConfig();
-        Renderer::SetClearColor(0.15f, 0.15f, 0.17f);
 
         FramebufferSpecification framebufferSpec;
         framebufferSpec.width = config.virtualWidth;
@@ -41,6 +41,7 @@ namespace CharmApp
         ProjectSerializer::SetContext(&state.project);
         SceneSerializer::SetContext(&state.editorScene);
         SceneHeirarchyPanel::SetContext(state.editorScene);
+        AssetRegistryPanel::Init();
         ContentBrowserPanel::Init();
         ToolbarPanel::Init();
 
@@ -63,66 +64,66 @@ namespace CharmApp
 
         Input::Capture(true);
 
-        if (Input::IsKeyPressed(KEY_ESCAPE))
-            Application::Quit();
-
         if (Input::IsKeyPressed(KEY_F1))
             state.activeScene->isDebugRenderingEnabled = !state.activeScene->isDebugRenderingEnabled;
 
-        if (Input::IsKeyPressed(KEY_F2))
-            Scenes::ResetEditorCameras(*state.activeScene);
-
-        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_R))
-            ScriptManager::ReloadModule();
-
-        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_N))
-            OnSceneNew();
-
-        if (Input::IsKeyDown(KEY_LEFT_CTRL) && !Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
-            OnSceneSave();
-
-        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
-            OnSceneSaveAs();
-
-        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_O))
-            OnSceneOpen();
-
-        if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_D))
-            OnDuplicateEntity();
-
-        Input::Capture(SceneViewportPanel::IsFocused());
-        Application::SetViewportPosition(SceneViewportPanel::GetPosition());
-        Application::SetViewportSize(SceneViewportPanel::GetSize());
-
         if (state.sceneState == SceneState::Editor)
         {
-            if (Input::IsMouseClicked(MOUSE_BUTTON_LEFT) && !Input::IsKeyDown(KEY_LEFT_ALT))
-            {
-                const glm::vec2 glViewportMouse = Utils::ScreenToViewportGL(Input::GetMousePosition(),
-                                                                            SceneViewportPanel::GetPosition(),
-                                                                            SceneViewportPanel::GetSize());
+            if (Input::IsKeyPressed(KEY_ESCAPE))
+                Application::Quit();
 
-                Framebuffers::Bind(state.framebuffer);
-                state.pixelData = Framebuffers::ReadPixel(state.framebuffer, 1, (u32)glViewportMouse.x, (u32)glViewportMouse.y);
-                Framebuffers::Unbind();
+            if (Input::IsKeyPressed(KEY_F2))
+                Scenes::ResetEditorCameras(*state.activeScene);
 
-                if (state.pixelData != -1)
-                {
-                    Entity entity = Entities::Create((entt::entity)state.pixelData, &state.editorScene);
-                    SceneHeirarchyPanel::SetSelectedEntity(entity);
-                }
-                else if (state.pixelData == -1 && SceneViewportPanel::IsFocused() && SceneViewportPanel::IsHovered())
-                    SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
-            }
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_R))
+                ScriptManager::ReloadModule();
+
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_N))
+                OnSceneNew();
+
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && !Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
+                OnSceneSave();
+
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
+                OnSceneSaveAs();
+
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_O))
+                OnSceneOpen();
+
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_D))
+                OnDuplicateEntity();
+
+            Input::Capture(SceneViewportPanel::IsFocused() && SceneViewportPanel::IsHovered());
+            if (Input::IsKeyPressed(KEY_E))
+                ToolbarPanel::SetManipulationType(ImGuizmo::OPERATION::SCALE);
+            if (Input::IsKeyPressed(KEY_R))
+                ToolbarPanel::SetManipulationType(ImGuizmo::OPERATION::ROTATE);
+            if (Input::IsKeyPressed(KEY_T))
+                ToolbarPanel::SetManipulationType(ImGuizmo::OPERATION::TRANSLATE);
 
             Scenes::UpdateEditor(*state.activeScene);
         }
         else
+        {
+            Input::Capture(SceneViewportPanel::IsFocused());
             Scenes::UpdateRuntime(*state.activeScene);
+        }
     }
 
     void OnRender()
     {
+        Entity activeCameraEntity2D = Scenes::GetActiveCameraEntity2D();
+        glm::vec3 clearColor = glm::vec3(0.f);
+        if (activeCameraEntity2D != Entity_Null)
+        {
+            const auto& activeCameraComponent = activeCameraEntity2D.GetComponent<Camera2DComponent>();
+            clearColor = activeCameraComponent.clearColor;
+        }
+        else
+            clearColor = glm::vec3(0.15f);
+
+        Renderer::SetClearColor(V3_OPEN(clearColor));
+
         Framebuffers::Bind(state.framebuffer);
         RenderCommand::Clear();
         Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
@@ -139,13 +140,13 @@ namespace CharmApp
     {
         ImGui::DockSpaceOverViewport();
 
+        DebugStatsPanel::Display();
         AssetRegistryPanel::Display();
         ContentBrowserPanel::Display();
         SceneHeirarchyPanel::Display();
         InspectorPanel::Display();
-        SceneViewportPanel::Display(state.framebuffer.colorAttachments[0]);
-        DebugStatsPanel::Display();
         ToolbarPanel::Display();
+        SceneViewportPanel::Display(state.framebuffer);
     }
 
     void OnShutdown()
@@ -285,4 +286,6 @@ namespace CharmApp
     Scene* GetActiveScene() { return state.activeScene; }
     SceneState GetActiveSceneState() { return state.sceneState; }
     Project& GetProject() { return state.project; }
+
+    void SetPixelData(s32 data) { state.pixelData = data; }
 }

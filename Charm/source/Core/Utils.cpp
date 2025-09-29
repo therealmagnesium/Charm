@@ -38,11 +38,40 @@ namespace Charm
         }
 
         const char* BoolToCString(bool value) { return (value) ? "true" : "false"; }
-        u32 TextureFilterToGL(Graphics::TextureFilter filter) { return (filter == TextureFilter::Linear) ? GL_LINEAR : GL_NEAREST; }
-        std::string TextureFilterToString(Graphics::TextureFilter filter) { return filter == TextureFilter::Linear ? "Linear" : "Nearest"; }
-        TextureFilter StringToTextureFilter(const std::string& str) { return str == "Linear" ? TextureFilter::Linear : TextureFilter::Nearest; }
         std::string SpriteSheetAnimTypeToString(const Graphics::SpriteSheetAnimType type) { return type == SpriteSheetAnimType::Horizontal ? "Horizontal" : "Vertical"; }
         Graphics::SpriteSheetAnimType StringToSpriteSheetAnimType(const std::string& str) { return str == "Horizontal" ? SpriteSheetAnimType::Horizontal : SpriteSheetAnimType::Vertical; }
+
+        u32 TextureFilterToGL(Graphics::TextureFilter filter)
+        {
+            u32 glFilters[6] = {GL_LINEAR, GL_NEAREST,
+                                GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST,
+                                GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST};
+            const u32 index = (u32)filter;
+            const u32 glFilter = glFilters[index];
+            return glFilter;
+        }
+
+        std::string TextureFilterToString(Graphics::TextureFilter filter)
+        {
+            const char* filters[6] = {"Linear", "Nearest",
+                                      "Linear Mipmap Linear", "Linear Mipmap Nearest",
+                                      "Nearest Mipmap Linear", "Nearest Mipmap Nearest"};
+            const u32 index = (u32)filter;
+            return filters[index];
+        }
+
+        TextureFilter StringToTextureFilter(const std::string& str)
+        {
+            std::unordered_map<std::string, TextureFilter> stringToFilter;
+            stringToFilter["Linear"] = TextureFilter::Linear;
+            stringToFilter["Nearest"] = TextureFilter::Nearest;
+            stringToFilter["Linear Mipmap Linear"] = TextureFilter::LinearMipmapLinear;
+            stringToFilter["Linear Mipmap Nearest"] = TextureFilter::LinearMipmapNearest;
+            stringToFilter["Nearest Mipmap Linear"] = TextureFilter::NearestMipmapLinear;
+            stringToFilter["Nearest Mipmap Nearest"] = TextureFilter::NearestMipmapNearest;
+
+            return stringToFilter.at(str);
+        }
 
         bool IsDepthFormat(TextureFormat format)
         {

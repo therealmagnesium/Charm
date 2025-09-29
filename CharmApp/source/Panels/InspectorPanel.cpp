@@ -314,10 +314,22 @@ namespace CharmApp
             });
 
             DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {
-                const float columnWidth = 100.f;
+                const float columnWidth = 105.f;
+                Entity prevActiveCameraEntity = Scenes::GetActiveCameraEntity2D();
+
                 UI::DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, columnWidth);
                 UI::DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, columnWidth);
-                UI::DrawBoolControl("Is Primary?", &component.isPrimary, columnWidth);
+
+                if (UI::DrawBoolControl("Is Primary?", &component.isPrimary, columnWidth))
+                {
+                    if (component.isPrimary && prevActiveCameraEntity != Entity_Null)
+                    {
+                        auto& prevCameraComponent = prevActiveCameraEntity.GetComponent<Camera2DComponent>();
+                        prevCameraComponent.isPrimary = false;
+                    }
+                }
+
+                UI::DrawColorControl("Clear Color", component.clearColor, columnWidth);
             });
 
             DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](Rigidbody2DComponent& component) {

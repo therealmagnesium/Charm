@@ -11,9 +11,11 @@ namespace Charm
     {
         namespace Textures
         {
-            Texture Load(const char* path)
+            Texture Load(const char* path, TextureFilter minFilter, TextureFilter magFilter)
             {
                 Texture texture;
+                texture.minFilter = minFilter;
+                texture.magFilter = magFilter;
 
                 texture.data = stbi_load(path, (s32*)&texture.width, (s32*)&texture.height, (s32*)&texture.channelCount, 0);
                 if (texture.data == NULL)
@@ -142,14 +144,17 @@ namespace Charm
 
             void Invalidate(Texture& texture)
             {
-                u32 glFilter = Utils::TextureFilterToGL(texture.filter);
+                const u32 glMinFilter = Utils::TextureFilterToGL(texture.minFilter);
+                const u32 glMagFilter = Utils::TextureFilterToGL(texture.magFilter);
+
                 glBindTexture(GL_TEXTURE_2D, texture.id);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glFilter);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glFilter);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glMinFilter);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glMagFilter);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
                              texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, texture.data);
+                glGenerateMipmap(GL_TEXTURE_2D);
             }
         }
     }

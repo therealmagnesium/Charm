@@ -17,10 +17,44 @@ namespace Charm
     {
         namespace Cameras
         {
+            void UpdateEditor(Camera2D& camera)
+            {
+                const auto& MousePan = [&](const glm::vec2& delta) {
+                    const float panSpeed = 30.f / camera.zoom;
+                    camera.target.x -= delta.x * panSpeed;
+                    camera.target.y += delta.y * panSpeed;
+                };
+
+                const auto& CalculateZoomSpeed = [&]() {
+                    float distance = camera.zoom * 0.35f;
+                    distance = std::max(distance, 0.0f);
+                    float speed = distance * distance;
+                    speed = std::min(speed, 5.f);
+
+                    return speed;
+                };
+
+                const auto& MouseZoom = [&](float delta) {
+                    camera.zoom += delta * CalculateZoomSpeed();
+                    if (camera.zoom < 0.1f)
+                        camera.zoom = 0.1f;
+                };
+
+                if (Input::IsKeyDown(KEY_LEFT_ALT))
+                {
+                    const glm::vec2 mouseDelta = Input::GetMouseRelative() * 0.003f;
+
+                    if (Input::IsMouseDown(MOUSE_BUTTON_LEFT))
+                        MousePan(mouseDelta);
+                }
+
+                const float scrollSpeed = Input::GetMouseScroll().y;
+                if (glm::abs(scrollSpeed) > 0.f)
+                    MouseZoom(scrollSpeed);
+            }
+
             void UpdateEditor(Camera3D& camera)
             {
-                const ApplicationConfig& config = Application::GetConfig();
-
                 const auto& MousePan = [&](const glm::vec2& delta) {
                     const float panSpeed = 2.f * camera.distance;
                     camera.target += -GetRightVector(camera) * delta.x * panSpeed;
@@ -66,28 +100,40 @@ namespace Charm
                         MouseZoom(mouseDelta.y);
                 }
 
-                MouseZoom(Input::GetMouseScroll().y);
+                const float scrollSpeed = Input::GetMouseScroll().y;
+                if (glm::abs(scrollSpeed) > 0.f)
+                    MouseZoom(scrollSpeed);
             }
-
-            void UpdateRuntime(Camera3D& camera) {}
 
             glm::mat4 GetViewMatrix2D(const Camera2D& camera)
             {
                 glm::mat4 transform = glm::mat4(1.f);
-                transform = glm::translate(transform, glm::vec3(camera.target - camera.offset, 0.f));
+                transform = glm::translate(transform, glm::vec3(camera.target, 0.f));
                 transform = glm::rotate(transform, glm::radians(camera.rotation), glm::vec3(0.f, 0.f, 1.f));
+                transform = glm::translate(transform, glm::vec3(-camera.offset, 0.f));
 
                 glm::mat4 viewMatrix = glm::inverse(transform);
                 return viewMatrix;
             }
 
-            glm::mat4 GetProjectionMatrix2D()
+            glm::mat4 GetProjectionMatrix2D(const Camera2D& camera)
             {
                 const ApplicationConfig& config = Application::GetConfig();
+                glm::vec2 virtualSize;
+                virtualSize.x = (float)config.virtualWidth / (float)Application::GetPixelsPerUnit();
+                virtualSize.y = (float)config.virtualHeight / (float)Application::GetPixelsPerUnit();
+                const glm::vec2 halfVirtualSize = virtualSize / 2.f;
+
+                glm::vec2 horizontalBounds;
+                glm::vec2 verticalBounds;
+
+                horizontalBounds.x = -halfVirtualSize.x / camera.zoom;
+                horizontalBounds.y = halfVirtualSize.x / camera.zoom;
+                verticalBounds.x = -halfVirtualSize.y / camera.zoom;
+                verticalBounds.y = halfVirtualSize.y / camera.zoom;
 
                 glm::mat4 projectionMatrix = glm::mat4(1.f);
-                projectionMatrix = glm::ortho(0.f, (float)config.virtualWidth / (float)Application::GetPixelsPerUnit(),
-                                              0.f, (float)config.virtualHeight / (float)Application::GetPixelsPerUnit(), -50.f, 50.f);
+                projectionMatrix = glm::ortho(horizontalBounds.x, horizontalBounds.y, verticalBounds.x, verticalBounds.y, -10.f, 10.f);
 
                 return projectionMatrix;
             }

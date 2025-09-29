@@ -16,8 +16,8 @@ namespace CharmApp
         void Init()
         {
             state.currentDirectory = ProjectManager::GetAssetPath(CharmApp::GetProject());
-            state.iconFile = Textures::Load("assets/textures/file_icon.png");
-            state.iconFolder = Textures::Load("assets/textures/folder_icon.png");
+            state.iconFile = Textures::Load("assets/textures/icon_file.png");
+            state.iconFolder = Textures::Load("assets/textures/icon_folder.png");
             state.homeDirectory = Utils::GetHomeDirectory();
         }
 

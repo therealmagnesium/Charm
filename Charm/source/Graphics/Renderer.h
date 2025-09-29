@@ -97,6 +97,8 @@ namespace Charm
             void DrawEntity(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
 
             glm::vec3& GetClearColor();
+            const glm::mat4& GetViewMatrix();
+            const glm::mat4& GetProjectionMatrix();
             u32 GetQuadCount();
             u32 GetCircleCount();
             u32 GetLineCount();

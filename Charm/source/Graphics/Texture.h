@@ -19,7 +19,11 @@ namespace Charm
         enum class TextureFilter : u8
         {
             Linear = 0,
-            Nearest
+            Nearest,
+            LinearMipmapLinear,
+            LinearMipmapNearest,
+            NearestMipmapLinear,
+            NearestMipmapNearest
         };
 
         struct Texture : public Core::Asset
@@ -30,7 +34,8 @@ namespace Charm
             u32 channelCount = 0;
             u32 internalFormat = 0;
             u32 dataFormat = 0;
-            TextureFilter filter = TextureFilter::Linear;
+            TextureFilter minFilter = TextureFilter::LinearMipmapLinear;
+            TextureFilter magFilter = TextureFilter::Linear;
             u8* data = NULL;
 
             inline bool operator==(const Texture& other) const { return id == other.id; }
@@ -39,7 +44,7 @@ namespace Charm
 
         namespace Textures
         {
-            Texture Load(const char* path);
+            Texture Load(const char* path, TextureFilter minFilter = TextureFilter::LinearMipmapLinear, TextureFilter magFilter = TextureFilter::Linear);
             Texture LoadEmpty(u32 width, u32 height, TextureFormat format);
             Texture LoadDefaultWhite();
             void Unload(Texture& texture);

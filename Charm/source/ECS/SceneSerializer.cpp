@@ -194,7 +194,8 @@ namespace Charm
                         case AssetType::Texture:
                         {
                             Texture* texture = (Texture*)asset;
-                            out << YAML::Key << "Texture Filter" << YAML::Value << Utils::TextureFilterToString(texture->filter);
+                            out << YAML::Key << "Texture Min Filter" << YAML::Value << Utils::TextureFilterToString(texture->minFilter);
+                            out << YAML::Key << "Texture Mag Filter" << YAML::Value << Utils::TextureFilterToString(texture->magFilter);
                             break;
                         }
                         case AssetType::AnimationController:
@@ -250,12 +251,18 @@ namespace Charm
 
                         AssetManager::Import(path.c_str(), type, handle);
 
-                        YAML::Node textureFilterNode = asset["Texture Filter"];
-                        if (textureFilterNode)
+                        YAML::Node minFilterNode = asset["Texture Min Filter"];
+                        if (minFilterNode)
                         {
                             Texture* texture = AssetManager::GetAsset<Texture>(handle);
-                            texture->filter = Utils::StringToTextureFilter(textureFilterNode.as<std::string>());
-                            Textures::Invalidate(*texture);
+                            texture->minFilter = Utils::StringToTextureFilter(minFilterNode.as<std::string>());
+
+                            YAML::Node magFilterNode = asset["Texture Mag Filter"];
+                            if (magFilterNode)
+                            {
+                                texture->magFilter = Utils::StringToTextureFilter(magFilterNode.as<std::string>());
+                                Textures::Invalidate(*texture);
+                            }
                         }
                     }
                 }
@@ -357,6 +364,7 @@ namespace Charm
                     auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
                     out << YAML::Key << "Camera2D Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Is Primary?" << YAML::Value << cameraComponent.isPrimary;
+                    out << YAML::Key << "Clear Color" << YAML::Value << cameraComponent.clearColor;
                     out << YAML::Key << "Target" << YAML::Value << cameraComponent.camera.target;
                     out << YAML::Key << "Offset" << YAML::Value << cameraComponent.camera.offset;
                     out << YAML::Key << "Rotation" << YAML::Value << cameraComponent.camera.rotation;
@@ -450,6 +458,7 @@ namespace Charm
                 {
                     auto& cameraComponent = entity.AddComponent<Camera2DComponent>();
                     cameraComponent.isPrimary = camera2DNode["Is Primary?"].as<bool>();
+                    cameraComponent.clearColor = camera2DNode["Clear Color"].as<glm::vec4>();
                     cameraComponent.camera.target = camera2DNode["Target"].as<glm::vec2>();
                     cameraComponent.camera.offset = camera2DNode["Offset"].as<glm::vec2>();
                     cameraComponent.camera.rotation = camera2DNode["Rotation"].as<float>();

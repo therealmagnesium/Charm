@@ -40,4 +40,6 @@ namespace CharmApp
     Scene* GetActiveScene();
     SceneState GetActiveSceneState();
     Project& GetProject();
+
+    void SetPixelData(s32 data);
 }

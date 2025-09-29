@@ -11,6 +11,8 @@ namespace Charm
             u32 width = 1280;
             u32 height = 720;
             std::string title = "Untitled";
+            bool isMaximized = false;
+            bool isMinimized = false;
             void* handle = NULL;
             void* context = NULL;
         };
@@ -26,6 +28,8 @@ namespace Charm
             void* GetContext();
             u32 GetWidth();
             u32 GetHeight();
+            bool IsMaximized();
+            bool IsMinimized();
         }
     }
 }

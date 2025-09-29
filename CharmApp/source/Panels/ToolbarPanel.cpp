@@ -2,6 +2,7 @@
 #include "../CharmApp.h"
 
 #include <imgui.h>
+#include <ImGuizmo.h>
 
 namespace CharmApp
 {
@@ -11,21 +12,24 @@ namespace CharmApp
     {
         void Init()
         {
-            state.iconPlay = Textures::Load("assets/textures/play_button.png");
-            state.iconStop = Textures::Load("assets/textures/stop_button.png");
-            state.windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+            state.icons[ToolbarIcons::Play] = Textures::Load("assets/textures/button_play.png");
+            state.icons[ToolbarIcons::Stop] = Textures::Load("assets/textures/button_stop.png");
+            state.icons[ToolbarIcons::Translate] = Textures::Load("assets/textures/button_translate.png");
+            state.icons[ToolbarIcons::Rotate] = Textures::Load("assets/textures/button_rotate.png");
+            state.icons[ToolbarIcons::Scale] = Textures::Load("assets/textures/button_scale.png");
+            state.windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+            state.manipulationType = ImGuizmo::OPERATION::TRANSLATE;
         }
 
         void Shutdown()
         {
-            Textures::Unload(state.iconPlay);
-            Textures::Unload(state.iconStop);
+            for (Texture& icon : state.icons)
+                Textures::Unload(icon);
         }
 
         void Display()
         {
             const SceneState sceneState = CharmApp::GetActiveSceneState();
-
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 2.f));
             ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0.f, 0.f));
 
@@ -36,11 +40,30 @@ namespace CharmApp
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(V3_OPEN(buttonHovered), 0.5f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(V3_OPEN(buttonActive), 0.5f));
 
-            ImGui::Begin("##Toolbar", NULL, state.windowFlags);
+            ImGui::Begin("Toolbar", NULL, state.windowFlags);
+
+            float maxIconSize = 40.f;
             float iconSize = ImGui::GetWindowHeight() - 12.f;
-            ImTextureID icon = (sceneState == SceneState::Editor) ? state.iconPlay.id : state.iconStop.id;
+
+            if (Window::IsMaximized())
+                maxIconSize = 65.f;
+
+            if (iconSize > maxIconSize)
+                iconSize = maxIconSize;
+
+            if (ImGui::ImageButton("##TranslateButton", state.icons[ToolbarIcons::Translate].id, ImVec2(iconSize, iconSize)))
+                state.manipulationType = ImGuizmo::OPERATION::TRANSLATE;
+            ImGui::SameLine();
+            if (ImGui::ImageButton("##RotateButton", state.icons[ToolbarIcons::Rotate].id, ImVec2(iconSize, iconSize)))
+                state.manipulationType = ImGuizmo::OPERATION::ROTATE;
+            ImGui::SameLine();
+            if (ImGui::ImageButton("##ScaleButton", state.icons[ToolbarIcons::Scale].id, ImVec2(iconSize, iconSize)))
+                state.manipulationType = ImGuizmo::OPERATION::SCALE;
+            ImGui::SameLine();
+
+            ImTextureID runtimeIcon = (sceneState == SceneState::Editor) ? state.icons[ToolbarIcons::Play].id : state.icons[ToolbarIcons::Stop].id;
             ImGui::SetCursorPosX((ImGui::GetContentRegionMax().x * 0.5f) - (iconSize * 0.5f));
-            if (ImGui::ImageButton("##PlayButton", icon, ImVec2(iconSize, iconSize), ImVec2(0.f, 1.f), ImVec2(1.f, 0.f)))
+            if (ImGui::ImageButton("##PlayButton", runtimeIcon, ImVec2(iconSize, iconSize)))
             {
                 if (sceneState == SceneState::Editor)
                     OnScenePlay();
@@ -48,9 +71,13 @@ namespace CharmApp
                     OnSceneStop();
             }
 
+            ImGui::End();
+
             ImGui::PopStyleVar(2);
             ImGui::PopStyleColor(3);
-            ImGui::End();
         }
+
+        u32 GetManipulationType() { return state.manipulationType; }
+        void SetManipulationType(u32 type) { state.manipulationType = type; }
     }
 }

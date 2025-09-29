@@ -20,6 +20,8 @@ namespace Charm
     {
         static Camera2D* activeCamera2D = NULL; // Active 2D runtime camera
         static Camera3D* activeCamera3D = NULL; // Active 3D runtime camera
+        static Entity activeCameraEntity2D = Entity_Null;
+        static Entity activeCameraEntity3D = Entity_Null;
 
         namespace Scenes
         {
@@ -62,6 +64,7 @@ namespace Charm
             Scene Copy(Scene& scene)
             {
                 Scene newScene = Scenes::Create();
+                newScene.isDebugRenderingEnabled = scene.isDebugRenderingEnabled;
 
                 auto& sourceRegistry = scene.registry;
                 auto& destRegistry = newScene.registry;
@@ -125,6 +128,13 @@ namespace Charm
                 CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
                 CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
                 CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
+
+                Entity activeCameraEntity = Scenes::GetActiveCameraEntity2D();
+                if (activeCameraEntity2D != Entity_Null && newEntity.HasComponent<Camera2DComponent>())
+                {
+                    auto& newCameraComponent = newEntity.GetComponent<Camera2DComponent>();
+                    newCameraComponent.isPrimary = false;
+                }
 
                 auto& destInternal = newEntity.GetComponent<InternalComponent>();
                 destInternal.id = Random::GenerateUUID();
@@ -282,7 +292,9 @@ namespace Charm
 
                 activeCamera2D = NULL;
                 activeCamera3D = NULL;
-                Cameras::UpdateEditor(scene.editorCamera3D);
+                activeCameraEntity2D = Entity_Null;
+                activeCameraEntity3D = Entity_Null;
+                Cameras::UpdateEditor(scene.editorCamera2D);
 
                 auto sprites = scene.registry.view<SpriteRendererComponent>();
                 for (auto entityID : sprites)
@@ -292,11 +304,23 @@ namespace Charm
                     auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
                     spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position, transform.scale);
                 }
+
+                auto cameras = scene.registry.view<Camera2DComponent>();
+                for (auto entityID : cameras)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+                    const auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
+                    if (cameraComponent.isPrimary)
+                    {
+                        activeCameraEntity2D = entity;
+                        break;
+                    }
+                }
             }
 
             void RenderEditor(Scene& scene, Entity& selectionContext)
             {
-                Renderer::BeginScene2D(scene.editorCamera3D);
+                Renderer::BeginScene2D(scene.editorCamera2D);
                 ApplyCircleSortingLayers(scene);
                 ApplySpriteSortingLayers(scene);
                 DrawEntitiesPerSortingLayer(scene, false);
@@ -340,6 +364,8 @@ namespace Charm
             {
                 activeCamera2D = NULL;
                 activeCamera3D = NULL;
+                activeCameraEntity2D = Entity_Null;
+                activeCameraEntity3D = Entity_Null;
 
                 auto animators = scene.registry.view<Animator2DComponent>();
                 auto boxColliders = scene.registry.view<BoxCollider2DComponent>();
@@ -535,6 +561,7 @@ namespace Charm
                     if (cameraComponent.isPrimary)
                     {
                         activeCamera2D = &cameraComponent.camera;
+                        activeCameraEntity2D = entity;
                         break;
                     }
                 }
@@ -565,13 +592,13 @@ namespace Charm
                 const ApplicationConfig& config = Application::GetConfig();
 
                 scene.editorCamera2D.target = glm::vec2(0.f);
-                scene.editorCamera2D.offset.x = (float)config.virtualWidth / 2.f;
-                scene.editorCamera2D.offset.y = (float)config.virtualHeight / 2.f;
+                scene.editorCamera2D.offset.x = 0.f;
+                scene.editorCamera2D.offset.y = 0.f;
                 scene.editorCamera2D.rotation = 0.f;
-                scene.editorCamera2D.zoom = 0.f;
+                scene.editorCamera2D.zoom = 1.f;
 
                 scene.editorCamera3D.target = glm::vec3(0.f);
-                scene.editorCamera3D.distance = 15.f;
+                scene.editorCamera3D.distance = 12.f;
                 scene.editorCamera3D.yaw = 0.f;
                 scene.editorCamera3D.pitch = 0.f;
                 scene.editorCamera3D.fov = 45.f;
@@ -756,6 +783,14 @@ namespace Charm
 
                 return thickness;
             }
+
+            Entity GetActiveCameraEntity2D() { return activeCameraEntity2D; }
+            Entity GetActiveCameraEntity3D() { return activeCameraEntity3D; }
+            const Camera2D* GetActiveCamera2D() { return (activeCamera2D != NULL) ? activeCamera2D : &Camera2D_Null; }
+            const Camera3D* GetActiveCamera3D() { return (activeCamera3D != NULL) ? activeCamera3D : &Camera3D_Null; }
+
+            void SetActiveCamera2D(Camera2D* camera) { activeCamera2D = camera; }
+            void SetActiveCamera3D(Camera3D* camera) { activeCamera3D = camera; }
         }
     }
 }

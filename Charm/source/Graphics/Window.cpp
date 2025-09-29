@@ -73,8 +73,10 @@ namespace Charm
                     switch (event.type)
                     {
                         case SDL_EVENT_QUIT:
+                        {
                             Application::Quit();
                             break;
+                        }
 
                         case SDL_EVENT_KEY_DOWN:
                         {
@@ -121,10 +123,31 @@ namespace Charm
                         }
 
                         case SDL_EVENT_WINDOW_RESIZED:
+                        {
                             state.width = event.window.data1;
                             state.height = event.window.data2;
                             RenderCommand::SetViewport(0, 0, state.width, state.height);
                             break;
+                        }
+
+                        case SDL_EVENT_WINDOW_MAXIMIZED:
+                        {
+                            state.isMaximized = true;
+                            break;
+                        }
+
+                        case SDL_EVENT_WINDOW_MINIMIZED:
+                        {
+                            state.isMinimized = true;
+                            break;
+                        }
+
+                        case SDL_EVENT_WINDOW_RESTORED:
+                        {
+                            state.isMinimized = false;
+                            state.isMaximized = false;
+                            break;
+                        }
 
                         default:
                             break;
@@ -144,6 +167,8 @@ namespace Charm
             void* GetContext() { return state.context; }
             u32 GetWidth() { return state.width; }
             u32 GetHeight() { return state.height; }
+            bool IsMaximized() { return state.isMaximized; }
+            bool IsMinimized() { return state.isMinimized; }
         }
     }
 }

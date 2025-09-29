@@ -12,52 +12,74 @@ namespace CharmApp
 {
     namespace AssetRegistryPanel
     {
+        enum ColumnID
+        {
+            Index = 0,
+            Type,
+            Path,
+            Handle
+        };
+
+        static AssetRegistryState state;
+
+        void Init()
+        {
+            state.flags = ImGuiTableFlags_Resizable |
+                          ImGuiTableFlags_Reorderable |
+                          ImGuiTableFlags_Hideable |
+                          ImGuiTableFlags_Sortable |
+                          ImGuiTableFlags_SortMulti |
+                          ImGuiTableFlags_RowBg |
+                          ImGuiTableFlags_BordersOuter |
+                          ImGuiTableFlags_BordersV |
+                          ImGuiTableFlags_NoBordersInBody |
+                          ImGuiTableFlags_ScrollY;
+        }
+
         void Display()
         {
             ImGui::Begin("Asset Registry");
-            const float columnWidth = 65.f;
-            for (auto& [handle, metadata] : AssetManager::GetRegistry())
+
+            if (ImGui::BeginTable("Asset Registry Table", 3, state.flags))
             {
-                ImGui::PushID(handle);
+                // ImGui::TableSetupColumn("Index", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, ColumnID::Index);
+                ImGui::TableSetupColumn("Type", 0, 0.0f, ColumnID::Type);
+                ImGui::TableSetupColumn("Path", 0, 0.0f, ColumnID::Path);
+                ImGui::TableSetupColumn("Handle", 0, 0.0f, ColumnID::Handle);
+                ImGui::TableSetupScrollFreeze(0, 1); // Make row always visible
+                ImGui::TableHeadersRow();
 
-                std::string extension = metadata.path.extension().string();
-                AssetType type = Utils::ExtensionToAssetType(extension);
-                std::string typeAsString = Utils::AssetTypeToString(type);
+                /*
+                        // Sort our data if sort specs have been changed!
+                        if (ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs())
+                        {
+                            if (sortSpecs->SpecsDirty)
+                            {
 
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Handle");
-                ImGui::NextColumn();
-                ImGui::Text("0x%lx", handle);
-                ImGui::Columns(1);
-                ImGui::Separator();
+                                MyItem::SortWithSortSpecs(sortSpecs, items.Data, items.Size);
+                                sort_specs->SpecsDirty = false;
+                            }
+                        }*/
 
-                ImGui::PopID();
+                const AssetRegistry& assetRegistry = AssetManager::GetRegistry();
+                for (auto& [handle, metadata] : assetRegistry)
+                {
+                    ImGui::PushID(handle);
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(Utils::AssetTypeToString(metadata.type).c_str());
+                    ImGui::SameLine();
+                    ImGui::SmallButton("x");
+                    ImGui::TableNextColumn();
+                    ImGui::TextUnformatted(metadata.path.c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::Text("0x%lX", handle);
+                    ImGui::PopID();
+                }
 
-                ImGui::PushID(metadata.path.string().c_str());
-
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Path");
-                ImGui::NextColumn();
-                ImGui::Text("%s", metadata.path.c_str());
-                ImGui::Columns(1);
-                ImGui::Separator();
-
-                ImGui::PopID();
-
-                ImGui::PushID(("Type" + std::to_string(handle)).c_str());
-
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0, columnWidth);
-                ImGui::Text("Type");
-                ImGui::NextColumn();
-                ImGui::Text("%s", typeAsString.c_str());
-                ImGui::Columns(1);
-                ImGui::Separator();
-
-                ImGui::PopID();
+                ImGui::EndTable();
             }
+
             ImGui::End();
         }
     }

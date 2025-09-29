@@ -59,6 +59,14 @@ namespace Charm
 
             void ResetEditorCameras(Scene& scene);
             void AlignParentsAndChildren(Scene& scene);
+
+            Entity GetActiveCameraEntity2D();
+            Entity GetActiveCameraEntity3D();
+            const Camera2D* GetActiveCamera2D();
+            const Camera3D* GetActiveCamera3D();
+
+            void SetActiveCamera2D(Camera2D* camera);
+            void SetActiveCamera3D(Camera3D* camera);
         }
     }
 }

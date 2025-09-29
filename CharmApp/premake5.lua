@@ -9,27 +9,29 @@ targetdir("../bin/" .. outputdir .. "/%{prj.name}")
 objdir("../build/" .. outputdir .. "/%{prj.name}")
 
 files({
-    "source/**.h",
-    "source/**.cpp",
+	"source/**.h",
+	"source/**.cpp",
 })
 
 includedirs({
-    "../Charm/source",
-    IncludeDir.entt,
-    IncludeDir.glad,
-    IncludeDir.glm,
-    IncludeDir.imgui,
+	"../Charm/source",
+	IncludeDir.entt,
+	IncludeDir.glad,
+	IncludeDir.glm,
+	IncludeDir.imgui,
+	IncludeDir.ImGuizmo,
 })
 
 links({
-    "Charm",
-    "imgui",
+	"Charm",
+	"imgui", -- Temporarly for ImGui::ShowDemoWindow
+	--"ImGuizmo",
 })
 
 postbuildcommands({
-    "{COPYDIR} assets/ %{cfg.buildtarget.directory}",
-    "{COPYDIR} SandboxProject/ %{cfg.buildtarget.directory}",
-    "{COPY} ../imgui.ini %{cfg.buildtarget.directory}",
+	"{COPYDIR} assets/ %{cfg.buildtarget.directory}",
+	"{COPYDIR} SandboxProject/ %{cfg.buildtarget.directory}",
+	"{COPY} ../imgui.ini %{cfg.buildtarget.directory}",
 })
 
 filter("system:windows")

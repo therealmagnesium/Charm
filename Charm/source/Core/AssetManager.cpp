@@ -81,6 +81,8 @@ namespace Charm
             const AssetMap& GetAllAssets() { return assets->loadedAssets; }
             const AssetRegistry& GetRegistry() { return assets->registry; }
 
+            u32 GetTotalAssetCount() { return assets->registry.size() == assets->loadedAssets.size() ? assets->registry.size() : assets->loadedAssets.size(); }
+
             Asset* GetAsset(AssetHandle handle)
             {
                 if (!IsHandleValid(handle))

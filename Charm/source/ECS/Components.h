@@ -122,6 +122,7 @@ namespace Charm
         struct Camera2DComponent
         {
             bool isPrimary = false;
+            glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
             Camera2D camera;
 
             Camera2DComponent() = default;

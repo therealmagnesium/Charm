@@ -1,5 +1,5 @@
 #pragma once
-#include <Graphics/Texture.h>
+#include <Graphics/Framebuffer.h>
 #include <glm/glm.hpp>
 
 using namespace Charm::Graphics;
@@ -16,7 +16,7 @@ namespace CharmApp
 
     namespace SceneViewportPanel
     {
-        void Display(Texture& displayTexture);
+        void Display(Framebuffer& framebuffer);
 
         bool IsHovered();
         bool IsFocused();

@@ -142,7 +142,7 @@ namespace Charm
             {
                 const ApplicationConfig& config = Application::GetConfig();
                 state.viewMatrix = Cameras::GetViewMatrix2D(camera);
-                state.projectionMatrix = Cameras::GetProjectionMatrix2D();
+                state.projectionMatrix = Cameras::GetProjectionMatrix2D(camera);
                 batchData.quadCount = 0;
                 batchData.circleCount = 0;
                 batchData.lineCount = 0;
@@ -457,6 +457,8 @@ namespace Charm
             }
 
             glm::vec3& GetClearColor() { return state.clearColor; }
+            const glm::mat4& GetViewMatrix() { return state.viewMatrix; }
+            const glm::mat4& GetProjectionMatrix() { return state.projectionMatrix; }
             u32 GetQuadCount() { return batchData.quadCount; }
             u32 GetCircleCount() { return batchData.circleCount; }
             u32 GetLineCount() { return batchData.lineCount; }

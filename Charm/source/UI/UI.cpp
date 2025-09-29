@@ -17,6 +17,7 @@
 #include <imgui_internal.h>
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
+#include <ImGuizmo.h>
 #include <SDL3/SDL_video.h>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -75,6 +76,7 @@ namespace Charm
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
+            ImGuizmo::BeginFrame();
         }
 
         void EndFrame()
@@ -96,7 +98,7 @@ namespace Charm
             }
         }
 
-        void DrawBoolControl(const char* label, bool* b, float columnWidth)
+        bool DrawBoolControl(const char* label, bool* b, float columnWidth)
         {
             ImGui::PushID(label);
             ImGui::Columns(2);
@@ -104,9 +106,11 @@ namespace Charm
             ImGui::Text("%s", label);
             ImGui::NextColumn();
 
-            ImGui::Checkbox("##", b);
+            bool hasChanged = ImGui::Checkbox("##", b);
             ImGui::Columns(1);
             ImGui::PopID();
+
+            return hasChanged;
         }
 
         void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth)
@@ -463,27 +467,52 @@ namespace Charm
 
         void DrawAssetControls_Texture(Texture* texture)
         {
-            const float columnWidth = 120.f;
+            const float columnWidth = 165.f;
+            const char* filters[6] = {"Linear", "Nearest",
+                                      "Linear Mipmap Linear", "Linear Mipmap Nearest",
+                                      "Nearest Mipmap Linear", "Nearest Mipmap Nearest"};
 
-            ImGui::PushID("Texture Filter");
+            ImGui::PushID("Texture Min Filter");
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("Texture Filter");
+            ImGui::Text("Texture Min Filter");
             ImGui::NextColumn();
 
-            std::string filterAsString = Utils::TextureFilterToString(texture->filter);
+            std::string filterAsString = Utils::TextureFilterToString(texture->minFilter);
             std::string placeholder = filterAsString;
             ImGui::SetNextItemWidth(-1.f);
-            if (ImGui::BeginCombo("##Texture Filter", placeholder.c_str()))
+            if (ImGui::BeginCombo("##Texture Min Filter", placeholder.c_str()))
             {
-                const char* filters[2] = {"Linear", "Nearest"};
-
-                for (u8 i = 0; i < 2; i++)
+                for (u8 i = 0; i < LEN(filters); i++)
                 {
-                    bool isSelected = filterAsString == filters[i];
+                    const bool isSelected = filterAsString == filters[i];
 
                     if (ImGui::Selectable(filters[i], isSelected))
-                        texture->filter = (TextureFilter)i;
+                        texture->minFilter = (TextureFilter)i;
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::Columns(1);
+            ImGui::PopID();
+
+            ImGui::PushID("Texture Mag Filter");
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("Texture Mag Filter");
+            ImGui::NextColumn();
+
+            std::string magFilterAsString = Utils::TextureFilterToString(texture->magFilter);
+            std::string magFilterPlaceholder = magFilterAsString;
+            ImGui::SetNextItemWidth(-1.f);
+            if (ImGui::BeginCombo("##Texture Mag Filter", magFilterPlaceholder.c_str()))
+            {
+                for (u8 i = 0; i < LEN(filters); i++)
+                {
+                    const bool isSelected = magFilterAsString == filters[i];
+
+                    if (ImGui::Selectable(filters[i], isSelected))
+                        texture->magFilter = (TextureFilter)i;
                 }
                 ImGui::EndCombo();
             }
@@ -588,9 +617,9 @@ namespace Charm
             style.Colors[ImGuiCol_CheckMark] = ImVec4(0.0313725508749485f, 0.9490196108818054f, 0.843137264251709f, 1.0f);
             style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.0313725508749485f, 0.9490196108818054f, 0.843137264251709f, 1.0f);
             style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.6000000238418579f, 0.9647058844566345f, 0.0313725508749485f, 1.0f);
-            style.Colors[ImGuiCol_Button] = ImVec4(0.1176470592617989f, 0.1333333402872086f, 0.1490196138620377f, 1.0f);
-            style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.1803921610116959f, 0.1882352977991104f, 0.196078434586525f, 1.0f);
-            style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.1529411822557449f, 0.1529411822557449f, 0.1529411822557449f, 1.0f);
+            style.Colors[ImGuiCol_Button] = ImVec4(0.1411764770746231f, 0.1647058874368668f, 0.2078431397676468f, 1.0f);
+            style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.2103921610116959f, 0.2182352977991104f, 0.276078434586525f, 1.0f);
+            style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.1829411822557449f, 0.1829411822557449f, 0.2429411822557449f, 1.0f);
             style.Colors[ImGuiCol_Header] = ImVec4(0.1411764770746231f, 0.1647058874368668f, 0.2078431397676468f, 1.0f);
             style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.2011764770746231f, 0.2247058874368668f, 0.2878431397676468f, 1.0f);
             style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.0784313753247261f, 0.08627451211214066f, 0.1019607856869698f, 1.0f);
