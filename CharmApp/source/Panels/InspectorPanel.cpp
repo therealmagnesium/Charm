@@ -35,7 +35,7 @@ namespace CharmApp
 
             ImGui::Begin("Inspector");
             bool isAssetValid = AssetManager::IsHandleValid(state.selectedAssetHandle);
-            state.selectedAsset = AssetManager::GetAsset(state.selectedAssetHandle);
+            state.selectedAsset = isAssetValid ? AssetManager::GetAsset(state.selectedAssetHandle) : NULL;
 
             if (selectedEntity && stringPath.empty())
                 DrawComponents(selectedEntity);

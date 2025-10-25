@@ -46,16 +46,15 @@ namespace Charm
                 isInitialized = false;
             }
 
-            bool Open()
+            bool Open(FileDialogFilter* filters, u8 filterCount)
             {
                 void* windowHandle = Window::GetHandle();
-
                 char* outPath = NULL;
 
                 nfdwindowhandle_t parentWindow;
                 NFD_GetNativeWindowFromSDLWindow((SDL_Window*)windowHandle, &parentWindow);
 
-                nfdresult_t result = NFD::OpenDialog(outPath, NULL, 0, state.defaultPath.c_str(), parentWindow);
+                nfdresult_t result = NFD::OpenDialog(outPath, (nfdfilteritem_t*)filters, filterCount, state.defaultPath.c_str(), parentWindow);
                 if (result == NFD_CANCEL || result == NFD_ERROR)
                     return false;
 
@@ -67,7 +66,7 @@ namespace Charm
 
             bool OpenMultiple() { ASSERT(false, "FileDialogs::OpenMultiple - No implementation!"); }
 
-            bool Save()
+            bool Save(FileDialogFilter* filters, u8 filterCount)
             {
                 void* windowHandle = Window::GetHandle();
 
@@ -76,7 +75,7 @@ namespace Charm
                 nfdwindowhandle_t parentWindow;
                 NFD_GetNativeWindowFromSDLWindow((SDL_Window*)windowHandle, &parentWindow);
 
-                nfdresult_t result = NFD::SaveDialog(outPath, NULL, 0, state.defaultPath.c_str(), NULL, parentWindow);
+                nfdresult_t result = NFD::SaveDialog(outPath, (nfdfilteritem_t*)filters, filterCount, state.defaultPath.c_str(), NULL, parentWindow);
                 if (result == NFD_CANCEL || result == NFD_ERROR)
                     return false;
 

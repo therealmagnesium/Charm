@@ -45,13 +45,13 @@ namespace CharmApp
         ContentBrowserPanel::Init();
         ToolbarPanel::Init();
 
-        const std::filesystem::path scriptModulePath = ProjectManager::GetAssetFileSystemPath(state.project.scriptModulePath, state.project);
+        const std::filesystem::path scriptModulePath = ProjectManager::GetScriptModulePath(state.project);
         if (std::filesystem::exists(scriptModulePath))
             ScriptManager::LoadModule(scriptModulePath.c_str());
 
         if (!state.project.startScenePath.empty())
         {
-            std::filesystem::path scenePath = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath, state.project);
+            std::filesystem::path scenePath = ProjectManager::GetStartScenePath(state.project);
             OpenScene(scenePath.c_str());
         }
 
@@ -69,9 +69,6 @@ namespace CharmApp
 
         if (state.sceneState == SceneState::Editor)
         {
-            if (Input::IsKeyPressed(KEY_ESCAPE))
-                Application::Quit();
-
             if (Input::IsKeyPressed(KEY_F2))
                 Scenes::ResetEditorCameras(*state.activeScene);
 
@@ -211,7 +208,11 @@ namespace CharmApp
         if (state.sceneState != SceneState::Editor)
             Scenes::OnRuntimeStop(*state.activeScene);
 
-        if (FileDialogs::Open())
+        FileDialogFilter filter;
+        filter.name = "Scene";
+        filter.specification = "charm";
+
+        if (FileDialogs::Open(&filter, 1))
         {
             std::string path = FileDialogs::GetSelectedPath().string();
             CharmApp::OpenScene(path.c_str());
@@ -233,7 +234,10 @@ namespace CharmApp
 
     void OnSceneSaveAs()
     {
-        if (FileDialogs::Save())
+        FileDialogFilter filter;
+        filter.name = "Scene";
+        filter.specification = "charm";
+        if (FileDialogs::Save(&filter, 1))
         {
             std::string path = FileDialogs::GetSelectedPath().string();
             SceneSerializer::SetContext(&state.editorScene);

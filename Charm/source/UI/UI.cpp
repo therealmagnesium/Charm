@@ -384,7 +384,11 @@ namespace Charm
         {
             if (ImGui::Button("Add Animation"))
             {
-                if (FileDialogs::Open())
+                FileDialogFilter filter;
+                filter.name = "Animation";
+                filter.specification = "anim";
+
+                if (FileDialogs::Open(&filter, 1))
                 {
                     const Project& project = ProjectSerializer::GetContext();
                     const std::filesystem::path path = FileDialogs::GetSelectedPath();

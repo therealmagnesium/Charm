@@ -33,5 +33,7 @@ namespace Charm
             std::filesystem::path path;
             AssetType type = AssetType::Invalid;
         };
+
+        inline const AssetHandle AssetHandle_Invalid = 0;
     }
 }

@@ -43,6 +43,8 @@ namespace Charm
             void Reset();
             void Capture(bool shouldCapture);
 
+            bool GetCapture();
+
             bool IsMouseDown(MouseButton button);
             bool IsMouseClicked(MouseButton button);
             glm::vec2 GetMousePosition();

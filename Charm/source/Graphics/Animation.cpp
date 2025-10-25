@@ -28,6 +28,7 @@ namespace Charm
                 catch (const YAML::BadFile& e)
                 {
                     ERROR("Animations::Load - Could not load the file \"%s\"", path);
+                    return animation;
                 }
 
                 ASSERT_RETURN(data, animation, "Animations::Load - Failed to load animation \"%s\", the path may be invalid!", path);

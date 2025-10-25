@@ -46,6 +46,8 @@ namespace Charm
                 ProjectSerializer::SetContext(NULL);
             }
 
+            std::filesystem::path GetScriptModulePath(const Project& project) { return project.directory / project.assetsDirectory / project.scriptModulePath; }
+            std::filesystem::path GetStartScenePath(const Project& project) { return project.directory / project.assetsDirectory / project.startScenePath; }
             std::filesystem::path GetAssetPath(const Project& project) { return project.directory / project.assetsDirectory; }
             std::filesystem::path GetAssetFileSystemPath(const std::filesystem::path& path, const Project& project) { return project.directory / project.assetsDirectory / path; }
         }

@@ -52,11 +52,14 @@ namespace CharmHub
 
         if (ImGui::Button("Load Project", buttonSize))
         {
-            if (FileDialogs::Open())
+            FileDialogFilter filter;
+            filter.name = "Project";
+            filter.specification = "chprj";
+
+            if (FileDialogs::Open(&filter, 1))
             {
                 const std::filesystem::path path = FileDialogs::GetSelectedPath();
-                const std::filesystem::path relativePath = std::filesystem::relative(path, std::filesystem::current_path());
-                state.project = ProjectManager::Load(relativePath.c_str());
+                state.project = ProjectManager::Load(path.c_str());
                 state.isProjectSelected = true;
             }
         }
@@ -74,9 +77,12 @@ namespace CharmHub
             UI::DrawTextInputControl("Name", &state.project.name);
             if (UI::DrawFilesystemInputControl("Path", &state.newProjectPath, ImGuiInputTextFlags_ElideLeft))
             {
-                if (FileDialogs::Save())
+                FileDialogFilter filter;
+                filter.name = "Project";
+                filter.specification = "chprj";
+                if (FileDialogs::Save(&filter, 1))
                 {
-                    state.newProjectPath = std::filesystem::relative(FileDialogs::GetSelectedPath(), std::filesystem::current_path());
+                    state.newProjectPath = FileDialogs::GetSelectedPath();
                     state.project.name = state.newProjectPath.stem();
                 }
             }

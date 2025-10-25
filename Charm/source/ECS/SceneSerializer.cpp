@@ -282,7 +282,14 @@ namespace Charm
                         if (parentUUID != 0)
                             parentChildRelationships.emplace_back(uuid, parentUUID);
 
-                        DeserializeEntity(deserializedEntity, entity);
+                        try
+                        {
+                            DeserializeEntity(deserializedEntity, entity);
+                        }
+                        catch (const YAML::BadConversion& e)
+                        {
+                            ERROR("Failed to deserialize entity %lX!", uuid);
+                        }
                     }
 
                     for (const auto& [childUUID, parentUUID] : parentChildRelationships)

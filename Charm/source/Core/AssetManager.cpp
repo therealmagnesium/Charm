@@ -78,6 +78,18 @@ namespace Charm
                 }
             }
 
+            void Remove(AssetHandle handle)
+            {
+                const std::filesystem::path assetPath = assets->registry[handle].path;
+
+                if (AssetManager::IsHandleValid(handle))
+                {
+                    INFO("Removing asset \"%s\"...", assetPath.c_str());
+                    assets->registry.erase(handle);
+                    assets->loadedAssets.erase(handle);
+                }
+            }
+
             const AssetMap& GetAllAssets() { return assets->loadedAssets; }
             const AssetRegistry& GetRegistry() { return assets->registry; }
 
@@ -92,6 +104,17 @@ namespace Charm
                 return asset;
             }
 
+            AssetType GetAssetType(AssetHandle handle)
+            {
+                AssetType type = AssetType::Invalid;
+                Asset* asset = GetAsset(handle);
+
+                if (asset != NULL)
+                    type = asset->GetType();
+
+                return type;
+            }
+
             std::filesystem::path GetAssetPath(AssetHandle handle) { return assets->registry.at(handle).path; }
 
             bool IsHandleValid(AssetHandle handle)
@@ -104,7 +127,7 @@ namespace Charm
                 return assets->loadedAssets.find(handle) != assets->loadedAssets.end();
             }
 
-            bool IsAssetRegistered(const std::string& path)
+            bool IsAssetRegistered(const std::filesystem::path& path)
             {
                 bool isRegistered = false;
                 for (auto& [handle, metadata] : assets->registry)
@@ -119,9 +142,9 @@ namespace Charm
                 return isRegistered;
             }
 
-            AssetHandle FindAssetHandle(const std::string& path)
+            AssetHandle FindAssetHandle(const std::filesystem::path& path)
             {
-                AssetHandle searchedAssetHandle = 0;
+                AssetHandle searchedAssetHandle = AssetHandle_Invalid;
                 for (auto& [handle, metadata] : assets->registry)
                 {
                     if (metadata.path == path)

@@ -1,4 +1,6 @@
 #pragma once
+#include "Core/Base.h"
+
 #include <filesystem>
 #include <vector>
 
@@ -6,6 +8,12 @@ namespace Charm
 {
     namespace Core
     {
+        struct FileDialogFilter
+        {
+            const char* name = "";
+            const char* specification = "";
+        };
+
         struct FileDialogState
         {
             std::filesystem::path defaultPath;
@@ -17,9 +25,9 @@ namespace Charm
             void Init();
             void Shutdown();
 
-            bool Open();
+            bool Open(FileDialogFilter* filters = NULL, u8 filterCount = 0);
             bool OpenMultiple();
-            bool Save();
+            bool Save(FileDialogFilter* filters, u8 filterCount);
 
             std::filesystem::path GetSelectedPath();
             const std::vector<std::filesystem::path>& GetSelectedPathMulti();

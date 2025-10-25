@@ -100,6 +100,9 @@ namespace CharmApp
             bool shouldDeleteEntity = false;
             if (ImGui::BeginPopupContextItem("Delete Entity Popup"))
             {
+                if (ImGui::MenuItem("Duplicate"))
+                    Scenes::DuplicateEntity(*entity.context, entity);
+
                 if (ImGui::MenuItem("Delete"))
                     shouldDeleteEntity = true;
 

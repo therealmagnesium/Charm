@@ -1,4 +1,6 @@
 #include "AssetRegistryPanel.h"
+#include "InspectorPanel.h"
+#include "ContentBrowserPanel.h"
 
 #include <Core/AssetManager.h>
 #include <Core/Random.h>
@@ -24,23 +26,23 @@ namespace CharmApp
 
         void Init()
         {
-            state.flags = ImGuiTableFlags_Resizable |
-                          ImGuiTableFlags_Reorderable |
-                          ImGuiTableFlags_Hideable |
-                          ImGuiTableFlags_Sortable |
-                          ImGuiTableFlags_SortMulti |
-                          ImGuiTableFlags_RowBg |
-                          ImGuiTableFlags_BordersOuter |
-                          ImGuiTableFlags_BordersV |
-                          ImGuiTableFlags_NoBordersInBody |
-                          ImGuiTableFlags_ScrollY;
+            state.tableFlags = ImGuiTableFlags_Resizable |
+                               ImGuiTableFlags_Reorderable |
+                               ImGuiTableFlags_Hideable |
+                               ImGuiTableFlags_Sortable |
+                               ImGuiTableFlags_SortMulti |
+                               ImGuiTableFlags_RowBg |
+                               ImGuiTableFlags_BordersOuter |
+                               ImGuiTableFlags_BordersV |
+                               ImGuiTableFlags_NoBordersInBody |
+                               ImGuiTableFlags_ScrollY;
         }
 
         void Display()
         {
             ImGui::Begin("Asset Registry");
 
-            if (ImGui::BeginTable("Asset Registry Table", 3, state.flags))
+            if (ImGui::BeginTable("Asset Registry Table", 3, state.tableFlags))
             {
                 // ImGui::TableSetupColumn("Index", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, ColumnID::Index);
                 ImGui::TableSetupColumn("Type", 0, 0.0f, ColumnID::Type);
@@ -54,27 +56,45 @@ namespace CharmApp
                         if (ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs())
                         {
                             if (sortSpecs->SpecsDirty)
-                            {
+                        {
 
-                                MyItem::SortWithSortSpecs(sortSpecs, items.Data, items.Size);
-                                sort_specs->SpecsDirty = false;
-                            }
-                        }*/
+                            MyItem::SortWithSortSpecs(sortSpecs, items.Data, items.Size);
+                            sort_specs->SpecsDirty = false;
+                        }
+                    }*/
 
                 const AssetRegistry& assetRegistry = AssetManager::GetRegistry();
+
                 for (auto& [handle, metadata] : assetRegistry)
                 {
+                    bool shouldDeleteAsset = false;
+
                     ImGui::PushID(handle);
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
+
                     ImGui::TextUnformatted(Utils::AssetTypeToString(metadata.type).c_str());
                     ImGui::SameLine();
-                    ImGui::SmallButton("x");
+
+                    if (ImGui::SmallButton("x"))
+                        shouldDeleteAsset = true;
+
                     ImGui::TableNextColumn();
                     ImGui::TextUnformatted(metadata.path.c_str());
                     ImGui::TableNextColumn();
                     ImGui::Text("0x%lX", handle);
                     ImGui::PopID();
+
+                    if (shouldDeleteAsset)
+                        state.assetToRemove = handle;
+                }
+
+                if (state.assetToRemove != AssetHandle_Invalid)
+                {
+                    InspectorPanel::SetSelectedAsset(AssetHandle_Invalid);
+                    ContentBrowserPanel::ClearSelectedFilePath();
+                    AssetManager::Remove(state.assetToRemove);
+                    state.assetToRemove = AssetHandle_Invalid;
                 }
 
                 ImGui::EndTable();

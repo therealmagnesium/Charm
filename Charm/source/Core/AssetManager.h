@@ -19,17 +19,19 @@ namespace Charm
 
             AssetHandle Import(const char* path, AssetType type);
             void Import(const char* path, AssetType type, AssetHandle handle);
+            void Remove(AssetHandle handle);
 
             const AssetMap& GetAllAssets();
             const AssetRegistry& GetRegistry();
 
             u32 GetTotalAssetCount();
             Asset* GetAsset(AssetHandle handle);
+            AssetType GetAssetType(AssetHandle handle);
             std::filesystem::path GetAssetPath(AssetHandle handle);
             bool IsHandleValid(AssetHandle handle);
             bool IsAssetLoaded(AssetHandle handle);
-            bool IsAssetRegistered(const std::string& path);
-            AssetHandle FindAssetHandle(const std::string& path);
+            bool IsAssetRegistered(const std::filesystem::path& path);
+            AssetHandle FindAssetHandle(const std::filesystem::path& path);
 
             template <typename T>
             inline T* GetAsset(AssetHandle handle)

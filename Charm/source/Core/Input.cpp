@@ -28,6 +28,8 @@ namespace Charm
 
             void Capture(bool shouldCapture) { state.shouldCapture = shouldCapture; }
 
+            bool GetCapture() { return state.shouldCapture; }
+
             bool IsMouseDown(MouseButton button) { return (state.shouldCapture) ? state.mouse.buttonsHeld[button] : false; }
             bool IsMouseClicked(MouseButton button) { return (state.shouldCapture) ? state.mouse.buttonsClicked[button] : false; }
             glm::vec2 GetMousePosition() { return (state.shouldCapture) ? state.mouse.position : glm::vec2(0.f); }
