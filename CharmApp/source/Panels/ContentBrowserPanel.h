@@ -18,6 +18,7 @@ namespace CharmApp
     {
         float padding = 64.f;
         float thumbnailSize = 64.f;
+        u32 columnCount = 0;
         ContentBrowserRenameState rename;
         std::filesystem::path currentDirectory;
         std::filesystem::path selectedFilePath;

@@ -31,7 +31,7 @@ namespace Charm
             {
                 if (state.moduleHandle != NULL)
                 {
-                    INFO("Script Manager is unloading module %s...", state.modulePath.c_str());
+                    INFO("Script Manager is unloading module \"%s\"...", state.modulePath.c_str());
                     dlclose(state.moduleHandle);
                     state.moduleHandle = NULL;
                     state.RegisterScripts = NULL;
