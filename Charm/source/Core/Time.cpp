@@ -47,6 +47,37 @@ namespace Charm
                 state.lastTime = state.currentTime;
             }
 
+            void StartTimer(Timer& timer, double target)
+            {
+                ResetTimer(timer, target);
+                UnpauseTimer(timer);
+            }
+
+            void ResetTimer(Timer& timer, double target)
+            {
+                timer.isDone = false;
+                timer.isPaused = true;
+                timer.elapsed = 0.0;
+                timer.target = target;
+            }
+
+            void UpdateTimer(Timer& timer)
+            {
+                if (!timer.isPaused && !timer.isDone)
+                {
+                    timer.elapsed += GetDelta();
+
+                    if (timer.elapsed >= timer.target && timer.target != 0.0)
+                    {
+                        timer.isPaused = true;
+                        timer.isDone = true;
+                    }
+                }
+            }
+
+            void PauseTimer(Timer& timer) { timer.isPaused = true; }
+            void UnpauseTimer(Timer& timer) { timer.isPaused = false; }
+
             double GetCurrent() { return state.currentTime; }
             double GetDelta() { return state.deltaTime; }
         }

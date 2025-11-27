@@ -79,22 +79,39 @@ namespace Charm
                     return;
                 }
 
-                shader.uniformLocations[name] = glGetUniformLocation(shader.id, name);
+                u32 location = glGetUniformLocation(shader.id, name);
 
-                if (shader.uniformLocations[name] == -1)
+                if (location == -1)
+                {
                     WARN("Shader with id %d could not find uniform \"%s\"", shader.id, name);
+                    return;
+                }
+
+                shader.uniformLocations[name] = location;
+            }
+
+            void SetUniform(Shader& shader, const char* name, s32 value)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                    glUniform1i(shader.uniformLocations[name], value);
             }
 
             void SetUniform(Shader& shader, const char* name, u32 value)
             {
                 if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
-                    glUniform1i(shader.uniformLocations[name], value);
+                    glUniform1ui(shader.uniformLocations[name], value);
             }
 
             void SetUniform(Shader& shader, const char* name, float value)
             {
                 if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
                     glUniform1f(shader.uniformLocations[name], value);
+            }
+
+            void SetUniform(Shader& shader, const char* name, const glm::vec2& value)
+            {
+                if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                    glUniform2fv(shader.uniformLocations[name], 1, glm::value_ptr(value));
             }
 
             void SetUniform(Shader& shader, const char* name, const glm::vec3& value)
@@ -133,8 +150,9 @@ namespace Charm
                 glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
                 if (!success)
                 {
+                    const char* shaderStringType = (type == GL_VERTEX_SHADER) ? "vertex" : "fragment";
                     glGetShaderInfoLog(shader, 512, NULL, infoLog);
-                    ERROR("Failed to compile shader! \n%s", infoLog);
+                    ERROR("Failed to compile %s shader! \n%s", shaderStringType, infoLog);
                 };
 
                 return shader;

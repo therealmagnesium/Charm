@@ -23,6 +23,7 @@
 #include "Graphics/Camera.h"
 #include "Graphics/Framebuffer.h"
 #include "Graphics/RenderCommand.h"
+#include "Graphics/RendererInternals.h"
 #include "Graphics/Renderer.h"
 #include "Graphics/Shader.h"
 #include "Graphics/Shapes.h"

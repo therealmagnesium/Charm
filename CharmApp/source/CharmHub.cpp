@@ -31,16 +31,16 @@ namespace CharmHub
         u32 flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
         ImGui::Begin("Projects", NULL, flags);
 
-        ImGui::PushFontSize(48.f);
+        ImGui::PushFont(NULL, 48.f);
         const ImVec2 windowSize = ImGui::GetWindowSize();
         const std::string text = "Welcome to Charm!";
         const ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
         const ImVec2 textPosition = ImVec2(windowSize.x / 2.f - textSize.x / 2.f, windowSize.y / 2.5f - textSize.y / 2.f);
         ImGui::SetCursorPos(textPosition);
         ImGui::TextUnformatted(text.c_str());
-        ImGui::PopFontSize();
+        ImGui::PopFont();
 
-        ImGui::PushFontSize(24.f);
+        ImGui::PushFont(NULL, 24.f);
         const ImVec2 buttonSize = ImVec2(175, 50);
         const ImVec2 buttonPosition = ImVec2(windowSize.x / 2.f - buttonSize.x, windowSize.y / 2.f - buttonSize.y / 2.f);
         ImGui::SetCursorPos(buttonPosition);
@@ -63,13 +63,13 @@ namespace CharmHub
                 state.isProjectSelected = true;
             }
         }
-        ImGui::PopFontSize();
+        ImGui::PopFont();
         ImGui::End();
 
         if (state.shouldDisplayNewProject)
         {
             ImGui::Begin("New Project");
-            ImGui::PushFontSize(20.f);
+            ImGui::PushFont(NULL, 20.f);
 
             if (ImGui::Button("Cancel", ImVec2(100.f, 25.f)))
                 state.shouldDisplayNewProject = false;
@@ -109,7 +109,7 @@ namespace CharmHub
                 SceneSerializer::SetContext(NULL);
             }
 
-            ImGui::PopFontSize();
+            ImGui::PopFont();
             ImGui::End();
         }
     }

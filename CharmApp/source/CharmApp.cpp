@@ -37,6 +37,8 @@ namespace CharmApp
         state.activeScene = &state.editorScene;
 
         state.project = CharmHub::GetProject();
+        state.grid.tileScale = 2;
+        state.grid.isEnabled = true;
 
         ProjectSerializer::SetContext(&state.project);
         SceneSerializer::SetContext(&state.editorScene);
@@ -56,11 +58,22 @@ namespace CharmApp
         }
 
         FileDialogs::SetDefaultPath(ProjectManager::GetAssetPath(state.project));
+        Time::StartTimer(state.timer);
+    }
+
+    void OnShutdown()
+    {
+        ScriptManager::UnloadModule();
+        AssetManager::Clean();
+        ContentBrowserPanel::Shutdown();
+        ToolbarPanel::Shutdown();
+        Framebuffers::Destroy(state.framebuffer);
     }
 
     void OnUpdate()
     {
         ASSERT(state.activeScene != NULL, "CharmApp::OnUpdate - The currently active scene is null!");
+        Time::UpdateTimer(state.timer);
 
         Input::Capture(true);
 
@@ -90,13 +103,32 @@ namespace CharmApp
             if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_D))
                 OnDuplicateEntity();
 
-            Input::Capture(SceneViewportPanel::IsFocused() && SceneViewportPanel::IsHovered());
+            Input::Capture(SceneViewportPanel::IsFocused());
             if (Input::IsKeyPressed(KEY_E))
                 ToolbarPanel::SetManipulationType(ImGuizmo::OPERATION::SCALE);
             if (Input::IsKeyPressed(KEY_R))
                 ToolbarPanel::SetManipulationType(ImGuizmo::OPERATION::ROTATE);
             if (Input::IsKeyPressed(KEY_T))
                 ToolbarPanel::SetManipulationType(ImGuizmo::OPERATION::TRANSLATE);
+            if (Input::IsKeyPressed(KEY_G))
+                state.grid.isEnabled = !state.grid.isEnabled;
+
+            if (Input::IsKeyPressed(KEY_F))
+            {
+                Entity& entity = SceneHeirarchyPanel::GetSelectedEntity();
+                if (entity.IsHandleValid())
+                {
+                    const auto& entityTransform = entity.GetComponent<TransformComponent>();
+                    const float min = glm::round(glm::min(entityTransform.scale.x, entityTransform.scale.y));
+                    const float max = glm::round(glm::max(entityTransform.scale.x, entityTransform.scale.y));
+                    float zoom = 1.f - min / max;
+                    if (zoom == 0.f)
+                        zoom = 1.f;
+
+                    state.editorScene.editorCamera2D.target = entityTransform.position;
+                    state.editorScene.editorCamera2D.zoom = zoom;
+                }
+            }
 
             Scenes::UpdateEditor(*state.activeScene);
         }
@@ -123,6 +155,15 @@ namespace CharmApp
 
         Framebuffers::Bind(state.framebuffer);
         RenderCommand::Clear();
+
+        if (state.grid.isEnabled)
+        {
+            const u32 colorAttachmentWidth = Framebuffers::GetColorAttachmentWidth(state.framebuffer);
+            const u32 colorAttachmentHeight = Framebuffers::GetColorAttachmentHeight(state.framebuffer);
+            const glm::vec2 resolution = glm::vec2(colorAttachmentWidth, colorAttachmentHeight);
+            Renderer::DrawGrid(state.editorScene.editorCamera2D, resolution, state.grid.tileScale);
+        }
+
         Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
 
         if (state.sceneState == SceneState::Editor)
@@ -146,15 +187,6 @@ namespace CharmApp
         SceneViewportPanel::Display(state.framebuffer);
     }
 
-    void OnShutdown()
-    {
-        ScriptManager::UnloadModule();
-        AssetManager::Clean();
-        ContentBrowserPanel::Shutdown();
-        ToolbarPanel::Shutdown();
-        Framebuffers::Destroy(state.framebuffer);
-    }
-
     void OnScenePlay()
     {
         Entity prev = SceneHeirarchyPanel::GetSelectedEntity();
@@ -172,6 +204,8 @@ namespace CharmApp
             auto& prevInternal = prev.GetComponent<InternalComponent>();
             SceneHeirarchyPanel::SetSelectedEntity(Entities::FindWithUUID(prevInternal.id, state.activeScene));
         }
+
+        state.grid.isEnabled = false;
     }
 
     void OnSceneStop()
@@ -190,6 +224,7 @@ namespace CharmApp
 
         Scenes::OnRuntimeStop(state.runtimeScene);
         state.runtimeScene = Scenes::Create();
+        state.grid.isEnabled = true;
     }
 
     void OnSceneNew()

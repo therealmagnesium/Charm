@@ -126,6 +126,35 @@ namespace Charm
                     glDeleteFramebuffers(1, &framebuffer.id);
                 }
             }
+
+            u32 GetColorAttachmentWidth(const Framebuffer& framebuffer, u32 attachmentIndex)
+            {
+                u32 width = 0;
+                if (attachmentIndex < framebuffer.colorAttachments.size())
+                {
+                    const Texture& attachment = framebuffer.colorAttachments[attachmentIndex];
+                    if (attachment.isValid)
+                        width = attachment.width;
+                }
+
+                return width;
+            }
+
+            u32 GetColorAttachmentHeight(const Framebuffer& framebuffer, u32 attachmentIndex)
+            {
+                u32 height = 0;
+                if (attachmentIndex < framebuffer.colorAttachments.size())
+                {
+                    const Texture& attachment = framebuffer.colorAttachments[attachmentIndex];
+                    if (attachment.isValid)
+                        height = attachment.height;
+                }
+
+                return height;
+            }
+
+            u32 GetDepthAttachmentWidth(const Framebuffer& framebuffer) { return framebuffer.depthAttachment.isValid ? framebuffer.depthAttachment.width : 0; }
+            u32 GetDepthAttachmentHeight(const Framebuffer& framebuffer) { return framebuffer.depthAttachment.isValid ? framebuffer.depthAttachment.height : 0; }
         }
     }
 }

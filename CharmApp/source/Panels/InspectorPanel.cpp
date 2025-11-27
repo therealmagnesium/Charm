@@ -96,68 +96,9 @@ namespace CharmApp
             ImGui::PopID();
 
             ImGui::SameLine();
-            ImGui::SetNextItemWidth(ImGui::CalcItemWidth() * 0.8f);
+            ImGui::SetNextItemWidth(-1.f);
             if (ImGui::InputText("##Tag", tagBuffer, sizeof(tagBuffer)))
                 internal.tag = std::string(tagBuffer);
-
-            ImGui::SameLine();
-
-            const float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
-            if (ImGui::Button("Add component", ImVec2(-1.f, lineHeight)))
-                ImGui::OpenPopup("Add Component");
-
-            if (ImGui::BeginPopup("Add Component"))
-            {
-                if (ImGui::MenuItem("Transform"))
-                {
-                    entity.AddComponent<TransformComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-
-                if (ImGui::MenuItem("Circle Renderer"))
-                {
-                    entity.AddComponent<CircleRendererComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-
-                if (ImGui::MenuItem("Sprite Renderer"))
-                {
-                    entity.AddComponent<SpriteRendererComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-
-                if (ImGui::MenuItem("Animator 2D"))
-                {
-                    entity.AddComponent<Animator2DComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-
-                if (ImGui::MenuItem("Camera 2D"))
-                {
-                    entity.AddComponent<Camera2DComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-
-                if (ImGui::MenuItem("Rigidbody 2D"))
-                {
-                    entity.AddComponent<Rigidbody2DComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-
-                if (ImGui::MenuItem("Box Collider 2D"))
-                {
-                    entity.AddComponent<BoxCollider2DComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-
-                if (ImGui::MenuItem("Native Script"))
-                {
-                    entity.AddComponent<NativeScriptComponent>();
-                    ImGui::CloseCurrentPopup();
-                }
-
-                ImGui::EndPopup();
-            }
 
             DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component) {
                 const float columnWidth = 80.f;
@@ -412,24 +353,83 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
             });
+
+            const float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
+            const float availableWidth = ImGui::GetContentRegionAvail().x;
+            const ImVec2 buttonSize = ImVec2(availableWidth * 0.8f, lineHeight);
+            ImGui::Separator();
+            ImGui::Indent(availableWidth * 0.5f - buttonSize.x * 0.5f);
+            if (ImGui::Button("Add component", buttonSize))
+                ImGui::OpenPopup("Add Component");
+
+            if (ImGui::BeginPopup("Add Component"))
+            {
+                if (ImGui::MenuItem("Transform"))
+                {
+                    entity.AddComponent<TransformComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Circle Renderer"))
+                {
+                    entity.AddComponent<CircleRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Sprite Renderer"))
+                {
+                    entity.AddComponent<SpriteRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Animator 2D"))
+                {
+                    entity.AddComponent<Animator2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Camera 2D"))
+                {
+                    entity.AddComponent<Camera2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Rigidbody 2D"))
+                {
+                    entity.AddComponent<Rigidbody2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Box Collider 2D"))
+                {
+                    entity.AddComponent<BoxCollider2DComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (ImGui::MenuItem("Native Script"))
+                {
+                    entity.AddComponent<NativeScriptComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
+            }
         }
 
         template <typename T, typename UIFunction>
         void DrawComponent(const char* name, Entity entity, UIFunction callback)
         {
-            const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap |
+            const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap |
                                              ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_FramePadding;
 
             if (entity.HasComponent<T>())
             {
+                ImGui::PushID(name);
                 auto& component = entity.GetComponent<T>();
-                ImVec2 availableRegion = ImGui::GetContentRegionAvail();
 
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.f, 4.f));
-
+                const ImVec2 availableRegion = ImGui::GetContentRegionAvail();
                 const float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
-                // ImGui::Separator();
-
                 bool isOpen = ImGui::TreeNodeEx(name, flags);
                 ImGui::PopStyleVar();
 
@@ -445,6 +445,8 @@ namespace CharmApp
 
                     ImGui::EndPopup();
                 }
+
+                ImGui::PopID();
 
                 if (isOpen)
                 {

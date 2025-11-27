@@ -1,7 +1,6 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/RenderCommand.h"
-#include "Graphics/Camera.h"
-#include "Graphics/Texture.h"
+#include "Graphics/RendererInternals.h"
 #include "Graphics/Window.h"
 
 #include "Core/Application.h"
@@ -9,7 +8,6 @@
 #include "Core/Utils.h"
 
 #include <glad/glad.h>
-#include <glm/fwd.hpp>
 #include <SDL3/SDL.h>
 
 using namespace Charm::Core;
@@ -116,6 +114,14 @@ namespace Charm
                 Shaders::CreateUniform(state.lineShader, "viewMatrix");
                 Shaders::CreateUniform(state.lineShader, "projectionMatrix");
 
+                state.grid.vao = VertexArray::Create();
+                state.grid.shader = Shaders::Load("assets/shaders/2DGrid_vs.glsl", "assets/shaders/2DGrid_fs.glsl");
+                Shaders::CreateUniform(state.grid.shader, "u_cameraPosition");
+                Shaders::CreateUniform(state.grid.shader, "u_cameraZoom");
+                Shaders::CreateUniform(state.grid.shader, "u_resolution");
+                Shaders::CreateUniform(state.grid.shader, "u_pixelsPerUnit");
+                Shaders::CreateUniform(state.grid.shader, "u_tileScale");
+
                 state.clearColor = glm::vec3(0.91f);
 
                 SetupBatchRendering();
@@ -129,9 +135,14 @@ namespace Charm
                 INFO("The renderer is shutting down...");
 
                 CleanUpBatchRendering();
+
                 Shaders::Unload(state.quadShader);
                 Shaders::Unload(state.circleShader);
                 Shaders::Unload(state.lineShader);
+
+                Shaders::Unload(state.grid.shader);
+                VertexArray::Destroy(state.grid.vao);
+
                 Window::Shutdown();
                 SDL_Quit();
 
@@ -454,6 +465,24 @@ namespace Charm
             {
                 CheckForNewBatch(BatchMode::Circles);
                 AddEntityToBatch(transform, circleRenderer, entityID);
+            }
+
+            void DrawGrid(const Camera2D& camera, const glm::vec2& resolution, u32 tileScale)
+            {
+                const u32 quadVertexCount = 6;
+
+                VertexArray::Bind(state.grid.vao);
+                Shaders::Bind(state.grid.shader);
+
+                Shaders::SetUniform(state.grid.shader, "u_cameraPosition", camera.target);
+                Shaders::SetUniform(state.grid.shader, "u_cameraZoom", camera.zoom);
+                Shaders::SetUniform(state.grid.shader, "u_resolution", resolution);
+                Shaders::SetUniform(state.grid.shader, "u_pixelsPerUnit", Application::GetPixelsPerUnit());
+                Shaders::SetUniform(state.grid.shader, "u_tileScale", tileScale);
+                RenderCommand::DrawArrays(PrimitiveType::Triangles, quadVertexCount);
+
+                Shaders::Unbind();
+                VertexArray::Unbind();
             }
 
             glm::vec3& GetClearColor() { return state.clearColor; }

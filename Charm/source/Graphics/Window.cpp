@@ -45,8 +45,8 @@ namespace Charm
                 state.context = SDL_GL_CreateContext((SDL_Window*)state.handle);
                 ASSERT(state.context != NULL, "Failed to initialize the window's OpenGL context!");
 
-                ASSERT(SDL_GL_MakeCurrent((SDL_Window*)state.handle, (SDL_GLContext)state.context) != false,
-                       "Failed to set the window's OpenGL context");
+                const bool isContextValid = SDL_GL_MakeCurrent((SDL_Window*)state.handle, (SDL_GLContext)state.context);
+                ASSERT(isContextValid != false, "Failed to set the window's OpenGL context");
 
                 INFO("Window \"%s\" was successfully created with an OpenGL context", state.title.c_str());
             }

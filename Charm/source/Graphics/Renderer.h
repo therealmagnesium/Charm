@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/Camera.h"
+#include "Graphics/Framebuffer.h"
 #include "Graphics/Shader.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
@@ -46,6 +47,12 @@ namespace Charm
             glm::vec3 color;
         };
 
+        struct RendererGrid
+        {
+            u32 vao = 0;
+            Shader shader;
+        };
+
         struct RenderState
         {
             glm::vec3 clearColor;
@@ -54,6 +61,7 @@ namespace Charm
             Shader quadShader;
             Shader circleShader;
             Shader lineShader;
+            RendererGrid grid;
         };
 
         namespace Renderer
@@ -95,6 +103,8 @@ namespace Charm
 
             void DrawEntity(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);
             void DrawEntity(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
+
+            void DrawGrid(const Camera2D& camera, const glm::vec2& resolution, u32 tileScale = 1);
 
             glm::vec3& GetClearColor();
             const glm::mat4& GetViewMatrix();

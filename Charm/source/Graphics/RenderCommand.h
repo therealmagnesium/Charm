@@ -5,6 +5,17 @@ namespace Charm
 {
     namespace Graphics
     {
+        enum PrimitiveType : u8
+        {
+            Points = 0,
+            Lines,
+            LineLoop,
+            LineStrip,
+            Triangles,
+            TriangleStrip,
+            TriangleFan
+        };
+
         namespace RenderCommand
         {
             void Clear();
@@ -12,6 +23,8 @@ namespace Charm
             void SetLineWidth(float width);
             void ShowCursor();
             void HideCursor();
+            void DrawArrays(PrimitiveType type, u32 vertexCount);
+            void DrawIndexed(PrimitiveType type, u64 indexCount);
         }
     }
 }

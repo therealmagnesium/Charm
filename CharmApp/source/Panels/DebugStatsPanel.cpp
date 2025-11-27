@@ -48,6 +48,8 @@ namespace CharmApp
             ImGui::Text("GL mouse position: " V2_FMT, V2_OPEN(glViewportMouse));
             ImGui::Text("Is viewport hovered?: %s", Utils::BoolToCString(SceneViewportPanel::IsHovered()));
             ImGui::Text("Is viewport focused?: %s", Utils::BoolToCString(SceneViewportPanel::IsFocused()));
+            ImGui::Text("Viewport position: " V2_FMT, V2_OPEN(SceneViewportPanel::GetPosition()));
+            ImGui::Text("Viewport size: " V2_FMT, V2_OPEN(SceneViewportPanel::GetSize()));
             ImGui::End();
         }
     }

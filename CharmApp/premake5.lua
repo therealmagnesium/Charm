@@ -36,11 +36,11 @@ postbuildcommands({
 
 filter("system:windows")
 defines({ "CH_PLATFORM_WINDOWS" })
-libdirs({})
 
 filter("system:linux")
 defines({ "CH_PLATFORM_LINUX" })
 links({ "gtk-3" })
+linkoptions({ "-Wl,-rpath,/usr/local/lib" })
 
 filter("configurations:Debug")
 defines({ "CH_DEBUG" })

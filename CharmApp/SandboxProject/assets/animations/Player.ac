@@ -1,9 +1,0 @@
-Animation Controller: 10870106614404216147
-Animation Count: 2
-Animations:
-  - Animation:
-      Handle: 17288850075062157363
-      Path: SandboxProject/assets/animations/Player_Idle.anim
-  - Animation:
-      Handle: 15179463915103717565
-      Path: SandboxProject/assets/animations/Player_Run.anim

@@ -54,6 +54,11 @@ namespace Charm
             s32 ReadPixel(Framebuffer& framebuffer, u32 attachmentIndex, u32 x, u32 y);
             void ClearAttachment(Framebuffer& framebuffer, u32 attachmentIndex, int value);
             void Destroy(Framebuffer& framebuffer);
+
+            u32 GetColorAttachmentWidth(const Framebuffer& framebuffer, u32 attachmentIndex = 0);
+            u32 GetColorAttachmentHeight(const Framebuffer& framebuffer, u32 attachmentIndex = 0);
+            u32 GetDepthAttachmentWidth(const Framebuffer& framebuffer);
+            u32 GetDepthAttachmentHeight(const Framebuffer& framebuffer);
         }
     }
 }

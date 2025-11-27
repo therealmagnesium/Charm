@@ -22,8 +22,11 @@ namespace Charm
             Shader Load(const char* vertexPath, const char* fragmentPath);
             void Unload(Shader& shader);
             void CreateUniform(Shader& shader, const char* name);
+            void SetUniform(Shader& shader, const char* name, s32 value);
             void SetUniform(Shader& shader, const char* name, u32 value);
             void SetUniform(Shader& shader, const char* name, float value);
+            void SetUniform(Shader& shader, const char* name, const glm::ivec2& value);
+            void SetUniform(Shader& shader, const char* name, const glm::vec2& value);
             void SetUniform(Shader& shader, const char* name, const glm::vec3& value);
             void SetUniform(Shader& shader, const char* name, const glm::vec4& value);
             void SetUniform(Shader& shader, const char* name, const glm::mat4& value);

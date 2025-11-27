@@ -3,6 +3,8 @@
 #include "Core/Application.h"
 #include "Core/Input.h"
 
+#include <imgui.h>
+#include <ImGuizmo.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -40,7 +42,7 @@ namespace Charm
                         camera.zoom = 0.1f;
                 };
 
-                if (Input::IsKeyDown(KEY_LEFT_ALT))
+                if (Input::IsKeyDown(KEY_LEFT_ALT) && !ImGuizmo::IsOver())
                 {
                     const glm::vec2 mouseDelta = Input::GetMouseRelative() * 0.003f;
 

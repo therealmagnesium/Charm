@@ -29,41 +29,60 @@ namespace Charm
 {
     namespace UI
     {
+        static bool isContextValid = false;
+
         void SetupTheme_MyPurple();
         void SetupTheme_ComfyDarkCyan();
 
         void SetupContext()
         {
-            IMGUI_CHECKVERSION();
+            if (isContextValid)
+            {
+                WARN("Cannot setup the UI context more than once");
+                return;
+            }
+
             ImGui::CreateContext();
             ImGuiIO& io = ImGui::GetIO();
-            (void)io;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
             io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-            float fontSize = 18.f;
+            SetupTheme_ComfyDarkCyan();
+
+            const float fontSize = 18.f;
             ImFont* font = io.Fonts->AddFontFromFileTTF("assets/fonts/montserrat/Montserrat-Regular.ttf", fontSize);
             io.FontDefault = font;
 
-            SetupTheme_ComfyDarkCyan();
-
             SDL_Window* windowHandle = (SDL_Window*)Window::GetHandle();
             SDL_GLContext windowContext = (SDL_GLContext)Window::GetContext();
-            ImGui_ImplSDL3_InitForOpenGL(windowHandle, windowContext);
-            ImGui_ImplOpenGL3_Init("#version 450");
 
+            const bool isSDL3BackendValid = ImGui_ImplSDL3_InitForOpenGL(windowHandle, windowContext);
+            const bool isOpenGLBackendValid = ImGui_ImplOpenGL3_Init("#version 450");
+
+            ASSERT(isSDL3BackendValid == true, "Failed to setup SDL backend for ImGui!");
+            ASSERT(isOpenGLBackendValid == true, "Failed to setup OpenGL backend for ImGui!");
+
+            isContextValid = true;
             INFO("The UI context was setup successfully");
         }
 
         void DestroyContext()
         {
+            if (!isContextValid)
+            {
+                WARN("Cannot destory the UI context because it hasn't been setup");
+                return;
+            }
+
             INFO("The UI context is shutting down...");
 
             ImGui_ImplOpenGL3_Shutdown();
             ImGui_ImplSDL3_Shutdown();
             ImGui::DestroyContext();
+
+            isContextValid = false;
         }
 
         void HandleEvents(void* event)
