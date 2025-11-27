@@ -4,7 +4,7 @@ config="$1"
 appName="CharmApp"
 
 CopyAssets () {
-    mode="${config^}"
+    mode="${1^}"
     system="$2"
     cp -r "$appName/assets/" "bin/$mode-$system/$appName/"
 }
@@ -53,6 +53,8 @@ if [[ $config = "run" ]]; then
     RunApplication ${2^} $3
 elif [[ $config = "clean" ]]; then
     CleanProject
+elif [[ $config = "assets" ]]; then
+    CopyAssets $2 $3
 else
     mode="${config^}"
     BuildProject $mode $2
