@@ -30,7 +30,6 @@ links({
 
 postbuildcommands({
 	"{COPYDIR} assets/ %{cfg.buildtarget.directory}",
-	"{COPYDIR} SandboxProject/ %{cfg.buildtarget.directory}",
 	"{COPY} ../imgui.ini %{cfg.buildtarget.directory}",
 })
 
