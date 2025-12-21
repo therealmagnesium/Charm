@@ -101,12 +101,15 @@ namespace CharmApp
 
         const std::filesystem::path& GetSelectedFilePath() { return state.selectedFilePath; }
         void ClearSelectedFilePath() { state.selectedFilePath.clear(); }
+        void SetCurrentDirectory(const std::filesystem::path& path) { state.currentDirectory = path; }
 
         void DrawBrowserAssets(const std::filesystem::directory_entry& entry)
         {
             const float padding = state.thumbnailSize * 0.5f;
+            const Project& project = ProjectManager::GetActive();
 
             const std::filesystem::path entryPath = entry.path();
+            const std::filesystem::path relativeAssetPath = ProjectManager::GetAssetRelativePath(entryPath, project);
             ImGui::PushID(entryPath.c_str());
 
             ImTextureID icon = (entry.is_directory()) ? state.iconFolder.id : state.iconFile.id;
@@ -127,9 +130,9 @@ namespace CharmApp
                 if (!entry.is_directory())
                 {
                     SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
-                    state.selectedFilePath = entryPath;
+                    state.selectedFilePath = relativeAssetPath;
 
-                    AssetHandle handle = AssetManager::FindAssetHandle(entryPath);
+                    const AssetHandle handle = AssetManager::FindAssetHandle(relativeAssetPath);
                     InspectorPanel::SetSelectedAsset(handle);
                 }
                 else
@@ -143,8 +146,7 @@ namespace CharmApp
             // Allow the icons for each asset to be draggable onto other ImGui windows and widgets
             if (ImGui::BeginDragDropSource())
             {
-                std::string relativePath = std::filesystem::relative(entryPath, ProjectManager::GetAssetPath(CharmApp::GetProject()));
-                const char* itemPath = relativePath.c_str();
+                const char* itemPath = relativeAssetPath.c_str();
                 ImGui::SetDragDropPayload("Content Browser Item", itemPath, (strnlen(itemPath, 1024) + 1) * sizeof(char));
                 ImGui::EndDragDropSource();
             }
@@ -160,7 +162,7 @@ namespace CharmApp
             // Allow right clicking on the icons to bring up a popup to display options for the file on disk
             if (ImGui::BeginPopupContextItem("Asset Options Popup"))
             {
-                state.selectedFilePath = entryPath;
+                state.selectedFilePath = ProjectManager::GetAssetRelativePath(entryPath, project);
 
                 // If the user decides to rename the file/folder, setup the rename state for the Content Browser Panel
                 if (ImGui::MenuItem("Rename"))
@@ -177,7 +179,7 @@ namespace CharmApp
                     INFO("Deleting file %s...", entryPath.c_str());
                     if (!entry.is_directory() && AssetManager::IsAssetRegistered(entryPath))
                     {
-                        AssetHandle handle = AssetManager::FindAssetHandle(entryPath);
+                        const AssetHandle handle = AssetManager::FindAssetHandle(relativeAssetPath);
                         AssetManager::Remove(handle);
                         InspectorPanel::SetSelectedAsset(AssetHandle_Invalid);
                     }
@@ -190,7 +192,7 @@ namespace CharmApp
             }
 
             // Check for the user renaming a file on disk
-            if (state.rename.isActive && entryPath == state.rename.path)
+            if (state.rename.isActive && relativeAssetPath == state.rename.path)
             {
                 // Cancel renaming the file if the user presses 'Escape'
                 const bool prevInputCapture = Input::GetCapture();
@@ -211,14 +213,14 @@ namespace CharmApp
                 {
                     AssetHandle handle = AssetHandle_Invalid;
                     AssetType type = AssetType::Invalid;
-                    if (AssetManager::IsAssetRegistered(entryPath))
+                    if (AssetManager::IsAssetRegistered(relativeAssetPath))
                     {
-                        handle = AssetManager::FindAssetHandle(entryPath);
+                        handle = AssetManager::FindAssetHandle(relativeAssetPath);
                         type = AssetManager::GetAssetType(handle);
                         AssetManager::Remove(handle);
                     }
 
-                    const std::filesystem::path newPath = entryPath.parent_path() / state.rename.fileName;
+                    const std::filesystem::path newPath = ProjectManager::GetAssetFileSystemPath(state.rename.path.parent_path() / state.rename.fileName, project);
                     std::filesystem::rename(entryPath, newPath);
 
                     if (handle != AssetHandle_Invalid && type != AssetType::Invalid)

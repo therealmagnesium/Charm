@@ -6,9 +6,13 @@
 #include "Core/Log.h"
 #include "Core/Utils.h"
 
+#include "Projects/Project.h"
+
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 #include <sstream>
+
+using namespace Charm::Projects;
 
 namespace YAML
 {
@@ -160,7 +164,7 @@ namespace Charm
 
             void SetContext(Scene* scene) { context = scene; }
 
-            void Serialize(const char* path)
+            void Serialize(const std::filesystem::path& path)
             {
                 ASSERT_ERROR(context != NULL, "SceneSerializer::Serialize - The context has not been set!");
 
@@ -198,10 +202,20 @@ namespace Charm
                             out << YAML::Key << "Texture Mag Filter" << YAML::Value << Utils::TextureFilterToString(texture->magFilter);
                             break;
                         }
+                        case AssetType::Animation:
+                        {
+                            const Project& project = ProjectManager::GetActive();
+                            const std::filesystem::path assetFilesytemPath = ProjectManager::GetAssetFileSystemPath(metadata.path, project);
+                            Animation* animation = (Animation*)asset;
+                            Animations::Save(assetFilesytemPath.c_str(), *animation);
+                            break;
+                        }
                         case AssetType::AnimationController:
                         {
+                            const Project& project = ProjectManager::GetActive();
+                            const std::filesystem::path assetFilesytemPath = ProjectManager::GetAssetFileSystemPath(metadata.path, project);
                             AnimationController* controller = (AnimationController*)asset;
-                            Animations::SaveController(metadata.path.string().c_str(), *controller);
+                            Animations::SaveController(assetFilesytemPath.c_str(), *controller);
                             break;
                         }
 
@@ -219,16 +233,16 @@ namespace Charm
                 fout.close();
             }
 
-            void SerializeRuntime(const char* path) { ASSERT(false, "SceneSerializer::SerializeRuntime - Not implemented yet!"); }
+            void SerializeRuntime(const std::filesystem::path& path) { ASSERT(false, "SceneSerializer::SerializeRuntime - Not implemented yet!"); }
 
-            void Deserialize(const char* path)
+            void Deserialize(const std::filesystem::path& path)
             {
                 ASSERT_ERROR(context != NULL, "SceneSerializer::Deserialize - The context has not been set!");
 
                 std::stringstream stream;
                 std::ifstream in(path);
 
-                ASSERT_ERROR(in.is_open(), "SceneSerializer::Deserialize - Failed to load scene \"%s\"", path);
+                ASSERT_ERROR(in.is_open(), "SceneSerializer::Deserialize - Failed to load scene \"%s\"", path.c_str());
 
                 stream << in.rdbuf();
                 in.close();
@@ -236,20 +250,22 @@ namespace Charm
                 YAML::Node data = YAML::Load(stream.str());
                 if (!data["Scene"])
                 {
-                    ERROR("SceneSerializer::Deserialize - Failed to find root scene node in %s!", path);
+                    ERROR("SceneSerializer::Deserialize - Failed to find root scene node in %s!", path.c_str());
                     return;
                 }
 
+                const Project& project = ProjectManager::GetActive();
                 YAML::Node assets = data["Asset Registry"];
                 if (assets)
                 {
                     for (auto asset : assets)
                     {
-                        AssetHandle handle = asset["Asset"].as<AssetHandle>();
-                        std::string path = asset["Path"].as<std::string>();
-                        AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
+                        const AssetHandle handle = asset["Asset"].as<AssetHandle>();
+                        const AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
+                        const std::filesystem::path savedPath = asset["Path"].as<std::string>();
+                        const std::filesystem::path loadPath = ProjectManager::GetAssetFileSystemPath(savedPath, project);
 
-                        AssetManager::Import(path.c_str(), type, handle);
+                        AssetManager::Import(loadPath.c_str(), type, handle);
 
                         YAML::Node minFilterNode = asset["Texture Min Filter"];
                         if (minFilterNode)
@@ -309,7 +325,7 @@ namespace Charm
                 }
             }
 
-            void DeserializeRuntime(const char* path) { ASSERT(false, "SceneSerializer::DeserializeRuntime - Not implemented yet!"); }
+            void DeserializeRuntime(const std::filesystem::path& path) { ASSERT(false, "SceneSerializer::DeserializeRuntime - Not implemented yet!"); }
 
             void SerializeEntity(YAML::Emitter& out, Entity& entity)
             {

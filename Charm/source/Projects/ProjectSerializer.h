@@ -7,11 +7,11 @@ namespace Charm
     {
         namespace ProjectSerializer
         {
-            void Serialize(const char* path);
-            void SerializeRuntime(const char* path);
+            void Serialize(const std::filesystem::path& path);
+            void SerializeRuntime(const std::filesystem::path& path);
 
-            void Deserialize(const char* path);
-            void DeserializeRuntime(const char* path);
+            void Deserialize(const std::filesystem::path& path);
+            void DeserializeRuntime(const std::filesystem::path& path);
 
             void SetContext(Project* project);
             const Project& GetContext();

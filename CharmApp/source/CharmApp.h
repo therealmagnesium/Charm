@@ -24,7 +24,8 @@ namespace CharmApp
         Scene runtimeScene;
         Scene* activeScene = NULL;
         s32 pixelData = -1;
-        std::string currentScenePath;
+        bool showPreferencesWindow = false;
+        std::filesystem::path currentScenePath;
         GridSettings grid;
     };
 
@@ -41,8 +42,12 @@ namespace CharmApp
     void OnSceneSave();
     void OnSceneSaveAs();
     void OnDuplicateEntity();
+    void OnProjectOpen();
 
-    void OpenScene(const char* path);
+    void OpenScene(const std::filesystem::path& path);
+
+    void DrawMenuBar();
+    void DrawPreferencesMenu();
 
     s32 GetPixelData();
     Scene* GetActiveScene();

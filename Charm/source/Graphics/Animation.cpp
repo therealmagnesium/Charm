@@ -5,10 +5,13 @@
 #include "Core/Log.h"
 #include "Core/Utils.h"
 
+#include "Projects/Project.h"
+
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
 using namespace Charm::Core;
+using namespace Charm::Projects;
 
 namespace Charm
 {
@@ -140,6 +143,7 @@ namespace Charm
                 catch (const YAML::BadFile& e)
                 {
                     ERROR("Animations::LoadController - Could not load the file \"%s\"", path);
+                    return controller;
                 }
 
                 ASSERT_RETURN(data, controller, "Animations::LoadController - Failed to load animation controller \"%s\", the path may be invalid!", path);
@@ -152,11 +156,13 @@ namespace Charm
                     controller.animations.reserve(animationCount);
                     YAML::Node animations = data["Animations"];
 
+                    const Project& project = ProjectManager::GetActive();
                     for (auto animationNode : animations)
                     {
                         const YAML::Node animation = animationNode["Animation"];
                         const AssetHandle animHandle = animation["Handle"].as<AssetHandle>();
-                        const std::string animPath = animation["Path"].as<std::string>();
+                        const std::filesystem::path animSavedPath = animation["Path"].as<std::string>();
+                        const std::filesystem::path animLoadPath = ProjectManager::GetAssetFileSystemPath(animSavedPath, project);
                         Animation* anim = AssetManager::GetAsset<Animation>(animHandle);
 
                         if (anim != NULL)
@@ -165,7 +171,7 @@ namespace Charm
                             continue;
                         }
 
-                        AssetManager::Import(animPath.c_str(), AssetType::Animation, animHandle);
+                        AssetManager::Import(animLoadPath.c_str(), AssetType::Animation, animHandle);
                         anim = AssetManager::GetAsset<Animation>(animHandle);
                         controller.animations.emplace_back(anim);
                     }

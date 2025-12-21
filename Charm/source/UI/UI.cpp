@@ -293,7 +293,7 @@ namespace Charm
                 if (*v < min)
                     *v = min;
 
-                if (*v >= max && min != max)
+                if (*v >= max && min < max)
                     *v = max;
             }
 

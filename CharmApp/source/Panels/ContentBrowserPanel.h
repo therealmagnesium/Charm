@@ -35,5 +35,7 @@ namespace CharmApp
 
         const std::filesystem::path& GetSelectedFilePath();
         void ClearSelectedFilePath();
+
+        void SetCurrentDirectory(const std::filesystem::path& path);
     }
 }

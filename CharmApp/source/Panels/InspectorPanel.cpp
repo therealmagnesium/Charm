@@ -151,18 +151,14 @@ namespace CharmApp
                     const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content Browser Item");
                     if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
                     {
-                        std::filesystem::path path = (const char*)payload->Data;
-                        path = ProjectManager::GetAssetFileSystemPath(path, CharmApp::GetProject());
+                        const std::filesystem::path path = (const char*)payload->Data;
+                        const std::string extension = path.extension().string();
 
-                        std::string extension = path.extension().string();
                         if (extension == ".png" || extension == ".jpg" || extension == ".jpeg")
                         {
-                            AssetHandle handle = AssetManager::FindAssetHandle(path.string());
+                            const AssetHandle handle = AssetManager::FindAssetHandle(path.string());
                             if (handle != 0)
-                            {
-                                AssetManager::Import(path.c_str(), AssetType::Texture, handle);
                                 component.sprite = handle;
-                            }
                             else
                                 component.sprite = AssetManager::Import(path.c_str(), AssetType::Texture);
 

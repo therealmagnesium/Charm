@@ -59,7 +59,7 @@ namespace CharmHub
             if (FileDialogs::Open(&filter, 1))
             {
                 const std::filesystem::path path = FileDialogs::GetSelectedPath();
-                state.project = ProjectManager::Load(path.c_str());
+                state.project = ProjectManager::Load(path);
                 state.isProjectSelected = true;
             }
         }
@@ -90,7 +90,7 @@ namespace CharmHub
             ImGui::SetCursorPosY(windowSize.y - 60.f);
             if (ImGui::Button("Open New Project", ImVec2(200.f, 50.f)) && !state.newProjectPath.empty() && !state.project.name.empty())
             {
-                ProjectManager::Save(state.newProjectPath.c_str(), state.project);
+                ProjectManager::Save(state.project, state.newProjectPath);
                 state.project.startScenePath = "Scenes/SampleScene.charm";
                 state.isProjectSelected = true;
 
@@ -105,7 +105,7 @@ namespace CharmHub
                 const std::filesystem::path startScenePath = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath, state.project);
                 Scene sampleScene = Scenes::Create();
                 SceneSerializer::SetContext(&sampleScene);
-                SceneSerializer::Serialize(startScenePath.c_str());
+                SceneSerializer::Serialize(startScenePath);
                 SceneSerializer::SetContext(NULL);
             }
 

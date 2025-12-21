@@ -6,7 +6,10 @@
 #include "Graphics/Animation.h"
 #include "Graphics/Texture.h"
 
+#include "Projects/Project.h"
+
 using namespace Charm::Graphics;
+using namespace Charm::Projects;
 
 namespace Charm
 {
@@ -63,8 +66,11 @@ namespace Charm
 
             void Import(const char* path, AssetType type, AssetHandle handle)
             {
+                const Project& project = ProjectManager::GetActive();
+                const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(path, project);
+
                 AssetMetadata metadata;
-                metadata.path = path;
+                metadata.path = relativePath;
                 metadata.type = type;
 
                 if (metadata.type == AssetType::Invalid)
@@ -159,13 +165,15 @@ namespace Charm
 
             Asset* LoadAsset(AssetHandle handle, AssetMetadata& metadata)
             {
+                const Project& project = ProjectManager::GetActive();
+                const std::filesystem::path path = ProjectManager::GetAssetFileSystemPath(metadata.path, project);
                 Asset* asset = NULL;
 
                 switch (metadata.type)
                 {
                     case AssetType::Texture:
                     {
-                        Texture texture = Textures::Load(metadata.path.c_str());
+                        Texture texture = Textures::Load(path.c_str());
                         if (texture.isValid)
                         {
                             asset = new Texture(std::move(texture));
@@ -176,7 +184,7 @@ namespace Charm
 
                     case AssetType::Animation:
                     {
-                        Animation animation = Animations::Load(metadata.path.c_str());
+                        Animation animation = Animations::Load(path.c_str());
                         if (animation.isValid)
                         {
                             asset = new Animation(std::move(animation));
@@ -187,7 +195,7 @@ namespace Charm
 
                     case AssetType::AnimationController:
                     {
-                        AnimationController controller = Animations::LoadController(metadata.path.c_str());
+                        AnimationController controller = Animations::LoadController(path.c_str());
                         if (controller.isValid)
                         {
                             asset = new AnimationController(std::move(controller));

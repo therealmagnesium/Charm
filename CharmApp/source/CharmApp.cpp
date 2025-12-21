@@ -97,8 +97,11 @@ namespace CharmApp
             if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_S))
                 OnSceneSaveAs();
 
-            if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_O))
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && !Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_O))
                 OnSceneOpen();
+
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_O))
+                OnProjectOpen();
 
             if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_D))
                 OnDuplicateEntity();
@@ -177,6 +180,10 @@ namespace CharmApp
     void OnRenderUI()
     {
         ImGui::DockSpaceOverViewport();
+
+        DrawMenuBar();
+        if (state.showPreferencesWindow)
+            DrawPreferencesMenu();
 
         DebugStatsPanel::Display();
         AssetRegistryPanel::Display();
@@ -264,6 +271,8 @@ namespace CharmApp
 
         SceneSerializer::SetContext(&state.editorScene);
         SceneSerializer::Serialize(state.currentScenePath.c_str());
+        ProjectManager::Log(state.project); // Temporarily for testing
+        ProjectManager::Save(state.project);
         INFO("Saved scene %s", state.currentScenePath.c_str());
     }
 
@@ -294,7 +303,27 @@ namespace CharmApp
         }
     }
 
-    void OpenScene(const char* path)
+    void OnProjectOpen()
+    {
+        state.project = ProjectManager::New();
+
+        FileDialogFilter filter;
+        filter.name = "Project";
+        filter.specification = "chprj";
+
+        if (FileDialogs::Open(&filter, 1))
+        {
+            const std::filesystem::path path = FileDialogs::GetSelectedPath();
+            state.project = ProjectManager::Load(path);
+
+            const std::filesystem::path startScenePath = ProjectManager::GetStartScenePath(state.project);
+            const std::filesystem::path assetsPath = ProjectManager::GetAssetPath(state.project);
+            OpenScene(startScenePath);
+            ContentBrowserPanel::SetCurrentDirectory(assetsPath);
+        }
+    }
+
+    void OpenScene(const std::filesystem::path& path)
     {
         OnSceneNew();
 
@@ -319,6 +348,55 @@ namespace CharmApp
             const std::filesystem::path absolutePath = homeDirectory / std::filesystem::relative(path, homeDirectory);
             INFO("Loaded scene %s", absolutePath.c_str());
         }
+    }
+
+    void DrawMenuBar()
+    {
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("New Scene", "Ctrl+N")) OnSceneNew();
+                if (ImGui::MenuItem("Open Scene", "Ctrl+O")) OnSceneOpen();
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S")) OnSceneSave();
+                if (ImGui::MenuItem("Save Scene As", "Ctrl+Shift+S")) OnSceneSaveAs();
+                ImGui::Separator();
+                if (ImGui::MenuItem("Open Project", "Ctrl+Shift+O")) OnProjectOpen();
+                if (ImGui::MenuItem("Exit")) Application::Quit();
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Edit"))
+            {
+                ImGui::MenuItem("Undo", "Ctrl+Z");
+                ImGui::MenuItem("Redo", "Ctrl+Y");
+                ImGui::Separator();
+                ImGui::MenuItem("Cut", "Ctrl+X");
+                ImGui::MenuItem("Copy", "Ctrl+C");
+                ImGui::MenuItem("Paste", "Ctrl+V");
+                ImGui::Separator();
+                if (ImGui::MenuItem("Preferences", "Ctrl+Shift+P", state.showPreferencesWindow)) state.showPreferencesWindow = !state.showPreferencesWindow;
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMainMenuBar();
+        }
+    }
+
+    void DrawPreferencesMenu()
+    {
+        const float columnWidth = 110.f;
+        ImGui::Begin("Preferences", &state.showPreferencesWindow);
+
+        if (ImGui::TreeNode("Editor Grid"))
+        {
+            UI::DrawBoolControl("Is Enabled?", &state.grid.isEnabled, columnWidth);
+            UI::DrawIntInputControl("Tile Scale", (s32*)&state.grid.tileScale, 1, 0, columnWidth);
+            ImGui::TreePop();
+        }
+
+        ImGui::End();
     }
 
     s32 GetPixelData() { return state.pixelData; }

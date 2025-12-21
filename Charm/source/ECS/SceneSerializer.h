@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Scene.h"
+#include <filesystem>
 
 namespace Charm
 {
@@ -9,11 +10,11 @@ namespace Charm
         {
             void SetContext(Scene* scene);
 
-            void Serialize(const char* path);
-            void SerializeRuntime(const char* path);
+            void Serialize(const std::filesystem::path& path);
+            void SerializeRuntime(const std::filesystem::path& path);
 
-            void Deserialize(const char* path);
-            void DeserializeRuntime(const char* path);
+            void Deserialize(const std::filesystem::path& path);
+            void DeserializeRuntime(const std::filesystem::path& path);
         }
     }
 }

@@ -3,8 +3,6 @@
 #include "ToolbarPanel.h"
 #include "../CharmApp.h"
 
-#include <ECS/SceneSerializer.h>
-
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include <filesystem>
@@ -53,7 +51,7 @@ namespace CharmApp
 
                     std::string extension = path.extension().string();
                     if (extension == ".charm")
-                        CharmApp::OpenScene(path.c_str());
+                        CharmApp::OpenScene(path);
                     else
                         ERROR("SceneViewportPanel::Display - Cannot load scene to viewport because it is not a \".charm\" file");
                 }
