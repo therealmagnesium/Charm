@@ -18,6 +18,7 @@ namespace Charm
             Entity FindWithUUID(UUID uuid, Scene* scene);
             std::vector<Entity> FindEntitiesWithTag(const char* tag, Scene* scene);
             std::vector<Entity> GetChildEntities(Entity& parent);
+            u32 GetChildCount(Entity& parent);
         }
 
         struct Entity

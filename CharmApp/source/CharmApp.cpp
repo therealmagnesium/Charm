@@ -37,8 +37,6 @@ namespace CharmApp
         state.activeScene = &state.editorScene;
 
         state.project = CharmHub::GetProject();
-        state.grid.tileScale = 2;
-        state.grid.isEnabled = true;
 
         ProjectSerializer::SetContext(&state.project);
         SceneSerializer::SetContext(&state.editorScene);
@@ -114,7 +112,7 @@ namespace CharmApp
             if (Input::IsKeyPressed(KEY_T))
                 ToolbarPanel::SetManipulationType(ImGuizmo::OPERATION::TRANSLATE);
             if (Input::IsKeyPressed(KEY_G))
-                state.grid.isEnabled = !state.grid.isEnabled;
+                state.project.grid.isEnabled = !state.project.grid.isEnabled;
 
             if (Input::IsKeyPressed(KEY_F))
             {
@@ -159,12 +157,12 @@ namespace CharmApp
         Framebuffers::Bind(state.framebuffer);
         RenderCommand::Clear();
 
-        if (state.grid.isEnabled)
+        if (state.project.grid.isEnabled)
         {
             const u32 colorAttachmentWidth = Framebuffers::GetColorAttachmentWidth(state.framebuffer);
             const u32 colorAttachmentHeight = Framebuffers::GetColorAttachmentHeight(state.framebuffer);
             const glm::vec2 resolution = glm::vec2(colorAttachmentWidth, colorAttachmentHeight);
-            Renderer::DrawGrid(state.editorScene.editorCamera2D, resolution, state.grid.tileScale);
+            Renderer::DrawGrid(state.editorScene.editorCamera2D, resolution, state.project.grid.tileScale);
         }
 
         Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
@@ -212,7 +210,7 @@ namespace CharmApp
             SceneHeirarchyPanel::SetSelectedEntity(Entities::FindWithUUID(prevInternal.id, state.activeScene));
         }
 
-        state.grid.isEnabled = false;
+        state.project.grid.isEnabled = false;
     }
 
     void OnSceneStop()
@@ -231,7 +229,7 @@ namespace CharmApp
 
         Scenes::OnRuntimeStop(state.runtimeScene);
         state.runtimeScene = Scenes::Create();
-        state.grid.isEnabled = true;
+        state.project.grid.isEnabled = true;
     }
 
     void OnSceneNew()
@@ -271,7 +269,6 @@ namespace CharmApp
 
         SceneSerializer::SetContext(&state.editorScene);
         SceneSerializer::Serialize(state.currentScenePath.c_str());
-        ProjectManager::Log(state.project); // Temporarily for testing
         ProjectManager::Save(state.project);
         INFO("Saved scene %s", state.currentScenePath.c_str());
     }
@@ -386,13 +383,23 @@ namespace CharmApp
 
     void DrawPreferencesMenu()
     {
-        const float columnWidth = 110.f;
         ImGui::Begin("Preferences", &state.showPreferencesWindow);
+
+        if (ImGui::TreeNode("General"))
+        {
+            const float columnWidth = 125.f;
+            u32 pixelsPerUnit = Application::GetPixelsPerUnit();
+            UI::DrawIntInputControl("Pixels Per Unit", (s32*)&pixelsPerUnit, 1, 0, columnWidth);
+            Application::SetPixelsPerUnit(pixelsPerUnit);
+
+            ImGui::TreePop();
+        }
 
         if (ImGui::TreeNode("Editor Grid"))
         {
-            UI::DrawBoolControl("Is Enabled?", &state.grid.isEnabled, columnWidth);
-            UI::DrawIntInputControl("Tile Scale", (s32*)&state.grid.tileScale, 1, 0, columnWidth);
+            const float columnWidth = 110.f;
+            UI::DrawBoolControl("Is Enabled?", &state.project.grid.isEnabled, columnWidth);
+            UI::DrawIntInputControl("Tile Scale", (s32*)&state.project.grid.tileScale, 1, 0, columnWidth);
             ImGui::TreePop();
         }
 

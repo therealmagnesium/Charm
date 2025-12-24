@@ -171,7 +171,7 @@ namespace Charm
                             continue;
                         }
 
-                        AssetManager::Import(animLoadPath.c_str(), AssetType::Animation, animHandle);
+                        AssetManager::Import(animLoadPath, AssetType::Animation, animHandle);
                         anim = AssetManager::GetAsset<Animation>(animHandle);
                         controller.animations.emplace_back(anim);
                     }

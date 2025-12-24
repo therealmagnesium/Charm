@@ -75,7 +75,7 @@ namespace CharmApp
                 if (ImGui::Button("Add To Asset Registry"))
                 {
                     const std::string extension = path.extension().string();
-                    state.selectedAssetHandle = AssetManager::Import(stringPath.c_str(), Utils::ExtensionToAssetType(extension));
+                    state.selectedAssetHandle = AssetManager::Import(stringPath, Utils::ExtensionToAssetType(extension));
                 }
             }
 
@@ -156,11 +156,11 @@ namespace CharmApp
 
                         if (extension == ".png" || extension == ".jpg" || extension == ".jpeg")
                         {
-                            const AssetHandle handle = AssetManager::FindAssetHandle(path.string());
+                            const AssetHandle handle = AssetManager::FindAssetHandle(path);
                             if (handle != 0)
                                 component.sprite = handle;
                             else
-                                component.sprite = AssetManager::Import(path.c_str(), AssetType::Texture);
+                                component.sprite = AssetManager::Import(path, AssetType::Texture);
 
                             Texture* texture = AssetManager::GetAsset<Texture>(component.sprite);
                             component.crop.width = texture->width;
@@ -241,6 +241,28 @@ namespace CharmApp
                     }
 
                     ImGui::EndCombo();
+                }
+
+                if (ImGui::BeginDragDropTarget())
+                {
+                    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content Browser Item");
+                    if (payload != NULL && CharmApp::GetActiveSceneState() == SceneState::Editor)
+                    {
+                        const std::filesystem::path path = (const char*)payload->Data;
+                        const std::string extension = path.extension().string();
+
+                        if (extension == ".ac")
+                        {
+                            const AssetHandle handle = AssetManager::FindAssetHandle(path);
+                            if (handle != 0)
+                                component.controller = handle;
+                            else
+                                component.controller = AssetManager::Import(path, AssetType::AnimationController);
+                        }
+                        else
+                            ERROR("SceneHeirarchyPanel::Display - Cannot load animation controller because \"%s\" is not an animation controller file (.ac)!", path.c_str());
+                    }
+                    ImGui::EndDragDropTarget();
                 }
 
                 ImGui::Columns(1);

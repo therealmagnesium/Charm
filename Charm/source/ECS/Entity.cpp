@@ -99,6 +99,11 @@ namespace Charm
                 return children;
             }
 
+            u32 GetChildCount(Entity& parent)
+            {
+                std::vector<Entity> children = GetChildEntities(parent);
+                return children.size();
+            }
         }
     }
 }

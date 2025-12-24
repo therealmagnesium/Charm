@@ -17,8 +17,8 @@ namespace Charm
             void Init(AssetCollection* collection);
             void Clean();
 
-            AssetHandle Import(const char* path, AssetType type);
-            void Import(const char* path, AssetType type, AssetHandle handle);
+            AssetHandle Import(const std::filesystem::path& path, AssetType type);
+            void Import(const std::filesystem::path& path, AssetType type, AssetHandle handle);
             void Remove(AssetHandle handle);
 
             const AssetMap& GetAllAssets();

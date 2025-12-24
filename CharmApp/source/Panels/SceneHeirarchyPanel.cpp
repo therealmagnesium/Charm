@@ -33,9 +33,9 @@ namespace CharmApp
                     DrawEntityNode(entity);
             }
 
-            ImVec2 windowSize = ImGui::GetWindowSize();
-            ImVec2 currentCursor = ImGui::GetCursorPos();
-            ImVec2 availableSpace = ImVec2(windowSize.x, windowSize.y - currentCursor.y);
+            const ImVec2 windowSize = ImGui::GetWindowSize();
+            const ImVec2 currentCursor = ImGui::GetCursorPos();
+            const ImVec2 availableSpace = ImVec2(windowSize.x, windowSize.y - currentCursor.y);
 
             if (availableSpace.y > 0)
             {
@@ -84,7 +84,7 @@ namespace CharmApp
         void SetContext(Scene& context)
         {
             state.context = &context;
-            state.selectionContext = (Entity){};
+            state.selectionContext = Entity_Null;
         }
 
         void SetSelectedEntity(const Entity& entity) { state.selectionContext = entity; }
@@ -95,24 +95,25 @@ namespace CharmApp
 
             ImGui::PushID(internal.id);
             ImGuiTreeNodeFlags flags = ((state.selectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-            bool isOpen = ImGui::TreeNodeEx(internal.tag.c_str(), flags);
+            bool isOpen = false;
 
-            bool shouldDeleteEntity = false;
-            if (ImGui::BeginPopupContextItem("Delete Entity Popup"))
+            const u32 childCount = Entities::GetChildCount(entity);
+            if (childCount > 0)
             {
-                if (ImGui::MenuItem("Duplicate"))
-                    Scenes::DuplicateEntity(*entity.context, entity);
-
-                if (ImGui::MenuItem("Delete"))
-                    shouldDeleteEntity = true;
-
-                ImGui::EndPopup();
+                ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 7.f);
+                isOpen = ImGui::TreeNodeEx(internal.tag.c_str(), flags);
+                ImGui::PopStyleVar();
+            }
+            else
+            {
+                ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 4.f);
+                ImGui::PushStyleVarX(ImGuiStyleVar_SelectableTextAlign, 0.075f);
+                ImGui::Selectable(internal.tag.c_str(), state.selectionContext == entity);
+                ImGui::PopStyleVar(2);
             }
 
             if (ImGui::IsItemClicked())
                 state.selectionContext = entity;
-
-            ImGui::PopID();
 
             if (ImGui::BeginDragDropSource())
             {
@@ -145,6 +146,20 @@ namespace CharmApp
                 }
                 ImGui::EndDragDropTarget();
             }
+
+            bool shouldDeleteEntity = false;
+            if (ImGui::BeginPopupContextItem("Delete Entity Popup"))
+            {
+                if (ImGui::MenuItem("Duplicate"))
+                    Scenes::DuplicateEntity(*entity.context, entity);
+
+                if (ImGui::MenuItem("Delete"))
+                    shouldDeleteEntity = true;
+
+                ImGui::EndPopup();
+            }
+
+            ImGui::PopID();
 
             if (isOpen)
             {

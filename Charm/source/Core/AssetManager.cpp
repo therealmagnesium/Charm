@@ -57,14 +57,14 @@ namespace Charm
                 assets->registry.clear();
             }
 
-            AssetHandle Import(const char* path, AssetType type)
+            AssetHandle Import(const std::filesystem::path& path, AssetType type)
             {
                 AssetHandle handle = Random::GenerateUUID();
                 AssetManager::Import(path, type, handle);
                 return handle;
             }
 
-            void Import(const char* path, AssetType type, AssetHandle handle)
+            void Import(const std::filesystem::path& path, AssetType type, AssetHandle handle)
             {
                 const Project& project = ProjectManager::GetActive();
                 const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(path, project);

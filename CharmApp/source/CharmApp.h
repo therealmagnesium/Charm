@@ -8,12 +8,6 @@ using namespace Charm::Projects;
 
 namespace CharmApp
 {
-    struct GridSettings
-    {
-        bool isEnabled = true;
-        u32 tileScale = 1;
-    };
-
     struct CharmState
     {
         Project project;
@@ -26,7 +20,6 @@ namespace CharmApp
         s32 pixelData = -1;
         bool showPreferencesWindow = false;
         std::filesystem::path currentScenePath;
-        GridSettings grid;
     };
 
     void OnCreate();

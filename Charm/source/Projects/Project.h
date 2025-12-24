@@ -1,4 +1,6 @@
 #pragma once
+#include "Core/Base.h"
+
 #include <string>
 #include <filesystem>
 
@@ -6,6 +8,12 @@ namespace Charm
 {
     namespace Projects
     {
+        struct GridSettings
+        {
+            bool isEnabled = true;
+            u32 tileScale = 1;
+        };
+
         struct Project
         {
             std::string name = "Untitled";
@@ -14,6 +22,7 @@ namespace Charm
             std::filesystem::path assetsDirectory;
             std::filesystem::path startScenePath;
             std::filesystem::path scriptModulePath;
+            GridSettings grid;
 
             bool operator==(const Project& other) const
             {

@@ -248,80 +248,70 @@ namespace Charm
                 in.close();
 
                 YAML::Node data = YAML::Load(stream.str());
-                if (!data["Scene"])
-                {
-                    ERROR("SceneSerializer::Deserialize - Failed to find root scene node in %s!", path.c_str());
-                    return;
-                }
+                const YAML::Node& sceneNode = data["Scene"];
+                const YAML::Node& assetsNode = data["Asset Registry"];
+                const YAML::Node& entitiesNode = data["Entities"];
+                ASSERT_ERROR(data && sceneNode && assetsNode && entitiesNode, "SceneSerializer::Deserialize - Invalid scene file %s!", path.c_str());
 
                 const Project& project = ProjectManager::GetActive();
-                YAML::Node assets = data["Asset Registry"];
-                if (assets)
+                for (auto asset : assetsNode)
                 {
-                    for (auto asset : assets)
+                    const AssetHandle handle = asset["Asset"].as<AssetHandle>();
+                    const AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
+                    const std::filesystem::path savedPath = asset["Path"].as<std::string>();
+                    const std::filesystem::path loadPath = ProjectManager::GetAssetFileSystemPath(savedPath, project);
+
+                    AssetManager::Import(loadPath, type, handle);
+
+                    const YAML::Node& minFilterNode = asset["Texture Min Filter"];
+                    if (minFilterNode)
                     {
-                        const AssetHandle handle = asset["Asset"].as<AssetHandle>();
-                        const AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
-                        const std::filesystem::path savedPath = asset["Path"].as<std::string>();
-                        const std::filesystem::path loadPath = ProjectManager::GetAssetFileSystemPath(savedPath, project);
+                        Texture* texture = AssetManager::GetAsset<Texture>(handle);
+                        texture->minFilter = Utils::StringToTextureFilter(minFilterNode.as<std::string>());
 
-                        AssetManager::Import(loadPath.c_str(), type, handle);
-
-                        YAML::Node minFilterNode = asset["Texture Min Filter"];
-                        if (minFilterNode)
+                        const YAML::Node& magFilterNode = asset["Texture Mag Filter"];
+                        if (magFilterNode)
                         {
-                            Texture* texture = AssetManager::GetAsset<Texture>(handle);
-                            texture->minFilter = Utils::StringToTextureFilter(minFilterNode.as<std::string>());
-
-                            YAML::Node magFilterNode = asset["Texture Mag Filter"];
-                            if (magFilterNode)
-                            {
-                                texture->magFilter = Utils::StringToTextureFilter(magFilterNode.as<std::string>());
-                                Textures::Invalidate(*texture);
-                            }
+                            texture->magFilter = Utils::StringToTextureFilter(magFilterNode.as<std::string>());
+                            Textures::Invalidate(*texture);
                         }
                     }
                 }
 
-                YAML::Node entities = data["Entities"];
                 std::vector<std::pair<UUID, UUID>> parentChildRelationships;
-
-                if (entities)
+                for (auto entity : entitiesNode)
                 {
-                    for (auto entity : entities)
+                    const UUID uuid = entity["Entity"].as<UUID>();
+                    Entity deserializedEntity = Scenes::CreateEntity(*context, uuid);
+
+                    const YAML::Node& internalNode = entity["Internal Component"];
+                    const UUID parentUUID = internalNode["Parent"].as<UUID>();
+                    if (parentUUID != 0)
+                        parentChildRelationships.emplace_back(uuid, parentUUID);
+
+                    try
                     {
-                        UUID uuid = entity["Entity"].as<UUID>();
-                        Entity deserializedEntity = Scenes::CreateEntity(*context, uuid);
+                        DeserializeEntity(deserializedEntity, entity);
+                    }
+                    catch (const YAML::BadConversion& e)
+                    {
+                        ERROR("Failed to deserialize entity %lX!", uuid);
+                    }
+                }
 
-                        YAML::Node internalNode = entity["Internal Component"];
-                        UUID parentUUID = internalNode["Parent"].as<UUID>();
-                        if (parentUUID != 0)
-                            parentChildRelationships.emplace_back(uuid, parentUUID);
+                for (const auto& [childUUID, parentUUID] : parentChildRelationships)
+                {
+                    Entity child = Entities::FindWithUUID(childUUID, context);
+                    Entity parent = Entities::FindWithUUID(parentUUID, context);
 
-                        try
-                        {
-                            DeserializeEntity(deserializedEntity, entity);
-                        }
-                        catch (const YAML::BadConversion& e)
-                        {
-                            ERROR("Failed to deserialize entity %lX!", uuid);
-                        }
+                    if (!child.IsHandleValid() || !parent.IsHandleValid())
+                    {
+                        ERROR("SceneSerializer::Deserialize - Failed to establish parent-child relationship between UUIDs %lu and %lu", parentUUID, childUUID);
+                        continue;
                     }
 
-                    for (const auto& [childUUID, parentUUID] : parentChildRelationships)
-                    {
-                        Entity child = Entities::FindWithUUID(childUUID, context);
-                        Entity parent = Entities::FindWithUUID(parentUUID, context);
-
-                        if (!child.IsHandleValid() || !parent.IsHandleValid())
-                        {
-                            ERROR("SceneSerializer::Deserialize - Failed to establish parent-child relationship between UUIDs %lu and %lu", parentUUID, childUUID);
-                            continue;
-                        }
-
-                        auto& childInternal = child.GetComponent<InternalComponent>();
-                        childInternal.parent = parent;
-                    }
+                    auto& childInternal = child.GetComponent<InternalComponent>();
+                    childInternal.parent = parent;
                 }
             }
 

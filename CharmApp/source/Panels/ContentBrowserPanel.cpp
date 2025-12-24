@@ -224,7 +224,7 @@ namespace CharmApp
                     std::filesystem::rename(entryPath, newPath);
 
                     if (handle != AssetHandle_Invalid && type != AssetType::Invalid)
-                        AssetManager::Import(newPath.c_str(), type, handle);
+                        AssetManager::Import(newPath, type, handle);
 
                     state.rename.isActive = false;
                     memset(state.rename.fileName, '\0', sizeof(state.rename.fileName));
@@ -296,7 +296,7 @@ namespace CharmApp
                         const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(path, project);
 
                         Animations::Save(projectPath.string().c_str(), Animation_Null);
-                        AssetHandle handle = AssetManager::Import(projectPath.string().c_str(), AssetType::Animation);
+                        AssetHandle handle = AssetManager::Import(projectPath, AssetType::Animation);
                         SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                         InspectorPanel::SetSelectedAsset(handle);
                     }
@@ -316,7 +316,7 @@ namespace CharmApp
                         const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(path, project);
 
                         Animations::SaveController(projectPath.string().c_str(), AnimationController_Null);
-                        AssetHandle handle = AssetManager::Import(projectPath.string().c_str(), AssetType::AnimationController);
+                        AssetHandle handle = AssetManager::Import(projectPath, AssetType::AnimationController);
                         SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                         InspectorPanel::SetSelectedAsset(handle);
                     }
