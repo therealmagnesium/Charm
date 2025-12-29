@@ -18,6 +18,8 @@ namespace Charm
             AnimationController,
             Shader,
             Texture,
+            TilePalette,
+            _TotalCount,
         };
 
         struct Asset

@@ -21,6 +21,7 @@ namespace CharmApp
 
     namespace InspectorPanel
     {
+        void DrawInspectorPanel();
         void DrawComponents(Entity& entity);
 
         template <typename T, typename UIFunction>
@@ -28,19 +29,28 @@ namespace CharmApp
 
         void Display()
         {
+            if (state.shouldDisplay)
+                DrawInspectorPanel();
+        }
+
+        void Toggle() { state.shouldDisplay = !state.shouldDisplay; }
+        bool ShouldDisplay() { return state.shouldDisplay; }
+
+        void SetSelectedAsset(AssetHandle handle) { state.selectedAssetHandle = handle; }
+
+        void DrawInspectorPanel()
+        {
             const std::filesystem::path path = ContentBrowserPanel::GetSelectedFilePath();
-            const std::string stringPath = path.string();
-            const std::string fileName = path.filename().string();
             Entity& selectedEntity = SceneHeirarchyPanel::GetSelectedEntity();
 
-            ImGui::Begin("Inspector");
+            ImGui::Begin("Inspector", &state.shouldDisplay);
             bool isAssetValid = AssetManager::IsHandleValid(state.selectedAssetHandle);
             state.selectedAsset = isAssetValid ? AssetManager::GetAsset(state.selectedAssetHandle) : NULL;
 
-            if (selectedEntity && stringPath.empty())
+            if (selectedEntity && path.empty())
                 DrawComponents(selectedEntity);
 
-            if (isAssetValid && !selectedEntity && !stringPath.empty())
+            if (isAssetValid && !selectedEntity && !path.empty())
             {
                 switch (state.selectedAsset->GetType())
                 {
@@ -65,24 +75,34 @@ namespace CharmApp
                         break;
                     }
 
+                    case AssetType::TilePalette:
+                    {
+                        TilePalette* tilePalette = (TilePalette*)state.selectedAsset;
+                        UI::DrawAssetControls_TilePalette(tilePalette);
+                        break;
+                    }
+
                     default:
                         break;
                 }
             }
 
-            if (!isAssetValid && !selectedEntity && !stringPath.empty())
+            const bool isValidFileSelected = !isAssetValid && !selectedEntity && !path.empty() && !ContentBrowserPanel::IsRenameActive();
+            if (isValidFileSelected)
             {
-                if (ImGui::Button("Add To Asset Registry"))
+                const std::string extension = path.extension().string();
+                const AssetType type = Utils::ExtensionToAssetType(extension);
+                if (type != AssetType::Invalid)
                 {
-                    const std::string extension = path.extension().string();
-                    state.selectedAssetHandle = AssetManager::Import(stringPath, Utils::ExtensionToAssetType(extension));
+                    if (ImGui::Button("Add To Asset Registry"))
+                        state.selectedAssetHandle = AssetManager::Import(path, type);
                 }
+                else
+                    ImGui::TextUnformatted("[UNSPECIFIED ASSET TYPE]");
             }
 
             ImGui::End();
         }
-
-        void SetSelectedAsset(AssetHandle handle) { state.selectedAssetHandle = handle; }
 
         void DrawComponents(Entity& entity)
         {

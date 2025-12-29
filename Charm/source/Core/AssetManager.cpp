@@ -2,11 +2,14 @@
 #include "Core/Asset.h"
 #include "Core/Log.h"
 #include "Core/Random.h"
+#include "Core/Utils.h"
 
 #include "Graphics/Animation.h"
 #include "Graphics/Texture.h"
+#include "Graphics/TilePalette.h"
 
 #include "Projects/Project.h"
+#include <algorithm>
 
 using namespace Charm::Graphics;
 using namespace Charm::Projects;
@@ -66,19 +69,18 @@ namespace Charm
 
             void Import(const std::filesystem::path& path, AssetType type, AssetHandle handle)
             {
-                const Project& project = ProjectManager::GetActive();
-                const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(path, project);
-
                 AssetMetadata metadata;
-                metadata.path = relativePath;
+                metadata.path = path;
                 metadata.type = type;
 
                 if (metadata.type == AssetType::Invalid)
                     return;
 
-                Asset* asset = (IsAssetRegistered(metadata.path) && IsAssetLoaded(handle)) ? assets->loadedAssets[handle] : LoadAsset(handle, metadata);
+                Asset* asset = (IsAssetRegistered(metadata.path) && IsAssetLoaded(handle)) ? assets->loadedAssets.at(handle) : LoadAsset(handle, metadata);
                 if (asset != NULL)
                 {
+                    const Project& project = ProjectManager::GetActive();
+                    metadata.path = ProjectManager::GetAssetRelativePath(path, project);
                     assets->registry[handle] = metadata;
                     assets->loadedAssets[handle] = asset;
                 }
@@ -122,6 +124,20 @@ namespace Charm
             }
 
             std::filesystem::path GetAssetPath(AssetHandle handle) { return assets->registry.at(handle).path; }
+            std::filesystem::path GetAssetPathAbsolute(AssetHandle handle)
+            {
+                const Project& project = ProjectManager::GetActive();
+                const std::filesystem::path relativePath = GetAssetPath(handle);
+                const std::filesystem::path absolutePath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
+                return absolutePath;
+            }
+
+            bool IsAssetTypeRegistered(AssetType type)
+            {
+                auto HasType = [=](const std::pair<AssetHandle, AssetMetadata>& pair) { return pair.second.type == type; };
+                auto it = std::find_if(assets->registry.begin(), assets->registry.end(), HasType);
+                return it != assets->registry.end();
+            }
 
             bool IsHandleValid(AssetHandle handle)
             {
@@ -135,32 +151,33 @@ namespace Charm
 
             bool IsAssetRegistered(const std::filesystem::path& path)
             {
-                bool isRegistered = false;
-                for (auto& [handle, metadata] : assets->registry)
-                {
-                    if (metadata.path == path)
-                    {
-                        isRegistered = true;
-                        break;
-                    }
-                }
-
-                return isRegistered;
+                auto IsPathRegistered = [&](const std::pair<AssetHandle, AssetMetadata>& pair) { return pair.second.path == path; };
+                auto it = std::find_if(assets->registry.begin(), assets->registry.end(), IsPathRegistered);
+                return it != assets->registry.end();
             }
 
             AssetHandle FindAssetHandle(const std::filesystem::path& path)
             {
                 AssetHandle searchedAssetHandle = AssetHandle_Invalid;
-                for (auto& [handle, metadata] : assets->registry)
-                {
-                    if (metadata.path == path)
-                    {
-                        searchedAssetHandle = handle;
-                        break;
-                    }
-                }
+                auto IsPathRegistered = [&](const std::pair<AssetHandle, AssetMetadata>& pair) { return pair.second.path == path; };
+                auto it = std::find_if(assets->registry.begin(), assets->registry.end(), IsPathRegistered);
+
+                if (it != assets->registry.end())
+                    searchedAssetHandle = it->first;
 
                 return searchedAssetHandle;
+            }
+
+            std::vector<AssetHandle> GetAllHandlesOfType(AssetType type)
+            {
+                std::vector<AssetHandle> handles;
+                handles.reserve(assets->registry.size());
+
+                for (const auto& [handle, metadata] : assets->registry)
+                    if (metadata.type == type)
+                        handles.emplace_back(handle);
+
+                return handles;
             }
 
             Asset* LoadAsset(AssetHandle handle, AssetMetadata& metadata)
@@ -199,6 +216,17 @@ namespace Charm
                         if (controller.isValid)
                         {
                             asset = new AnimationController(std::move(controller));
+                            asset->handle = handle;
+                        }
+                        break;
+                    }
+
+                    case AssetType::TilePalette:
+                    {
+                        TilePalette tilePalette = TilePalettes::Load(path);
+                        if (tilePalette.isValid)
+                        {
+                            asset = new TilePalette(std::move(tilePalette));
                             asset->handle = handle;
                         }
                         break;

@@ -162,18 +162,15 @@ namespace Charm
                         const YAML::Node animation = animationNode["Animation"];
                         const AssetHandle animHandle = animation["Handle"].as<AssetHandle>();
                         const std::filesystem::path animSavedPath = animation["Path"].as<std::string>();
-                        const std::filesystem::path animLoadPath = ProjectManager::GetAssetFileSystemPath(animSavedPath, project);
-                        Animation* anim = AssetManager::GetAsset<Animation>(animHandle);
 
-                        if (anim != NULL)
+                        if (AssetManager::IsHandleValid(animHandle))
                         {
-                            controller.animations.emplace_back(anim);
+                            controller.animations.emplace_back(animHandle);
                             continue;
                         }
 
-                        AssetManager::Import(animLoadPath, AssetType::Animation, animHandle);
-                        anim = AssetManager::GetAsset<Animation>(animHandle);
-                        controller.animations.emplace_back(anim);
+                        AssetManager::Import(animSavedPath, AssetType::Animation, animHandle);
+                        controller.animations.emplace_back(animHandle);
                     }
                 }
 
@@ -192,14 +189,14 @@ namespace Charm
 
                 out << YAML::Key << "Animations" << YAML::Value << YAML::BeginSeq;
 
-                for (Animation* animation : controller.animations)
+                for (AssetHandle animation : controller.animations)
                 {
-                    const std::filesystem::path animPath = AssetManager::GetAssetPath(animation->handle);
+                    const std::filesystem::path animPath = AssetManager::GetAssetPath(animation);
 
                     out << YAML::BeginMap;
 
                     out << YAML::Key << "Animation" << YAML::Value << YAML::BeginMap;
-                    out << YAML::Key << "Handle" << YAML::Value << animation->handle;
+                    out << YAML::Key << "Handle" << YAML::Value << animation;
                     out << YAML::Key << "Path" << YAML::Value << animPath;
                     out << YAML::EndMap;
 

@@ -66,13 +66,6 @@ namespace CharmApp
                 InspectorPanel::SetSelectedAsset(AssetHandle_Invalid);
             }
 
-            /*
-                    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered())
-                    {
-                        state.selectedFilePath.clear();
-                        InspectorPanel::SetSelectedAsset(AssetHandle_Invalid);
-                    }*/
-
             const float cellSize = state.thumbnailSize + state.padding;
             state.columnCount = (u32)(panelWidth / cellSize);
             state.padding = state.thumbnailSize * 1.515625f;
@@ -91,7 +84,10 @@ namespace CharmApp
                 shouldLog = false;
 
                 if (ImGui::BeginPopupContextWindow("Create Asset Popup", ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight))
+                {
                     DrawCreateAssetPopup();
+                    ImGui::EndPopup();
+                }
 
                 ImGui::EndTable();
             }
@@ -100,6 +96,7 @@ namespace CharmApp
         }
 
         const std::filesystem::path& GetSelectedFilePath() { return state.selectedFilePath; }
+        bool IsRenameActive() { return state.rename.isActive; }
         void ClearSelectedFilePath() { state.selectedFilePath.clear(); }
         void SetCurrentDirectory(const std::filesystem::path& path) { state.currentDirectory = path; }
 
@@ -162,11 +159,11 @@ namespace CharmApp
             // Allow right clicking on the icons to bring up a popup to display options for the file on disk
             if (ImGui::BeginPopupContextItem("Asset Options Popup"))
             {
-                state.selectedFilePath = ProjectManager::GetAssetRelativePath(entryPath, project);
-
+                state.selectedFilePath.clear();
                 // If the user decides to rename the file/folder, setup the rename state for the Content Browser Panel
                 if (ImGui::MenuItem("Rename"))
                 {
+                    state.selectedFilePath = ProjectManager::GetAssetRelativePath(entryPath, project);
                     const char* fileName = state.selectedFilePath.filename().c_str();
                     strncpy(state.rename.fileName, fileName, strlen(fileName) + 1);
                     state.rename.isActive = true;
@@ -202,6 +199,7 @@ namespace CharmApp
                     state.rename.isActive = false;
                     memset(state.rename.fileName, '\0', sizeof(state.rename.fileName));
                     state.rename.path.clear();
+                    state.selectedFilePath.clear();
                 }
                 Input::Capture(prevInputCapture);
 
@@ -295,7 +293,7 @@ namespace CharmApp
                         const std::filesystem::path path = FileDialogs::GetSelectedPath();
                         const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(path, project);
 
-                        Animations::Save(projectPath.string().c_str(), Animation_Null);
+                        Animations::Save(projectPath.c_str(), Animation_Null);
                         AssetHandle handle = AssetManager::Import(projectPath, AssetType::Animation);
                         SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                         InspectorPanel::SetSelectedAsset(handle);
@@ -315,8 +313,28 @@ namespace CharmApp
                         const std::filesystem::path path = FileDialogs::GetSelectedPath();
                         const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(path, project);
 
-                        Animations::SaveController(projectPath.string().c_str(), AnimationController_Null);
+                        Animations::SaveController(projectPath.c_str(), AnimationController_Null);
                         AssetHandle handle = AssetManager::Import(projectPath, AssetType::AnimationController);
+                        SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
+                        InspectorPanel::SetSelectedAsset(handle);
+                    }
+                }
+
+                // Bring up a file dialog to allow the user to create and save a new tile palette file on disk
+                if (ImGui::MenuItem("Tile Palette"))
+                {
+                    FileDialogFilter filter;
+                    filter.name = "Tile Palette";
+                    filter.specification = "chtp";
+
+                    FileDialogs::SetDefaultPath(state.currentDirectory);
+                    if (FileDialogs::Save(&filter, 1))
+                    {
+                        const std::filesystem::path path = FileDialogs::GetSelectedPath();
+                        const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(path, project);
+
+                        TilePalettes::Save(TilePalette_Null, projectPath);
+                        AssetHandle handle = AssetManager::Import(projectPath, AssetType::TilePalette);
                         SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                         InspectorPanel::SetSelectedAsset(handle);
                     }
@@ -325,7 +343,6 @@ namespace CharmApp
                 ImGui::MenuItem("Native Script");
                 ImGui::EndMenu();
             }
-            ImGui::EndPopup();
         }
     }
 }

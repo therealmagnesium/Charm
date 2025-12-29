@@ -10,15 +10,18 @@ namespace CharmApp
     {
         Scene* context = NULL;
         Entity selectionContext;
+        bool shouldDisplay = true;
     };
 
     namespace SceneHeirarchyPanel
     {
         void Display();
+        void Toggle();
         void SetContext(Scene& context);
         void SetSelectedEntity(const Entity& entity);
 
         Scene* GetContext();
         Entity& GetSelectedEntity();
+        bool ShouldDisplay();
     }
 }

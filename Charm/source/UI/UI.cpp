@@ -7,6 +7,7 @@
 
 #include "Graphics/Animation.h"
 #include "Graphics/Texture.h"
+#include "Graphics/TilePalette.h"
 #include "Graphics/Window.h"
 
 #include "Projects/Project.h"
@@ -413,13 +414,10 @@ namespace Charm
                     const std::filesystem::path path = FileDialogs::GetSelectedPath();
                     const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
                     const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
-                    AssetHandle handle = AssetManager::FindAssetHandle(projectPath.string());
 
+                    AssetHandle handle = AssetManager::FindAssetHandle(projectPath.string());
                     if (AssetManager::IsHandleValid(handle))
-                    {
-                        Animation* animation = AssetManager::GetAsset<Animation>(handle);
-                        controller->animations.emplace_back(animation);
-                    }
+                        controller->animations.emplace_back(handle);
                 }
             }
 
@@ -455,7 +453,8 @@ namespace Charm
 
                 for (u32 i = 0; i < controller->animations.size(); i++)
                 {
-                    Animation* animation = controller->animations[i];
+                    AssetHandle animationHandle = controller->animations[i];
+                    Animation* animation = AssetManager::GetAsset<Animation>(animationHandle);
                     const std::filesystem::path path = AssetManager::GetAssetPath(animation->handle);
                     const std::string stemName = path.stem().string();
 
@@ -490,25 +489,35 @@ namespace Charm
 
         void DrawAssetControls_Texture(Texture* texture)
         {
-            const float columnWidth = 165.f;
+            if (texture == NULL) return;
+
+            const float columnWidth = 150.f;
             const char* filters[6] = {"Linear", "Nearest",
                                       "Linear Mipmap Linear", "Linear Mipmap Nearest",
                                       "Nearest Mipmap Linear", "Nearest Mipmap Nearest"};
 
-            ImGui::PushID("Texture Min Filter");
+            ImGui::PushID(texture->handle);
+
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("Name");
+            ImGui::Text("Size (pixels)");
             ImGui::Text("Texture Min Filter");
+            ImGui::Text("Texture Mag Filter");
             ImGui::NextColumn();
 
-            std::string filterAsString = Utils::TextureFilterToString(texture->minFilter);
-            std::string placeholder = filterAsString;
+            const std::string name = AssetManager::GetAssetPath(texture->handle).stem().string();
+            ImGui::Text("%s", name.c_str());
+            ImGui::Text("%dx%d", texture->width, texture->height);
+
+            const std::string minFilterAsString = Utils::TextureFilterToString(texture->minFilter);
+            std::string placeholder = minFilterAsString;
             ImGui::SetNextItemWidth(-1.f);
             if (ImGui::BeginCombo("##Texture Min Filter", placeholder.c_str()))
             {
                 for (u8 i = 0; i < LEN(filters); i++)
                 {
-                    const bool isSelected = filterAsString == filters[i];
+                    const bool isSelected = minFilterAsString == filters[i];
 
                     if (ImGui::Selectable(filters[i], isSelected))
                         texture->minFilter = (TextureFilter)i;
@@ -516,19 +525,10 @@ namespace Charm
                 ImGui::EndCombo();
             }
 
-            ImGui::Columns(1);
-            ImGui::PopID();
-
-            ImGui::PushID("Texture Mag Filter");
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("Texture Mag Filter");
-            ImGui::NextColumn();
-
-            std::string magFilterAsString = Utils::TextureFilterToString(texture->magFilter);
-            std::string magFilterPlaceholder = magFilterAsString;
+            const std::string magFilterAsString = Utils::TextureFilterToString(texture->magFilter);
+            placeholder = magFilterAsString;
             ImGui::SetNextItemWidth(-1.f);
-            if (ImGui::BeginCombo("##Texture Mag Filter", magFilterPlaceholder.c_str()))
+            if (ImGui::BeginCombo("##Texture Mag Filter", placeholder.c_str()))
             {
                 for (u8 i = 0; i < LEN(filters); i++)
                 {
@@ -541,10 +541,52 @@ namespace Charm
             }
 
             ImGui::Columns(1);
-            ImGui::PopID();
+
+            const float targetAspect = (float)texture->width / (float)texture->height;
+            ImVec2 regionSize = ImGui::GetContentRegionAvail();
+            ImVec2 aspectSize = ImVec2(regionSize.x, regionSize.x / targetAspect);
+
+            if (aspectSize.y > regionSize.y)
+            {
+                aspectSize.y = regionSize.y;
+                aspectSize.x = regionSize.y * targetAspect;
+            }
+
+            ImGui::Image(texture->id, aspectSize, ImVec2(0.f, 0.f), ImVec2(1.f, 1.f));
 
             if (ImGui::Button("Apply"))
                 Textures::Invalidate(*texture);
+
+            ImGui::PopID();
+        }
+
+        void DrawAssetControls_TilePalette(Graphics::TilePalette* tilePalette)
+        {
+            if (tilePalette == NULL)
+                return;
+
+            ImGui::PushID(tilePalette->handle);
+
+            const float columnWidth = 130.f;
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::TextUnformatted("Name");
+            ImGui::TextUnformatted("Slice Width");
+            ImGui::TextUnformatted("Slice Height");
+            ImGui::TextUnformatted("Total Tile Count");
+            ImGui::NextColumn();
+
+            const std::string name = AssetManager::GetAssetPath(tilePalette->handle).stem().string();
+            ImGui::Text("%s", name.c_str());
+            ImGui::Text("%d", tilePalette->sliceWidth);
+            ImGui::Text("%d", tilePalette->sliceHeight);
+            ImGui::Text("%d", tilePalette->totalTileCount);
+            ImGui::Columns(1);
+
+            ImGui::Separator();
+            ImGui::TextUnformatted("Open the \"Tile Palette\" window to paint with a palette");
+
+            ImGui::PopID();
         }
 
         void SetupTheme_MyPurple()

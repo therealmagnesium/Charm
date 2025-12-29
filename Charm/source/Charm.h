@@ -28,6 +28,7 @@
 #include "Graphics/Shader.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
+#include "Graphics/TilePalette.h"
 #include "Graphics/Window.h"
 
 #include "Projects/Project.h"

@@ -497,6 +497,7 @@ namespace Charm
                     auto& animator2D = entity.GetComponent<Animator2DComponent>();
                     AnimationController* controller = AssetManager::GetAsset<AnimationController>(animator2D.controller);
                     Animation* animation = NULL;
+                    AssetHandle animationHandle = AssetHandle_Invalid;
 
                     if (controller == NULL)
                         continue;
@@ -504,7 +505,8 @@ namespace Charm
                     if (animator2D.activeSlot < 0 || controller->animations.size() < 1 || animator2D.activeSlot > controller->animations.size() - 1)
                         continue;
 
-                    animation = controller->animations[animator2D.activeSlot];
+                    animationHandle = controller->animations[animator2D.activeSlot];
+                    animation = AssetManager::GetAsset<Animation>(animationHandle);
                     if (animation == NULL)
                         continue;
 
@@ -522,6 +524,7 @@ namespace Charm
                     auto& animator2D = entity.GetComponent<Animator2DComponent>();
                     AnimationController* controller = AssetManager::GetAsset<AnimationController>(animator2D.controller);
                     Animation* animation = NULL;
+                    AssetHandle animationHandle = AssetHandle_Invalid;
 
                     if (controller == NULL)
                         continue;
@@ -529,7 +532,8 @@ namespace Charm
                     if (animator2D.activeSlot < 0 || controller->animations.size() < 1 || animator2D.activeSlot > controller->animations.size() - 1)
                         continue;
 
-                    animation = controller->animations[animator2D.activeSlot];
+                    animationHandle = controller->animations[animator2D.activeSlot];
+                    animation = AssetManager::GetAsset<Animation>(animationHandle);
                     if (animation == NULL || !entity.HasComponent<SpriteRendererComponent>())
                         continue;
 
@@ -669,9 +673,12 @@ namespace Charm
                         auto& internal = entity.GetComponent<InternalComponent>();
                         auto& transform = entity.GetComponent<TransformComponent>();
 
+                        if (!internal.isActive)
+                            continue;
+
                         if (entity.HasComponent<CircleRendererComponent>())
                         {
-                            auto& circleRenderer = entity.GetComponent<CircleRendererComponent>();
+                            const auto& circleRenderer = entity.GetComponent<CircleRendererComponent>();
                             const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, glm::vec2(circleRenderer.radius),
                                                                                          transform.rotation.z, glm::vec2(0.f));
                             Renderer::DrawEntity(transformMatrix, circleRenderer, (s32)entity.handle);
@@ -679,14 +686,9 @@ namespace Charm
 
                         if (entity.HasComponent<SpriteRendererComponent>())
                         {
-                            auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
-
-                            if (!internal.isActive)
-                                continue;
-
+                            const auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
                             glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale,
                                                                                    transform.rotation.z, spriteRenderer.origin);
-
                             if (internal.parent.IsHandleValid())
                             {
                                 const auto& parentTransform = internal.parent.GetComponent<TransformComponent>();

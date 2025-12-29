@@ -7,11 +7,6 @@
 
 namespace Charm
 {
-    namespace ECS
-    {
-        struct SpriteRendererComponent;
-    }
-
     namespace Graphics
     {
         struct Texture;
@@ -41,7 +36,7 @@ namespace Charm
 
         struct AnimationController : Core::Asset
         {
-            std::vector<Animation*> animations;
+            std::vector<Core::AssetHandle> animations;
             Core::AssetType GetType() const override { return Core::AssetType::AnimationController; }
         };
 

@@ -2,6 +2,8 @@
 #include "Core/Asset.h"
 #include "Core/Log.h"
 
+#include <vector>
+
 namespace Charm
 {
     namespace Core
@@ -28,10 +30,13 @@ namespace Charm
             Asset* GetAsset(AssetHandle handle);
             AssetType GetAssetType(AssetHandle handle);
             std::filesystem::path GetAssetPath(AssetHandle handle);
+            std::filesystem::path GetAssetPathAbsolute(AssetHandle handle);
+            bool IsAssetTypeRegistered(AssetType type);
             bool IsHandleValid(AssetHandle handle);
             bool IsAssetLoaded(AssetHandle handle);
             bool IsAssetRegistered(const std::filesystem::path& path);
             AssetHandle FindAssetHandle(const std::filesystem::path& path);
+            std::vector<AssetHandle> GetAllHandlesOfType(AssetType type);
 
             template <typename T>
             inline T* GetAsset(AssetHandle handle)

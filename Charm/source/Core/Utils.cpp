@@ -102,11 +102,12 @@ namespace Charm
 
         std::string AssetTypeToString(AssetType type)
         {
-            const char* types[5] = {"Invalid",
-                                    "Animation",
-                                    "Animation Controller",
-                                    "Shader",
-                                    "Texture"};
+            const char* types[(u32)AssetType::_TotalCount] = {"Invalid",
+                                                              "Animation",
+                                                              "Animation Controller",
+                                                              "Shader",
+                                                              "Texture",
+                                                              "Tile Palette"};
             return types[(u8)type];
         }
 
@@ -114,12 +115,13 @@ namespace Charm
         {
             std::unordered_map<std::string, AssetType> list;
             list["Invalid"] = AssetType::Invalid;
-            list["Shader"] = AssetType::Shader;
-            list["Texture"] = AssetType::Texture;
             list["Animation"] = AssetType::Animation;
             list["Animation Controller"] = AssetType::AnimationController;
+            list["Shader"] = AssetType::Shader;
+            list["Texture"] = AssetType::Texture;
+            list["Tile Palette"] = AssetType::TilePalette;
 
-            return list.find(str) != list.end() ? list[str] : AssetType::Invalid;
+            return list.find(str) != list.end() ? list.at(str) : AssetType::Invalid;
         }
 
         AssetType ExtensionToAssetType(const std::string& extension)
@@ -131,8 +133,9 @@ namespace Charm
             list[".glsl"] = AssetType::Shader;
             list[".anim"] = AssetType::Animation;
             list[".ac"] = AssetType::AnimationController;
+            list[".chtp"] = AssetType::TilePalette;
 
-            return list.find(extension) != list.end() ? list[extension] : AssetType::Invalid;
+            return list.find(extension) != list.end() ? list.at(extension) : AssetType::Invalid;
         }
 
         PhysicsBodyType StringToBodyType(const std::string& str)

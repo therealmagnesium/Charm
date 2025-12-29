@@ -6,6 +6,8 @@
 #include "Core/Log.h"
 #include "Core/Utils.h"
 
+#include "Graphics/TilePalette.h"
+
 #include "Projects/Project.h"
 
 #include <yaml-cpp/yaml.h>
@@ -218,7 +220,14 @@ namespace Charm
                             Animations::SaveController(assetFilesytemPath.c_str(), *controller);
                             break;
                         }
-
+                        case AssetType::TilePalette:
+                        {
+                            const Project& project = ProjectManager::GetActive();
+                            const std::filesystem::path assetFilesytemPath = ProjectManager::GetAssetFileSystemPath(metadata.path, project);
+                            TilePalette* tilePalette = (TilePalette*)asset;
+                            TilePalettes::Save(*tilePalette);
+                            break;
+                        }
                         default:
                             break;
                     }
@@ -259,9 +268,8 @@ namespace Charm
                     const AssetHandle handle = asset["Asset"].as<AssetHandle>();
                     const AssetType type = Utils::StringToAssetType(asset["Type"].as<std::string>());
                     const std::filesystem::path savedPath = asset["Path"].as<std::string>();
-                    const std::filesystem::path loadPath = ProjectManager::GetAssetFileSystemPath(savedPath, project);
 
-                    AssetManager::Import(loadPath, type, handle);
+                    AssetManager::Import(savedPath, type, handle);
 
                     const YAML::Node& minFilterNode = asset["Texture Min Filter"];
                     if (minFilterNode)

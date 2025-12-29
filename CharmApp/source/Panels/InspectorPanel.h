@@ -10,12 +10,14 @@ namespace CharmApp
     {
         AssetHandle selectedAssetHandle = 0;
         Asset* selectedAsset = NULL;
+        bool shouldDisplay = true;
     };
 
     namespace InspectorPanel
     {
         void Display();
-
+        void Toggle();
+        bool ShouldDisplay();
         void SetSelectedAsset(AssetHandle handle);
     }
 }

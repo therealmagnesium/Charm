@@ -13,7 +13,8 @@ namespace Charm
             RGBA,
             Depth,
             DepthStencil,
-            RedInteger
+            RedInteger,
+            _TotalCount
         };
 
         enum class TextureFilter : u8
@@ -23,7 +24,16 @@ namespace Charm
             LinearMipmapLinear,
             LinearMipmapNearest,
             NearestMipmapLinear,
-            NearestMipmapNearest
+            NearestMipmapNearest,
+            _TotalCount,
+        };
+
+        enum class TextureMode : u8
+        {
+            Single = 0,
+            SpriteSheet,
+            Tileset,
+            _TotalCount
         };
 
         struct Texture : public Core::Asset

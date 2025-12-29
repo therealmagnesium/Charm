@@ -10,6 +10,7 @@ namespace Charm
         struct Animation;
         struct AnimationController;
         struct Texture;
+        struct TilePalette;
     }
 
     namespace UI
@@ -33,5 +34,6 @@ namespace Charm
         void DrawAssetControls_Animation(Graphics::Animation* animation);
         void DrawAssetControls_AnimationController(Graphics::AnimationController* controller);
         void DrawAssetControls_Texture(Graphics::Texture* texture);
+        void DrawAssetControls_TilePalette(Graphics::TilePalette* tilePalette);
     }
 }

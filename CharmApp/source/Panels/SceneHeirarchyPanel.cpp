@@ -16,14 +16,34 @@ namespace CharmApp
 
     namespace SceneHeirarchyPanel
     {
+        void DrawSceneHeirarchyPanel();
+        void DrawCreateEntityPopup();
         void DrawEntityNode(Entity& entity);
 
         void Display()
         {
+            if (state.shouldDisplay)
+                DrawSceneHeirarchyPanel();
+        }
+
+        void Toggle() { state.shouldDisplay = !state.shouldDisplay; }
+        Scene* GetContext() { return state.context; }
+        Entity& GetSelectedEntity() { return state.selectionContext; }
+        bool ShouldDisplay() { return state.shouldDisplay; }
+
+        void SetContext(Scene& context)
+        {
+            state.context = &context;
+            state.selectionContext = Entity_Null;
+        }
+
+        void SetSelectedEntity(const Entity& entity) { state.selectionContext = entity; }
+
+        void DrawSceneHeirarchyPanel()
+        {
             ASSERT(state.context != NULL, "SceneHierarchyPanel::Display - The scene heirarchy must have a context to display!");
 
-            ImGui::ShowDemoWindow();
-            ImGui::Begin("Scene Heirarchy");
+            ImGui::Begin("Scene Heirarchy", &state.shouldDisplay);
 
             for (auto entityID : state.context->registry.view<entt::entity>())
             {
@@ -37,18 +57,16 @@ namespace CharmApp
             const ImVec2 currentCursor = ImGui::GetCursorPos();
             const ImVec2 availableSpace = ImVec2(windowSize.x, windowSize.y - currentCursor.y);
 
-            if (availableSpace.y > 0)
+            if (availableSpace.y > 0.f)
             {
                 ImGui::InvisibleButton("##empty_space", availableSpace);
 
                 if (ImGui::IsItemClicked())
                     state.selectionContext = Entity_Null;
 
-                if (ImGui::BeginPopupContextItem("Create Entity Popup", ImGuiPopupFlags_MouseButtonRight))
+                if (ImGui::BeginPopupContextWindow("Create Entity Popup", ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight))
                 {
-                    if (ImGui::MenuItem("Create a blank entity"))
-                        Scenes::CreateEntity(*state.context);
-
+                    DrawCreateEntityPopup();
                     ImGui::EndPopup();
                 }
 
@@ -78,16 +96,43 @@ namespace CharmApp
             ImGui::End();
         }
 
-        Scene* GetContext() { return state.context; }
-        Entity& GetSelectedEntity() { return state.selectionContext; }
-
-        void SetContext(Scene& context)
+        void DrawCreateEntityPopup()
         {
-            state.context = &context;
-            state.selectionContext = Entity_Null;
-        }
+            if (ImGui::BeginMenu("Create"))
+            {
+                if (ImGui::MenuItem("Blank Entity"))
+                    state.selectionContext = Scenes::CreateEntity(*state.context);
 
-        void SetSelectedEntity(const Entity& entity) { state.selectionContext = entity; }
+                ImGui::SeparatorText("2D");
+                const bool shouldCreateSprite = ImGui::MenuItem("Sprite");
+                const bool shouldCreateAnimatedSprite = ImGui::MenuItem("Animated Sprite");
+                const bool shouldCreateCamera = ImGui::MenuItem("Camera");
+
+                if (shouldCreateSprite)
+                {
+                    Entity entity = Scenes::CreateEntity(*state.context, "Sprite");
+                    entity.AddComponent<SpriteRendererComponent>();
+                    state.selectionContext = entity;
+                }
+
+                if (shouldCreateAnimatedSprite)
+                {
+                    Entity entity = Scenes::CreateEntity(*state.context, "Animated Sprite");
+                    entity.AddComponent<SpriteRendererComponent>();
+                    entity.AddComponent<Animator2DComponent>();
+                    state.selectionContext = entity;
+                }
+
+                if (shouldCreateCamera)
+                {
+                    Entity entity = Scenes::CreateEntity(*state.context, "Camera");
+                    entity.AddComponent<Camera2DComponent>();
+                    state.selectionContext = entity;
+                }
+
+                ImGui::EndMenu();
+            }
+        }
 
         void DrawEntityNode(Entity& entity)
         {

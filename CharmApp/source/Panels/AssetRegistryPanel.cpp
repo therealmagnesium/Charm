@@ -12,18 +12,17 @@ using namespace Charm::Core;
 
 namespace CharmApp
 {
+    static AssetRegistryState state;
+    enum ColumnID
+    {
+        Index = 0,
+        Type,
+        Path,
+        Handle
+    };
+
     namespace AssetRegistryPanel
     {
-        enum ColumnID
-        {
-            Index = 0,
-            Type,
-            Path,
-            Handle
-        };
-
-        static AssetRegistryState state;
-
         void Init()
         {
             state.tableFlags = ImGuiTableFlags_Resizable |

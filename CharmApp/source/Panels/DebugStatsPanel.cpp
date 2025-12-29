@@ -21,7 +21,18 @@ namespace CharmApp
 
     namespace DebugStatsPanel
     {
+        void DrawDebugStatsPanel();
+
         void Display()
+        {
+            if (state.shouldDisplay)
+                DrawDebugStatsPanel();
+        }
+
+        void Toggle() { state.shouldDisplay = !state.shouldDisplay; }
+        bool ShouldDisplay() { return state.shouldDisplay; }
+
+        void DrawDebugStatsPanel()
         {
             const ApplicationConfig& config = Application::GetConfig();
             const glm::vec2 virtualMouse = Utils::ScreenToVirtual(Input::GetMousePosition());
@@ -34,7 +45,7 @@ namespace CharmApp
             const s32 pixelData = CharmApp::GetPixelData();
             const Scene* activeScene = CharmApp::GetActiveScene();
 
-            ImGui::Begin("Debug Stats");
+            ImGui::Begin("Debug Stats", &state.shouldDisplay);
             ImGui::Text("FPS: %d", (u32)(1.f / Time::GetDelta()));
             ImGui::Text("MS per frame: %.7f", Time::GetDelta());
             ImGui::Text("Number of quads: %d", Renderer::GetQuadCount());

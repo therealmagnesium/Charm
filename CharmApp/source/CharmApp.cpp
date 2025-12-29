@@ -6,6 +6,7 @@
 #include "Panels/InspectorPanel.h"
 #include "Panels/SceneHeirarchyPanel.h"
 #include "Panels/SceneViewport.h"
+#include "Panels/TilePalettePanel.h"
 #include "Panels/ToolbarPanel.h"
 
 #include <Charm.h>
@@ -104,6 +105,9 @@ namespace CharmApp
             if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyPressed(KEY_D))
                 OnDuplicateEntity();
 
+            if (Input::IsKeyDown(KEY_LEFT_CTRL) && Input::IsKeyDown(KEY_LEFT_SHIFT) && Input::IsKeyPressed(KEY_P))
+                state.showPreferencesWindow = !state.showPreferencesWindow;
+
             Input::Capture(SceneViewportPanel::IsFocused());
             if (Input::IsKeyPressed(KEY_E))
                 ToolbarPanel::SetManipulationType(ImGuizmo::OPERATION::SCALE);
@@ -180,14 +184,15 @@ namespace CharmApp
         ImGui::DockSpaceOverViewport();
 
         DrawMenuBar();
-        if (state.showPreferencesWindow)
-            DrawPreferencesMenu();
+        DrawPreferencesMenu();
 
+        ImGui::ShowDemoWindow();
         DebugStatsPanel::Display();
         AssetRegistryPanel::Display();
         ContentBrowserPanel::Display();
         SceneHeirarchyPanel::Display();
         InspectorPanel::Display();
+        TilePalettePanel::Display();
         ToolbarPanel::Display();
         SceneViewportPanel::Display(state.framebuffer);
     }
@@ -377,33 +382,46 @@ namespace CharmApp
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("Window"))
+            {
+                if (ImGui::MenuItem("Debug Stats", NULL, DebugStatsPanel::ShouldDisplay())) DebugStatsPanel::Toggle();
+                if (ImGui::MenuItem("Inspector", NULL, InspectorPanel::ShouldDisplay())) InspectorPanel::Toggle();
+                if (ImGui::MenuItem("Scene Heirarchy", NULL, SceneHeirarchyPanel::ShouldDisplay())) SceneHeirarchyPanel::Toggle();
+                if (ImGui::MenuItem("Tile Palette", NULL, TilePalettePanel::ShouldDisplay())) TilePalettePanel::Toggle();
+
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMainMenuBar();
         }
     }
 
     void DrawPreferencesMenu()
     {
-        ImGui::Begin("Preferences", &state.showPreferencesWindow);
-
-        if (ImGui::TreeNode("General"))
+        if (state.showPreferencesWindow)
         {
-            const float columnWidth = 125.f;
-            u32 pixelsPerUnit = Application::GetPixelsPerUnit();
-            UI::DrawIntInputControl("Pixels Per Unit", (s32*)&pixelsPerUnit, 1, 0, columnWidth);
-            Application::SetPixelsPerUnit(pixelsPerUnit);
+            ImGui::Begin("Preferences", &state.showPreferencesWindow);
 
-            ImGui::TreePop();
+            if (ImGui::TreeNode("General"))
+            {
+                const float columnWidth = 125.f;
+                u32 pixelsPerUnit = Application::GetPixelsPerUnit();
+                UI::DrawIntInputControl("Pixels Per Unit", (s32*)&pixelsPerUnit, 1, 0, columnWidth);
+                Application::SetPixelsPerUnit(pixelsPerUnit);
+
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode("Editor Grid"))
+            {
+                const float columnWidth = 110.f;
+                UI::DrawBoolControl("Is Enabled?", &state.project.grid.isEnabled, columnWidth);
+                UI::DrawIntInputControl("Tile Scale", (s32*)&state.project.grid.tileScale, 1, 0, columnWidth);
+                ImGui::TreePop();
+            }
+
+            ImGui::End();
         }
-
-        if (ImGui::TreeNode("Editor Grid"))
-        {
-            const float columnWidth = 110.f;
-            UI::DrawBoolControl("Is Enabled?", &state.project.grid.isEnabled, columnWidth);
-            UI::DrawIntInputControl("Tile Scale", (s32*)&state.project.grid.tileScale, 1, 0, columnWidth);
-            ImGui::TreePop();
-        }
-
-        ImGui::End();
     }
 
     s32 GetPixelData() { return state.pixelData; }
