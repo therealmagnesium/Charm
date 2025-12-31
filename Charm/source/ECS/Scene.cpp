@@ -303,6 +303,16 @@ namespace Charm
                     auto& transform = entity.GetComponent<TransformComponent>();
                     auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
                     spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position, transform.scale);
+
+                    if (AssetManager::IsHandleValid(spriteRenderer.sprite))
+                    {
+                        Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
+                        if (texture->rowCount == 1 && texture->columnCount == 1)
+                            continue;
+
+                        spriteRenderer.crop.width = texture->width / (float)texture->columnCount;
+                        spriteRenderer.crop.height = texture->height / (float)texture->rowCount;
+                    }
                 }
 
                 auto cameras = scene.registry.view<Camera2DComponent>();
@@ -336,13 +346,29 @@ namespace Charm
                     {
                         const auto& spriteRenderer = selectionContext.GetComponent<SpriteRendererComponent>();
                         glm::mat4 transformMatrix = glm::mat4(1.f);
+                        glm::vec2 size = transform.scale;
+
+                        if (AssetManager::IsHandleValid(spriteRenderer.sprite))
+                        {
+                            Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
+                            if (texture->rowCount > 1 || texture->columnCount > 1)
+                            {
+                                size.x *= (spriteRenderer.crop.width / texture->pixelsPerUnit);
+                                size.y *= (spriteRenderer.crop.height / texture->pixelsPerUnit);
+                            }
+                            else
+                            {
+                                size.x *= texture->width / (float)texture->pixelsPerUnit;
+                                size.y *= texture->height / (float)texture->pixelsPerUnit;
+                            }
+                        }
 
                         if (!internal.parent)
-                            transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale, transform.rotation.z, spriteRenderer.origin);
+                            transformMatrix = Utils::GetTransfomMatrix2D(transform.position, size, transform.rotation.z, spriteRenderer.origin);
                         else
                         {
                             auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
-                            transformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, transform.scale, transform.rotation.z, spriteRenderer.origin);
+                            transformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, size, transform.rotation.z, spriteRenderer.origin);
                         }
 
                         Renderer::DrawRectangleLines(transformMatrix, selectionColor);
@@ -687,12 +713,29 @@ namespace Charm
                         if (entity.HasComponent<SpriteRendererComponent>())
                         {
                             const auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
-                            glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale,
+                            glm::vec2 size = transform.scale;
+
+                            if (AssetManager::IsHandleValid(spriteRenderer.sprite))
+                            {
+                                Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
+                                if (texture->rowCount > 1 || texture->columnCount > 1)
+                                {
+                                    size.x *= (spriteRenderer.crop.width / texture->pixelsPerUnit);
+                                    size.y *= (spriteRenderer.crop.height / texture->pixelsPerUnit);
+                                }
+                                else
+                                {
+                                    size.x *= texture->width / (float)texture->pixelsPerUnit;
+                                    size.y *= texture->height / (float)texture->pixelsPerUnit;
+                                }
+                            }
+
+                            glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, size,
                                                                                    transform.rotation.z, spriteRenderer.origin);
                             if (internal.parent.IsHandleValid())
                             {
                                 const auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
-                                const glm::mat4 newTransformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, transform.scale,
+                                const glm::mat4 newTransformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, size,
                                                                                                 transform.rotation.z, spriteRenderer.origin);
 
                                 if (entity.HasComponent<Rigidbody2DComponent>() && isRuntime)

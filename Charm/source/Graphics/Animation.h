@@ -15,6 +15,7 @@ namespace Charm
         {
             Horizontal = 0,
             Vertical,
+            _TotalCount
         };
 
         struct Animation : public Core::Asset
@@ -23,9 +24,7 @@ namespace Charm
             u32 counter = 0;
             u32 speed = 0;
             u32 frameCount = 0;
-            u32 rowCount = 0;
             u32 rowOffset = 0;
-            u32 columnCount = 0;
             u32 columnOffset = 0;
             bool shouldLoop = false;
             bool hasFinished = false;

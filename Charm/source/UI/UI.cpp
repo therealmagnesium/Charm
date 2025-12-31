@@ -373,9 +373,9 @@ namespace Charm
             ImGui::SetNextItemWidth(-1.f);
             if (ImGui::BeginCombo("##", placeholder.c_str()))
             {
-                const char* types[2] = {"Horizontal", "Vertical"};
+                const char* types[(u32)SpriteSheetAnimType::_TotalCount] = {"Horizontal", "Vertical"};
 
-                for (u8 i = 0; i < 2; i++)
+                for (u8 i = 0; i < LEN(types); i++)
                 {
                     bool isSelected = typeAsString == types[i];
 
@@ -390,11 +390,12 @@ namespace Charm
 
             DrawIntInputControl("Speed", (s32*)&animation->speed, 0, 0, columnWidth);
             DrawIntInputControl("Frame Count", (s32*)&animation->frameCount, 0, 0, columnWidth);
-            DrawIntInputControl("Row Count", (s32*)&animation->rowCount, 0, 0, columnWidth);
             DrawIntInputControl("Row Offset", (s32*)&animation->rowOffset, 0, 0, columnWidth);
-            DrawIntInputControl("Column Count", (s32*)&animation->columnCount, 0, 0, columnWidth);
             DrawIntInputControl("Column Offset", (s32*)&animation->columnOffset, 0, 0, columnWidth);
             DrawBoolControl("Should Loop?", &animation->shouldLoop, columnWidth);
+
+            // DrawIntInputControl("Row Count", (s32*)&animation->rowCount, 0, 0, columnWidth);
+            // DrawIntInputControl("Column Count", (s32*)&animation->columnCount, 0, 0, columnWidth);
 
             if (ImGui::Button("Save"))
                 Animations::Save(stringPath.c_str(), *animation);
@@ -491,19 +492,25 @@ namespace Charm
         {
             if (texture == NULL) return;
 
-            const float columnWidth = 150.f;
-            const char* filters[6] = {"Linear", "Nearest",
-                                      "Linear Mipmap Linear", "Linear Mipmap Nearest",
-                                      "Nearest Mipmap Linear", "Nearest Mipmap Nearest"};
+            const float columnWidth = 130.f;
+            const char* filters[(u32)TextureFilter::_TotalCount] = {"Linear", "Nearest",
+                                                                    "Linear Mipmap Linear", "Linear Mipmap Nearest",
+                                                                    "Nearest Mipmap Linear", "Nearest Mipmap Nearest"};
+            const char* modes[(u32)TextureMode::_TotalCount] = {"Single", "Sprite Sheet", "Tileset"};
 
             ImGui::PushID(texture->handle);
 
             ImGui::Columns(2);
             ImGui::SetColumnWidth(0, columnWidth);
+
             ImGui::Text("Name");
             ImGui::Text("Size (pixels)");
-            ImGui::Text("Texture Min Filter");
-            ImGui::Text("Texture Mag Filter");
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Min Filter");
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Mag Filter");
+            ImGui::AlignTextToFramePadding();
+            ImGui::Text("Mode");
             ImGui::NextColumn();
 
             const std::string name = AssetManager::GetAssetPath(texture->handle).stem().string();
@@ -540,7 +547,24 @@ namespace Charm
                 ImGui::EndCombo();
             }
 
+            const std::string modeAsString = Utils::TextureModeToString(texture->mode);
+            placeholder = modeAsString;
+            ImGui::SetNextItemWidth(-1.f);
+            if (ImGui::BeginCombo("##Texture Mode", placeholder.c_str()))
+            {
+                for (u8 i = 0; i < LEN(modes); i++)
+                {
+                    const bool isSelected = modeAsString == modes[i];
+
+                    if (ImGui::Selectable(modes[i], isSelected))
+                        texture->mode = (TextureMode)i;
+                }
+                ImGui::EndCombo();
+            }
+
             ImGui::Columns(1);
+
+            DrawIntInputControl("Pixels Per Unit", (s32*)&texture->pixelsPerUnit, 0, 0, columnWidth);
 
             const float targetAspect = (float)texture->width / (float)texture->height;
             ImVec2 regionSize = ImGui::GetContentRegionAvail();

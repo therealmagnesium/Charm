@@ -38,10 +38,16 @@ namespace Charm
         }
 
         const char* BoolToCString(bool value) { return (value) ? "true" : "false"; }
-        std::string SpriteSheetAnimTypeToString(const Graphics::SpriteSheetAnimType type) { return type == SpriteSheetAnimType::Horizontal ? "Horizontal" : "Vertical"; }
+        std::string SpriteSheetAnimTypeToString(const SpriteSheetAnimType type) { return type == SpriteSheetAnimType::Horizontal ? "Horizontal" : "Vertical"; }
         Graphics::SpriteSheetAnimType StringToSpriteSheetAnimType(const std::string& str) { return str == "Horizontal" ? SpriteSheetAnimType::Horizontal : SpriteSheetAnimType::Vertical; }
 
-        u32 TextureFilterToGL(Graphics::TextureFilter filter)
+        std::string TextureModeToString(TextureMode mode)
+        {
+            const char* modes[(u32)TextureMode::_TotalCount] = {"Single", "Sprite Sheet", "Tileset"};
+            return modes[(u32)mode];
+        }
+
+        u32 TextureFilterToGL(TextureFilter filter)
         {
             u32 glFilters[6] = {GL_LINEAR, GL_NEAREST,
                                 GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST,
@@ -51,11 +57,11 @@ namespace Charm
             return glFilter;
         }
 
-        std::string TextureFilterToString(Graphics::TextureFilter filter)
+        std::string TextureFilterToString(TextureFilter filter)
         {
-            const char* filters[6] = {"Linear", "Nearest",
-                                      "Linear Mipmap Linear", "Linear Mipmap Nearest",
-                                      "Nearest Mipmap Linear", "Nearest Mipmap Nearest"};
+            const char* filters[(u32)TextureFilter::_TotalCount] = {"Linear", "Nearest",
+                                                                    "Linear Mipmap Linear", "Linear Mipmap Nearest",
+                                                                    "Nearest Mipmap Linear", "Nearest Mipmap Nearest"};
             const u32 index = (u32)filter;
             return filters[index];
         }
@@ -71,6 +77,16 @@ namespace Charm
             stringToFilter["Nearest Mipmap Nearest"] = TextureFilter::NearestMipmapNearest;
 
             return stringToFilter.at(str);
+        }
+
+        TextureMode StringToTextureMode(const std::string& str)
+        {
+            std::unordered_map<std::string, TextureMode> stringToMode;
+            stringToMode["Single"] = TextureMode::Single;
+            stringToMode["Sprite Sheet"] = TextureMode::SpriteSheet;
+            stringToMode["Tileset"] = TextureMode::Tileset;
+
+            return stringToMode.at(str);
         }
 
         bool IsDepthFormat(TextureFormat format)

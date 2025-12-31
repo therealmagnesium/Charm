@@ -200,8 +200,12 @@ namespace Charm
                         case AssetType::Texture:
                         {
                             Texture* texture = (Texture*)asset;
+                            out << YAML::Key << "Texture Mode" << YAML::Value << Utils::TextureModeToString(texture->mode);
                             out << YAML::Key << "Texture Min Filter" << YAML::Value << Utils::TextureFilterToString(texture->minFilter);
                             out << YAML::Key << "Texture Mag Filter" << YAML::Value << Utils::TextureFilterToString(texture->magFilter);
+                            out << YAML::Key << "Texture Row Count" << YAML::Value << texture->rowCount;
+                            out << YAML::Key << "Texture Column Count" << YAML::Value << texture->columnCount;
+                            out << YAML::Key << "Texture Pixels Per Unit" << YAML::Value << texture->pixelsPerUnit;
                             break;
                         }
                         case AssetType::Animation:
@@ -271,18 +275,16 @@ namespace Charm
 
                     AssetManager::Import(savedPath, type, handle);
 
-                    const YAML::Node& minFilterNode = asset["Texture Min Filter"];
-                    if (minFilterNode)
+                    if (type == AssetType::Texture)
                     {
                         Texture* texture = AssetManager::GetAsset<Texture>(handle);
-                        texture->minFilter = Utils::StringToTextureFilter(minFilterNode.as<std::string>());
-
-                        const YAML::Node& magFilterNode = asset["Texture Mag Filter"];
-                        if (magFilterNode)
-                        {
-                            texture->magFilter = Utils::StringToTextureFilter(magFilterNode.as<std::string>());
-                            Textures::Invalidate(*texture);
-                        }
+                        texture->mode = Utils::StringToTextureMode(asset["Texture Mode"].as<std::string>());
+                        texture->minFilter = Utils::StringToTextureFilter(asset["Texture Min Filter"].as<std::string>());
+                        texture->magFilter = Utils::StringToTextureFilter(asset["Texture Mag Filter"].as<std::string>());
+                        texture->rowCount = asset["Texture Row Count"].as<u32>();
+                        texture->columnCount = asset["Texture Column Count"].as<u32>();
+                        texture->pixelsPerUnit = asset["Texture Pixels Per Unit"].as<u32>();
+                        Textures::Invalidate(*texture);
                     }
                 }
 

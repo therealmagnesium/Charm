@@ -40,9 +40,7 @@ namespace Charm
                 YAML::Node properties = data["Properties"];
                 animation.speed = properties["Speed"].as<u32>();
                 animation.frameCount = properties["Frame Count"].as<u32>();
-                animation.rowCount = properties["Row Count"].as<u32>();
                 animation.rowOffset = properties["Row Offset"].as<u32>();
-                animation.columnCount = properties["Column Count"].as<u32>();
                 animation.columnOffset = properties["Column Offset"].as<u32>();
                 animation.shouldLoop = properties["Should Loop"].as<bool>();
                 animation.spriteSheetType = Utils::StringToSpriteSheetAnimType(properties["Sprite Sheet Type"].as<std::string>());
@@ -61,9 +59,7 @@ namespace Charm
                 out << YAML::Key << "Properties" << YAML::Value << YAML::BeginMap;
                 out << YAML::Key << "Speed" << YAML::Value << animation.speed;
                 out << YAML::Key << "Frame Count" << YAML::Value << animation.frameCount;
-                out << YAML::Key << "Row Count" << YAML::Value << animation.rowCount;
                 out << YAML::Key << "Row Offset" << YAML::Value << animation.rowOffset;
-                out << YAML::Key << "Column Count" << YAML::Value << animation.columnCount;
                 out << YAML::Key << "Column Offset" << YAML::Value << animation.columnOffset;
                 out << YAML::Key << "Should Loop" << YAML::Value << animation.shouldLoop;
                 out << YAML::Key << "Sprite Sheet Type" << YAML::Value << Utils::SpriteSheetAnimTypeToString(animation.spriteSheetType);
@@ -113,8 +109,8 @@ namespace Charm
 
             void Apply(Animation& animation, Rectangle& rect, const Texture& texture)
             {
-                rect.width = (float)texture.width / animation.columnCount;
-                rect.height = (float)texture.height / animation.rowCount;
+                rect.width = (float)texture.width / texture.columnCount;
+                rect.height = (float)texture.height / texture.rowCount;
 
                 const u32 horizontalOffset = animation.columnOffset * rect.width;
                 const u32 verticalOffset = animation.rowOffset * rect.height;
@@ -127,6 +123,9 @@ namespace Charm
 
                     case SpriteSheetAnimType::Vertical:
                         rect.y = (float)animation.currentFrame * rect.height + verticalOffset;
+                        break;
+
+                    default:
                         break;
                 }
             }

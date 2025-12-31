@@ -44,6 +44,10 @@ namespace Charm
             u32 channelCount = 0;
             u32 internalFormat = 0;
             u32 dataFormat = 0;
+            u32 rowCount = 1;
+            u32 columnCount = 1;
+            u32 pixelsPerUnit = 100;
+            TextureMode mode = TextureMode::Single;
             TextureFilter minFilter = TextureFilter::LinearMipmapLinear;
             TextureFilter magFilter = TextureFilter::Linear;
             u8* data = NULL;

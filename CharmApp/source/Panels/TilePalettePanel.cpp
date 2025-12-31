@@ -8,10 +8,10 @@ using namespace Charm::Graphics;
 
 namespace CharmApp
 {
+    static TilePalettePanelState state;
+
     namespace TilePalettePanel
     {
-        static TilePalettePanelState state;
-
         void DrawTilePalettePanel();
         void DrawMode_InvalidEmpty();
         void DrawMode_Invalid();
@@ -81,7 +81,7 @@ namespace CharmApp
             const float selectButtonWidth = ImGui::CalcTextSize("Select").x;
             ImGui::TextUnformatted("Select a tile palette to work with");
 
-            ImGui::SetNextItemWidth(-selectButtonWidth * 1.3f);
+            ImGui::SetNextItemWidth(-1.3f * selectButtonWidth);
             if (ImGui::BeginCombo("##Tile Palette Selection", placeholder.c_str()))
             {
                 if (ImGui::Selectable("None", !AssetManager::IsHandleValid(state.tilePalette)))

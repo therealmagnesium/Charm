@@ -1,6 +1,7 @@
 #include "InspectorPanel.h"
-#include "SceneHeirarchyPanel.h"
 #include "ContentBrowserPanel.h"
+#include "SceneHeirarchyPanel.h"
+#include "TextureSlicerPanel.h"
 #include "../CharmApp.h"
 
 #include <Core/Utils.h>
@@ -58,6 +59,25 @@ namespace CharmApp
                     {
                         Texture* texture = (Texture*)state.selectedAsset;
                         UI::DrawAssetControls_Texture(texture);
+
+                        ImGui::SameLine();
+
+                        if (texture->mode != TextureMode::Single)
+                        {
+                            if (ImGui::Button("Slice"))
+                            {
+                                TextureSlicerPanel::SetSpriteSheet(texture->handle);
+
+                                if (texture->rowCount > 1 || texture->columnCount > 1)
+                                {
+                                    TextureSlicerPanel::SetSliceWidth(texture->width / texture->columnCount);
+                                    TextureSlicerPanel::SetSliceHeight(texture->height / texture->rowCount);
+                                }
+
+                                TextureSlicerPanel::Toggle();
+                            }
+                        }
+
                         break;
                     }
 
@@ -216,17 +236,6 @@ namespace CharmApp
                 ImGui::PopID();
 
                 UI::DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
-
-                ImGui::PushID("Crop");
-                ImGui::Columns(2);
-                ImGui::SetColumnWidth(0.f, columnWidth);
-                ImGui::Text("Crop");
-                ImGui::NextColumn();
-                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-                ImGui::DragFloat4("##Crop", &component.crop.x);
-                ImGui::Columns(1);
-                ImGui::PopID();
-
                 UI::DrawColorControl("Tint", component.tint, columnWidth);
             });
 

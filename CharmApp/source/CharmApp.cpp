@@ -6,6 +6,7 @@
 #include "Panels/InspectorPanel.h"
 #include "Panels/SceneHeirarchyPanel.h"
 #include "Panels/SceneViewport.h"
+#include "Panels/TextureSlicerPanel.h"
 #include "Panels/TilePalettePanel.h"
 #include "Panels/ToolbarPanel.h"
 
@@ -195,6 +196,7 @@ namespace CharmApp
         TilePalettePanel::Display();
         ToolbarPanel::Display();
         SceneViewportPanel::Display(state.framebuffer);
+        TextureSlicerPanel::Display();
     }
 
     void OnScenePlay()
@@ -388,6 +390,7 @@ namespace CharmApp
                 if (ImGui::MenuItem("Inspector", NULL, InspectorPanel::ShouldDisplay())) InspectorPanel::Toggle();
                 if (ImGui::MenuItem("Scene Heirarchy", NULL, SceneHeirarchyPanel::ShouldDisplay())) SceneHeirarchyPanel::Toggle();
                 if (ImGui::MenuItem("Tile Palette", NULL, TilePalettePanel::ShouldDisplay())) TilePalettePanel::Toggle();
+                if (ImGui::MenuItem("Texture Slicer", NULL, TextureSlicerPanel::ShouldDisplay())) TextureSlicerPanel::Toggle();
 
                 ImGui::EndMenu();
             }
