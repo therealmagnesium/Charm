@@ -11,7 +11,6 @@ using namespace Charm::Graphics;
 namespace CharmApp
 {
     static ContentBrowserState state;
-    static bool shouldLog = true;
 
     namespace ContentBrowserPanel
     {
@@ -81,8 +80,6 @@ namespace CharmApp
                 for (const auto& entry : directoryIterator)
                     DrawBrowserAssets(entry);
 
-                shouldLog = false;
-
                 if (ImGui::BeginPopupContextWindow("Create Asset Popup", ImGuiPopupFlags_NoOpenOverExistingPopup | ImGuiPopupFlags_MouseButtonRight))
                 {
                     DrawCreateAssetPopup();
@@ -96,6 +93,8 @@ namespace CharmApp
         }
 
         const std::filesystem::path& GetSelectedFilePath() { return state.selectedFilePath; }
+        const Graphics::Texture& GetIconFile() { return state.iconFile; }
+        const Graphics::Texture& GetIconFolder() { return state.iconFolder; }
         bool IsRenameActive() { return state.rename.isActive; }
         void ClearSelectedFilePath() { state.selectedFilePath.clear(); }
         void SetCurrentDirectory(const std::filesystem::path& path) { state.currentDirectory = path; }
@@ -148,12 +147,38 @@ namespace CharmApp
                 ImGui::EndDragDropSource();
             }
 
+            if (entry.is_directory())
+            {
+                if (ImGui::BeginDragDropTarget())
+                {
+                    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Content Browser Item");
+                    if (payload != NULL)
+                    {
+                        const std::filesystem::path sourcePath = ProjectManager::GetAssetFileSystemPath((const char*)payload->Data, ProjectManager::GetActive());
+                        const std::filesystem::path destPath = state.currentDirectory / entryPath / sourcePath.filename();
+                        const std::filesystem::path relativeSource = std::filesystem::proximate(sourcePath, ProjectManager::GetAssetPath(project));
+                        const std::filesystem::path relativeDest = std::filesystem::proximate(destPath, ProjectManager::GetAssetPath(project));
+
+                        std::filesystem::rename(sourcePath, destPath);
+
+                        if (AssetManager::IsAssetRegistered(relativeSource))
+                        {
+                            const AssetHandle handle = AssetManager::FindAssetHandle(relativeSource);
+                            const AssetType type = AssetManager::GetAssetType(handle);
+                            AssetManager::Remove(handle);
+                            AssetManager::Import(relativeDest, type, handle);
+                        }
+                    }
+
+                    ImGui::EndDragDropTarget();
+                }
+            }
+
             // Handle double clicking on folders to update the current searched directory
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && entry.is_directory())
             {
                 state.currentDirectory /= entryPath.filename();
                 state.selectedFilePath.clear();
-                shouldLog = true;
             }
 
             // Allow right clicking on the icons to bring up a popup to display options for the file on disk
@@ -263,11 +288,10 @@ namespace CharmApp
                 if (ImGui::MenuItem("Folder"))
                 {
                     const char* newFolderName = "New Folder";
-                    const std::filesystem::path folderPath = ProjectManager::GetAssetFileSystemPath(newFolderName, project);
-                    const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(folderPath, project);
+                    const std::filesystem::path folderPath = ProjectManager::GetAssetFileSystemPath(state.currentDirectory / newFolderName, project);
                     try
                     {
-                        if (std::filesystem::create_directory(projectPath))
+                        if (std::filesystem::create_directory(folderPath))
                             INFO("Folder \"%s\", was created successfully!", newFolderName);
                         else
                             ERROR("Folder \"%s\" could not be created either because it already exists, or Charm does not have permission", newFolderName);

@@ -2,14 +2,14 @@
 #include <ECS/Scene.h>
 #include <ECS/Entity.h>
 
-using namespace Charm::ECS;
+using namespace Charm;
 
 namespace CharmApp
 {
     struct SceneHeirarchyState
     {
-        Scene* context = NULL;
-        Entity selectionContext;
+        ECS::Scene* context = NULL;
+        ECS::Entity selectionContext;
         bool shouldDisplay = true;
     };
 
@@ -17,11 +17,11 @@ namespace CharmApp
     {
         void Display();
         void Toggle();
-        void SetContext(Scene& context);
-        void SetSelectedEntity(const Entity& entity);
+        void SetContext(ECS::Scene& context);
+        void SetSelectedEntity(const ECS::Entity& entity);
 
-        Scene* GetContext();
-        Entity& GetSelectedEntity();
+        ECS::Scene* GetContext();
+        ECS::Entity& GetSelectedEntity();
         bool ShouldDisplay();
     }
 }

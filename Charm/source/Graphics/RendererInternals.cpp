@@ -20,7 +20,20 @@ namespace Charm
             void Unbind() { glBindVertexArray(0); }
             void EnableAttributeLocation(u32 location) { glEnableVertexAttribArray(location); }
             void DisableAttributeLocation(u32 location) { glDisableVertexAttribArray(location); }
-            void SpecifyFormat(u32 location, u32 numComponents, u32 type, u64 stride, u64 offset) { glVertexAttribPointer(location, numComponents, type, false, stride, (void*)offset); }
+            void SpecifyFormat(u32 location, u32 numComponents, u32 type, u64 stride, u64 offset)
+            {
+                switch (type)
+                {
+                    case GL_FLOAT:
+                        glVertexAttribPointer(location, numComponents, type, false, stride, (void*)offset);
+                        break;
+
+                    case GL_INT:
+                    case GL_UNSIGNED_INT:
+                        glVertexAttribIPointer(location, numComponents, type, stride, (void*)offset);
+                        break;
+                }
+            }
         }
 
         namespace VertexBuffer

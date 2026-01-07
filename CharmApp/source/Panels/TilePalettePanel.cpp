@@ -1,4 +1,5 @@
 #include "TilePalettePanel.h"
+#include "TextureSlicerPanel.h"
 
 #include <Core/AssetManager.h>
 #include <imgui.h>
@@ -72,7 +73,6 @@ namespace CharmApp
 
         void DrawMode_Invalid()
         {
-            const std::vector<AssetHandle> palettes = AssetManager::GetAllHandlesOfType(AssetType::TilePalette);
             std::string placeholder = "Select a palette";
 
             if (AssetManager::IsHandleValid(state.tilePalette))
@@ -87,6 +87,7 @@ namespace CharmApp
                 if (ImGui::Selectable("None", !AssetManager::IsHandleValid(state.tilePalette)))
                     state.tilePalette = AssetHandle_Invalid;
 
+                const std::vector<AssetHandle> palettes = AssetManager::GetAllHandlesOfType(AssetType::TilePalette);
                 for (AssetHandle handle : palettes)
                 {
                     const bool isSelected = (state.tilePalette == handle);
@@ -106,9 +107,7 @@ namespace CharmApp
                 {
                     TilePalette* tilePalette = AssetManager::GetAsset<TilePalette>(state.tilePalette);
 
-                    if (AssetManager::IsHandleValid(tilePalette->tileset) && tilePalette->crops.size() > 1)
-                        state.mode = TilePaletteMode::ValidSliced;
-                    else if (AssetManager::IsHandleValid(tilePalette->tileset))
+                    if (AssetManager::IsHandleValid(tilePalette->tileset))
                         state.mode = TilePaletteMode::ValidUnsliced;
                     else
                         state.mode = TilePaletteMode::ValidNoTileset;
@@ -148,6 +147,10 @@ namespace CharmApp
                 const std::vector<AssetHandle> tilesets = AssetManager::GetAllHandlesOfType(AssetType::Texture);
                 for (AssetHandle handle : tilesets)
                 {
+                    Texture* tileset = AssetManager::GetAsset<Texture>(handle);
+                    if (tileset->mode == TextureMode::Single)
+                        continue;
+
                     const bool isSelected = (tilePalette->tileset == handle);
                     const std::string stemName = AssetManager::GetAssetPath(handle).stem().string();
                     if (ImGui::Selectable(stemName.c_str(), isSelected))
@@ -162,7 +165,17 @@ namespace CharmApp
             if (ImGui::Button("Select"))
             {
                 if (AssetManager::IsHandleValid(tilePalette->tileset))
+                {
                     state.mode = TilePaletteMode::ValidUnsliced;
+
+                    if (!TextureSlicerPanel::ShouldDisplay())
+                    {
+                        TextureSlicerPanel::SetSpriteSheet(tilePalette->tileset);
+                        TextureSlicerPanel::Toggle();
+                    }
+                    else
+                        TextureSlicerPanel::SetSpriteSheet(tilePalette->tileset);
+                }
                 else
                     ERROR("TilePalettePanel::Display - Cannot selct an invalid handle for the tileset!");
             }
@@ -185,7 +198,14 @@ namespace CharmApp
             }
         }
 
-        void DrawMode_ValidUnsliced() { ImGui::Text("PLACEHOLDER: VALID UNSLICED"); }
+        void DrawMode_ValidUnsliced()
+        {
+            ImGui::Text("Slice your tileset first in order to paint with it");
+
+            /*
+                    TilePalette* tilePalette = AssetManager::GetAsset<TilePalette>(state.tilePalette);
+                    Texture* tileset = AssetManager::GetAsset<Texture>(tilePalette->tileset);*/
+        }
         void DrawMode_ValidSliced() { ImGui::Text("PLACEHOLDER: VALID SLICED"); }
     }
 }

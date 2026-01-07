@@ -4,6 +4,7 @@
 #include "Core/Log.h"
 #include "Core/Utils.h"
 
+#include <glm/gtc/type_ptr.hpp>
 #include <glad/glad.h>
 
 namespace Charm
@@ -92,13 +93,24 @@ namespace Charm
 
             s32 ReadPixel(Framebuffer& framebuffer, u32 attachmentIndex, u32 x, u32 y)
             {
-                ASSERT(attachmentIndex < framebuffer.colorAttachments.size(), "Framebuffers::ReadPixel - Invalid attachment index!");
-
                 s32 pixelData = -1;
+                ASSERT_RETURN(attachmentIndex < framebuffer.colorAttachments.size(), pixelData, "Framebuffers::ReadPixel - Invalid attachment index!");
+
                 glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
                 glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
 
                 return pixelData;
+            }
+
+            glm::vec4 ReadPixelColor(Framebuffer& framebuffer, u32 attachmentIndex, u32 x, u32 y)
+            {
+                glm::vec4 pixelColor;
+                ASSERT_RETURN(attachmentIndex < framebuffer.colorAttachments.size(), pixelColor, "Framebuffers::ReadPixel - Invalid attachment index!");
+
+                glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
+                glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, glm::value_ptr(pixelColor));
+
+                return pixelColor;
             }
 
             void ClearAttachment(Framebuffer& framebuffer, u32 attachmentIndex, int value)

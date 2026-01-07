@@ -11,6 +11,7 @@
 
 using namespace Charm::Core;
 using namespace Charm::Graphics;
+using namespace Charm::ECS;
 
 namespace CharmApp
 {
@@ -20,9 +21,16 @@ namespace CharmApp
     {
         void DrawTextureSlicerPanel();
         void DrawSliceControls();
+        void DrawCanvas();
 
         void Display()
         {
+            if (!AssetManager::IsHandleValid(state.texture))
+                return;
+
+            if (!AssetManager::IsHandleValid(state.targetAnimation))
+                return;
+
             if (state.shouldDisplay)
                 DrawTextureSlicerPanel();
         }
@@ -32,25 +40,102 @@ namespace CharmApp
         void SetSpriteSheet(AssetHandle spriteSheetHandle) { state.texture = spriteSheetHandle; }
         void SetSliceWidth(u32 sliceWidth) { state.sliceWidth = sliceWidth; }
         void SetSliceHeight(u32 sliceHeight) { state.sliceHeight = sliceHeight; }
+        void ClearSelection() { state.selectedFrames.clear(); }
+        void SetTargetAnimation(Core::AssetHandle targetAnimationHandle)
+        {
+            state.targetAnimation = targetAnimationHandle;
+            state.selectedFrames.clear();
+        }
 
         void DrawTextureSlicerPanel()
         {
             ImGui::Begin("Texture Slicer", &state.shouldDisplay, ImGuiWindowFlags_NoDocking);
 
             DrawSliceControls();
+            DrawCanvas();
 
-            if (!AssetManager::IsHandleValid(state.texture))
+            ImGui::End();
+        }
+
+        void DrawSliceControls()
+        {
+            const float columnWidth = 120.f;
+
+            UI::DrawIntInputControl("Column Count", (s32*)&state.columnCount, 0, 0, columnWidth);
+            UI::DrawIntInputControl("Row Count", (s32*)&state.rowCount, 0, 0, columnWidth);
+            UI::DrawIntInputControl("Slice Width", (s32*)&state.sliceWidth, 0, 0, columnWidth);
+            UI::DrawIntInputControl("Slice Height", (s32*)&state.sliceHeight, 0, 0, columnWidth);
+
+            if (ImGui::Button("Apply"))
             {
-                ImGui::End();
-                return;
+                Animation* animation = AssetManager::GetAsset<Animation>(state.targetAnimation);
+                animation->frameCount = state.selectedFrames.size();
+                animation->frames.resize(animation->frameCount);
+
+                for (u32 i = 0; i < animation->frameCount; i++)
+                {
+                    FrameSelection& frameSelection = state.selectedFrames[i];
+                    const float x = frameSelection.column * state.sliceWidth;
+                    const float y = frameSelection.row * state.sliceHeight;
+                    const float width = state.sliceWidth;
+                    const float height = state.sliceHeight;
+                    const Rectangle frame = (Rectangle){x, y, width, height};
+
+                    animation->frames[frameSelection.frameIndex] = frame;
+                }
+
+                Toggle();
             }
-
-            Texture* spriteSheet = AssetManager::GetAsset<Texture>(state.texture);
-
-            // Display "slice" button
             ImGui::SameLine();
-            const bool shouldSlice = ImGui::Button("Slice");
-            ImGui::Columns(1);
+            if (ImGui::Button("Clear"))
+                ClearSelection();
+
+            /*
+                    ImGui::Columns(2);
+                    ImGui::SetColumnWidth(0, columnWidth);
+                    ImGui::Text("Sprite Sheet");
+                    ImGui::NextColumn();
+
+                    std::string placeholder = "Select a sprite sheet";
+                    if (AssetManager::IsHandleValid(state.texture))
+                        placeholder = AssetManager::GetAssetPath(state.texture).stem().string();
+
+                    const float applyButtonWidth = ImGui::CalcTextSize("Apply").x;
+                    const float clearButtonWidth = ImGui::CalcTextSize("Clear").x;
+                    ImGui::SetNextItemWidth(-1.5f * (applyButtonWidth + clearButtonWidth));
+                    if (ImGui::BeginCombo("##Sprite Sheet Selection", placeholder.c_str()))
+                    {
+                        if (ImGui::Selectable("None", !AssetManager::IsHandleValid(state.texture)))
+                            state.texture = AssetHandle_Invalid;
+
+                        const std::vector<AssetHandle> textures = AssetManager::GetAllHandlesOfType(AssetType::Texture);
+                        for (AssetHandle handle : textures)
+                        {
+                            Texture* texture = AssetManager::GetAsset<Texture>(handle);
+                            if (texture->mode == TextureMode::Single)
+                                continue;
+
+                            const bool isSelected = (state.texture == handle);
+                            const std::string stemName = AssetManager::GetAssetPath(handle).stem().string();
+                            if (ImGui::Selectable(stemName.c_str(), isSelected))
+                            {
+                                state.texture = handle;
+                                state.sliceWidth = 32;
+                                state.sliceHeight = 32;
+                                state.columnCount = texture->width / state.sliceWidth;
+                                state.rowCount = texture->height / state.sliceHeight;
+                            }
+                        }
+
+                        ImGui::EndCombo();
+                    }
+
+                    ImGui::Columns(1);*/
+        }
+
+        void DrawCanvas()
+        {
+            Texture* spriteSheet = AssetManager::GetAsset<Texture>(state.texture);
 
             // Calculate canvas properties
             ImVec2 canvasTopLeft = ImGui::GetCursorScreenPos();
@@ -78,130 +163,109 @@ namespace CharmApp
             ImGui::SetCursorScreenPos(canvasTopLeft);
             ImGui::Image(spriteSheet->id, aspectSize, ImVec2(0.f, 0.f), ImVec2(1.f, 1.f));
 
-            if (state.sliceWidth > 0 && state.sliceHeight > 0)
+            // Calculate the scale factor between texture pixels and screen pixels
+            const float scaleX = aspectSize.x / (float)spriteSheet->width;
+            const float scaleY = aspectSize.y / (float)spriteSheet->height;
+
+            // Calculate scaled slice dimensions
+            const float scaledSliceWidth = state.sliceWidth * scaleX;
+            const float scaledSliceHeight = state.sliceHeight * scaleY;
+
+            // Create an invisible button over the entire canvas for input handling
+            ImGui::SetCursorScreenPos(canvasTopLeft);
+            ImGui::InvisibleButton("##Canvas", aspectSize, ImGuiButtonFlags_MouseButtonLeft);
+            const bool isCanvasHovered = ImGui::IsItemHovered();
+            const bool isCanvasClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+            if (isCanvasClicked)
             {
-                const u32 numCols = spriteSheet->width / state.sliceWidth;
-                const u32 numRows = spriteSheet->height / state.sliceHeight;
+                const ImVec2 mousePosition = ImGui::GetMousePos();
+                const ImVec2 relativePos = ImVec2(mousePosition.x - canvasTopLeft.x, mousePosition.y - canvasTopLeft.y);
 
-                // Handle what happens when the "slice" button is clicked
-                if (shouldSlice)
+                // Calculate which frame was clicked
+                const u32 column = (u32)(relativePos.x / scaledSliceWidth);
+                const u32 row = (u32)(relativePos.y / scaledSliceHeight);
+
+                // Ensure the click is within bounds
+                if (column < state.columnCount && row < state.rowCount)
                 {
-                    spriteSheet->rowCount = numRows;
-                    spriteSheet->columnCount = numCols;
+                    // Check if this frame is already selected
+                    auto it = std::find_if(state.selectedFrames.begin(), state.selectedFrames.end(),
+                                           [row, column](const FrameSelection& fs) { return fs.row == row && fs.column == column; });
 
-                    Scene* context = SceneHeirarchyPanel::GetContext();
-                    auto sprites = context->registry.view<SpriteRendererComponent>();
-                    for (auto spriteID : sprites)
+                    if (it != state.selectedFrames.end())
                     {
-                        Entity entity = Entities::Create(spriteID, context);
-                        auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                        // Frame already selected - remove it and adjust indices
+                        u32 removedIndex = it->frameIndex;
+                        state.selectedFrames.erase(it);
 
-                        // Skip if the texture we're slicing doesn't match the entity's texture reference handle
-                        if (spriteRenderer.sprite != state.texture)
-                            continue;
-
-                        // Set the sprite renderer's crop size to be the size of each slice
-                        spriteRenderer.crop.width = state.sliceWidth;
-                        spriteRenderer.crop.height = state.sliceHeight;
-
-                        // Check if the entity also has an animator component
-                        bool hasAnimator = entity.HasComponent<Animator2DComponent>();
-                        if (hasAnimator)
+                        // Adjust frame indices for frames that came after the removed one
+                        for (auto& frame : state.selectedFrames)
                         {
-                            auto& animator = entity.GetComponent<Animator2DComponent>();
-                            if (!AssetManager::IsHandleValid(animator.controller))
-                                continue;
-
-                            // For every animation in the animation controller, set the sprite sheet type
-                            AnimationController* controller = AssetManager::GetAsset<AnimationController>(animator.controller);
-                            for (u32 i = 0; i < controller->animations.size(); i++)
-                            {
-                                AssetHandle animHandle = controller->animations[i];
-                                if (!AssetManager::IsHandleValid(animHandle))
-                                    continue;
-
-                                Animation* animation = AssetManager::GetAsset<Animation>(animHandle);
-                                animation->spriteSheetType = (numCols > numRows) ? SpriteSheetAnimType::Horizontal : SpriteSheetAnimType::Vertical;
-                            }
+                            if (frame.frameIndex > removedIndex)
+                                frame.frameIndex--;
                         }
                     }
-                }
-
-                // Calculate the scale factor between texture pixels and screen pixels
-                const float scaleX = aspectSize.x / (float)spriteSheet->width;
-                const float scaleY = aspectSize.y / (float)spriteSheet->height;
-
-                // Calculate scaled slice dimensions
-                const float scaledSliceWidth = state.sliceWidth * scaleX;
-                const float scaledSliceHeight = state.sliceHeight * scaleY;
-
-                // Draw a grid of all the slices
-                for (u32 row = 0; row < numRows; row++)
-                {
-                    for (u32 col = 0; col < numCols; col++)
+                    else
                     {
-                        ImVec2 topLeft;
-                        topLeft.x = canvasTopLeft.x + col * scaledSliceWidth;
-                        topLeft.y = canvasTopLeft.y + row * scaledSliceHeight;
-
-                        ImVec2 bottomRight;
-                        bottomRight.x = topLeft.x + scaledSliceWidth;
-                        bottomRight.y = topLeft.y + scaledSliceHeight;
-
-                        drawList->AddRect(topLeft, bottomRight, IM_COL32(50, 168, 82, 255));
+                        // Add new frame selection
+                        FrameSelection selection;
+                        selection.row = row;
+                        selection.column = column;
+                        selection.frameIndex = (u32)state.selectedFrames.size();
+                        state.selectedFrames.emplace_back(selection);
                     }
                 }
             }
-            ImGui::End();
-        }
 
-        void DrawSliceControls()
-        {
-            const float columnWidth = 120.f;
-
-            UI::DrawIntInputControl("Slice Width", (s32*)&state.sliceWidth, 0, 0, columnWidth);
-            UI::DrawIntInputControl("Slice Height", (s32*)&state.sliceHeight, 0, 0, columnWidth);
-
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("Sprite Sheet");
-            ImGui::NextColumn();
-
-            std::string placeholder = "Select a sprite sheet";
-            if (AssetManager::IsHandleValid(state.texture))
-                placeholder = AssetManager::GetAssetPath(state.texture).stem().string();
-
-            const float sliceButtonWidth = ImGui::CalcTextSize("Slice").x;
-            ImGui::SetNextItemWidth(-1.5f * sliceButtonWidth);
-            if (ImGui::BeginCombo("##Sprite Sheet Selection", placeholder.c_str()))
+            // Draw a grid of all the slices
+            for (u32 row = 0; row < state.rowCount; row++)
             {
-                if (ImGui::Selectable("None", !AssetManager::IsHandleValid(state.texture)))
-                    state.texture = AssetHandle_Invalid;
-
-                const std::vector<AssetHandle> textures = AssetManager::GetAllHandlesOfType(AssetType::Texture);
-                for (AssetHandle handle : textures)
+                for (u32 col = 0; col < state.columnCount; col++)
                 {
-                    Texture* texture = AssetManager::GetAsset<Texture>(handle);
-                    if (texture->mode == TextureMode::Single)
-                        continue;
+                    ImVec2 topLeft;
+                    topLeft.x = canvasTopLeft.x + col * scaledSliceWidth;
+                    topLeft.y = canvasTopLeft.y + row * scaledSliceHeight;
 
-                    const bool isSelected = (state.texture == handle);
-                    const std::string stemName = AssetManager::GetAssetPath(handle).stem().string();
-                    if (ImGui::Selectable(stemName.c_str(), isSelected))
+                    ImVec2 bottomRight;
+                    bottomRight.x = topLeft.x + scaledSliceWidth;
+                    bottomRight.y = topLeft.y + scaledSliceHeight;
+
+                    drawList->AddRect(topLeft, bottomRight, IM_COL32(50, 168, 82, 255));
+
+                    // Check if this frame is selected
+                    auto it = std::find_if(state.selectedFrames.begin(), state.selectedFrames.end(),
+                                           [row, col](const FrameSelection& fs) { return fs.row == row && fs.column == col; });
+
+                    if (it != state.selectedFrames.end())
                     {
-                        state.texture = handle;
-                        state.sliceWidth = 0;
-                        state.sliceHeight = 0;
+                        // Draw semi-transparent overlay
+                        drawList->AddRectFilled(topLeft, bottomRight, IM_COL32(0, 0, 0, 150));
 
-                        if (texture->rowCount > 1 || texture->columnCount > 1)
+                        // Draw frame number
+                        char frameNumText[8];
+                        snprintf(frameNumText, sizeof(frameNumText), "%u", it->frameIndex);
+
+                        ImVec2 textSize = ImGui::CalcTextSize(frameNumText);
+                        ImVec2 textPosition;
+                        textPosition.x = topLeft.x + (scaledSliceWidth - textSize.x) * 0.5f;
+                        textPosition.y = topLeft.y + (scaledSliceHeight - textSize.y) * 0.5f;
+
+                        // Draw text with outline for better visibility
+                        drawList->AddText(ImVec2(textPosition.x + 1, textPosition.y + 1), IM_COL32(0, 0, 0, 255), frameNumText);
+                        drawList->AddText(textPosition, IM_COL32(255, 255, 255, 255), frameNumText);
+                    }
+
+                    // Highlight hovered frame
+                    if (isCanvasHovered)
+                    {
+                        ImVec2 mousePos = ImGui::GetMousePos();
+                        if (mousePos.x >= topLeft.x && mousePos.x <= bottomRight.x &&
+                            mousePos.y >= topLeft.y && mousePos.y <= bottomRight.y)
                         {
-                            state.sliceWidth = texture->width / texture->columnCount;
-                            state.sliceHeight = texture->height / texture->rowCount;
+                            drawList->AddRect(topLeft, bottomRight, IM_COL32(255, 255, 100, 255), 0.0f, 0, 2.0f);
                         }
                     }
                 }
-
-                ImGui::EndCombo();
             }
         }
     }

@@ -35,6 +35,8 @@ namespace CharmApp
 
         bool IsRenameActive();
         const std::filesystem::path& GetSelectedFilePath();
+        const Graphics::Texture& GetIconFile();
+        const Graphics::Texture& GetIconFolder();
 
         void ClearSelectedFilePath();
         void SetCurrentDirectory(const std::filesystem::path& path);

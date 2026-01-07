@@ -17,6 +17,8 @@ namespace Charm
 
         namespace FileDialogs
         {
+            std::filesystem::path EnsureExtension(const std::filesystem::path& path, const char* extension);
+
             void Init()
             {
                 if (isInitialized)
@@ -79,9 +81,22 @@ namespace Charm
                 if (result == NFD_CANCEL || result == NFD_ERROR)
                     return false;
 
-                state.selectedPaths[0] = outPath;
+                std::filesystem::path selectedPath = outPath;
                 free(outPath);
 
+                // Ensure the path has the correct extension based on the first filter
+                if (filters != NULL && filterCount > 0)
+                {
+                    // Get the first extension from the specification (e.g., "anim" from "anim")
+                    // If there are multiple extensions (e.g., "png,jpg,jpeg"), take the first one
+                    std::string spec = filters[0].specification;
+                    u64 commaPos = spec.find(',');
+                    std::string firstExtension = (commaPos != std::string::npos) ? spec.substr(0, commaPos) : spec;
+
+                    selectedPath = EnsureExtension(selectedPath, firstExtension.c_str());
+                }
+
+                state.selectedPaths[0] = selectedPath;
                 return true;
             }
 
@@ -89,6 +104,29 @@ namespace Charm
             const std::vector<std::filesystem::path>& GetSelectedPathMulti() { return state.selectedPaths; }
 
             void SetDefaultPath(const std::filesystem::path& path) { state.defaultPath = path; }
+
+            std::filesystem::path EnsureExtension(const std::filesystem::path& path, const char* extension)
+            {
+                std::filesystem::path resultPath = path;
+
+                // Check if the path already has an extension
+                if (resultPath.has_extension())
+                {
+                    std::string currentExtension = resultPath.extension().string();
+                    // Remove the leading dot from the extension for comparison
+                    if (!currentExtension.empty() && currentExtension[0] == '.')
+                        currentExtension = currentExtension.substr(1);
+
+                    // If it matches the expected extension, we're good
+                    if (currentExtension == extension)
+                        return resultPath;
+                }
+
+                // Either no extension or wrong extension - append the correct one
+                resultPath += ".";
+                resultPath += extension;
+                return resultPath;
+            }
         }
     }
 }

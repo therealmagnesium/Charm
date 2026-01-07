@@ -47,7 +47,7 @@ namespace CharmApp
                 if (payload != NULL && activeSceneState == SceneState::Editor)
                 {
                     std::filesystem::path path = (const char*)payload->Data;
-                    path = ProjectManager::GetAssetFileSystemPath(path, CharmApp::GetProject());
+                    path = ProjectManager::GetAssetFileSystemPath(path, ProjectManager::GetActive());
 
                     std::string extension = path.extension().string();
                     if (extension == ".charm")
@@ -86,33 +86,6 @@ namespace CharmApp
                     entityTransformComponent.scale = scale;
                 }
             }
-
-            if (activeSceneState == SceneState::Editor)
-            {
-                Input::Capture(state.isHovered);
-
-                if (Input::IsMouseClicked(MOUSE_BUTTON_LEFT) && !Input::IsKeyDown(KEY_LEFT_ALT) && state.isHovered && !ImGuizmo::IsUsing())
-                {
-                    const glm::vec2 glViewportMouse = Utils::ScreenToViewportGL(Input::GetMousePosition(),
-                                                                                state.position,
-                                                                                state.size);
-
-                    Framebuffers::Bind(framebuffer);
-                    const s32 pixelData = Framebuffers::ReadPixel(framebuffer, 1, (u32)glViewportMouse.x, (u32)glViewportMouse.y);
-                    CharmApp::SetPixelData(pixelData);
-                    Framebuffers::Unbind();
-
-                    Scene* activeScene = CharmApp::GetActiveScene();
-                    if (pixelData != -1)
-                    {
-                        Entity entity = Entities::Create((entt::entity)pixelData, activeScene);
-                        SceneHeirarchyPanel::SetSelectedEntity(entity);
-                    }
-                    else if (pixelData == -1)
-                        SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
-                }
-            }
-
             ImGui::End();
         }
 

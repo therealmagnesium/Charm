@@ -22,6 +22,8 @@ namespace Charm
             void SetLineWidth(float width) { glLineWidth(width); }
             void ShowCursor() { SDL_ShowCursor(); }
             void HideCursor() { SDL_HideCursor(); }
+            void EnableDepthWriting() { glDepthMask(true); }
+            void DisableDepthWriting() { glDepthMask(false); }
             void DrawArrays(PrimitiveType type, u32 vertexCount) { glDrawArrays(type, 0, vertexCount); }
             void DrawIndexed(PrimitiveType type, u64 indexCount) { glDrawElements(type, indexCount, GL_UNSIGNED_INT, NULL); }
         }

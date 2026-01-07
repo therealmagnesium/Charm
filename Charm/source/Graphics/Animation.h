@@ -20,15 +20,16 @@ namespace Charm
 
         struct Animation : public Core::Asset
         {
+            std::vector<Rectangle> frames;
             u32 currentFrame = 0;
             u32 counter = 0;
             u32 speed = 0;
             u32 frameCount = 0;
-            u32 rowOffset = 0;
-            u32 columnOffset = 0;
+            // u32 rowOffset = 0;
+            // u32 columnOffset = 0;
             bool shouldLoop = false;
             bool hasFinished = false;
-            SpriteSheetAnimType spriteSheetType = SpriteSheetAnimType::Horizontal;
+            // SpriteSheetAnimType spriteSheetType = SpriteSheetAnimType::Horizontal;
 
             Core::AssetType GetType() const override { return Core::AssetType::Animation; }
         };

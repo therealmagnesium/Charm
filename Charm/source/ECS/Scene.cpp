@@ -247,6 +247,7 @@ namespace Charm
                     shapeDef.isSensor = bc2D.isTrigger;
                     shapeDef.density = bc2D.density;
                     shapeDef.enableContactEvents = true;
+                    shapeDef.invokeContactCreation = false;
                     shapeDef.material = b2DefaultSurfaceMaterial();
                     shapeDef.material.friction = bc2D.friction;
                     shapeDef.material.restitution = bc2D.restitution;
@@ -302,16 +303,29 @@ namespace Charm
                     Entity entity = Entities::Create(entityID, &scene);
                     auto& transform = entity.GetComponent<TransformComponent>();
                     auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
-                    spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position, transform.scale);
 
                     if (AssetManager::IsHandleValid(spriteRenderer.sprite))
                     {
                         Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
-                        if (texture->rowCount == 1 && texture->columnCount == 1)
+                        if (texture->mode == TextureMode::Single || !entity.HasComponent<Animator2DComponent>())
                             continue;
 
-                        spriteRenderer.crop.width = texture->width / (float)texture->columnCount;
-                        spriteRenderer.crop.height = texture->height / (float)texture->rowCount;
+                        const auto& animator = entity.GetComponent<Animator2DComponent>();
+                        if (animator.controller == AssetHandle_Invalid)
+                            continue;
+
+                        AnimationController* controller = AssetManager::GetAsset<AnimationController>(animator.controller);
+                        if (controller->animations.size() < 1)
+                            continue;
+
+                        if (controller->animations[0] == AssetHandle_Invalid)
+                            continue;
+
+                        Animation* firstAnimation = AssetManager::GetAsset<Animation>(controller->animations[0]);
+                        if (firstAnimation->frames.size() < 1)
+                            continue;
+
+                        spriteRenderer.crop = firstAnimation->frames[0];
                     }
                 }
 
@@ -338,7 +352,7 @@ namespace Charm
                 if (selectionContext)
                 {
                     const auto& transform = selectionContext.GetComponent<TransformComponent>();
-                    const glm::vec3 selectionColor = glm::vec3(0.84, 0.62, 0.47);
+                    const glm::vec3 selectionColor = glm::vec3(0.988f, 0.408f, 0.137f);
 
                     auto& internal = selectionContext.GetComponent<InternalComponent>();
 
@@ -351,7 +365,7 @@ namespace Charm
                         if (AssetManager::IsHandleValid(spriteRenderer.sprite))
                         {
                             Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
-                            if (texture->rowCount > 1 || texture->columnCount > 1)
+                            if (texture->mode != TextureMode::Single)
                             {
                                 size.x *= (spriteRenderer.crop.width / texture->pixelsPerUnit);
                                 size.y *= (spriteRenderer.crop.height / texture->pixelsPerUnit);
@@ -712,16 +726,16 @@ namespace Charm
 
                         if (entity.HasComponent<SpriteRendererComponent>())
                         {
-                            const auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                            auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
                             glm::vec2 size = transform.scale;
 
                             if (AssetManager::IsHandleValid(spriteRenderer.sprite))
                             {
                                 Texture* texture = AssetManager::GetAsset<Texture>(spriteRenderer.sprite);
-                                if (texture->rowCount > 1 || texture->columnCount > 1)
+                                if (texture->mode != TextureMode::Single)
                                 {
-                                    size.x *= (spriteRenderer.crop.width / texture->pixelsPerUnit);
-                                    size.y *= (spriteRenderer.crop.height / texture->pixelsPerUnit);
+                                    size.x *= spriteRenderer.crop.width / (float)texture->pixelsPerUnit;
+                                    size.y *= spriteRenderer.crop.height / (float)texture->pixelsPerUnit;
                                 }
                                 else
                                 {
@@ -730,11 +744,13 @@ namespace Charm
                                 }
                             }
 
+                            spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position, size);
                             glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, size,
                                                                                    transform.rotation.z, spriteRenderer.origin);
                             if (internal.parent.IsHandleValid())
                             {
                                 const auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
+                                spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position + parentTransform.position, size);
                                 const glm::mat4 newTransformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, size,
                                                                                                 transform.rotation.z, spriteRenderer.origin);
 

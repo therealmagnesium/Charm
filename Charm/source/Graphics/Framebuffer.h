@@ -3,6 +3,7 @@
 #include "Graphics/Texture.h"
 
 #include <vector>
+#include <glm/vec4.hpp>
 
 namespace Charm
 {
@@ -52,6 +53,7 @@ namespace Charm
             void Unbind();
             void Invalidate(Framebuffer& framebuffer);
             s32 ReadPixel(Framebuffer& framebuffer, u32 attachmentIndex, u32 x, u32 y);
+            glm::vec4 ReadPixelColor(Framebuffer& framebuffer, u32 attachmentIndex, u32 x, u32 y);
             void ClearAttachment(Framebuffer& framebuffer, u32 attachmentIndex, int value);
             void Destroy(Framebuffer& framebuffer);
 

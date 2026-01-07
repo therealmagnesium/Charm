@@ -1,7 +1,9 @@
 #version 450 core
 
 layout (location = 0) in vec2 v_texCoords;
+
 layout (location = 0) out vec4 finalColor;
+layout (location = 1) out int entityID;
 
 uniform float u_cameraZoom = 1.f;
 uniform vec2 u_cameraPosition = vec2(0.f);
@@ -9,7 +11,7 @@ uniform vec2 u_resolution = vec2(640.f, 360.f);
 uniform uint u_pixelsPerUnit = 32;
 uniform uint u_tileScale = 1;
 
-const vec4 k_colorLight = vec4(0.18f, 0.18f, 0.18f, 1.f);
+const vec4 k_colorLight = vec4(0.18f, 0.18f, 0.18f, 0.2f);
 const vec4 k_colorDark = vec4(0.f);
 
 /*
@@ -50,6 +52,7 @@ void main()
 
     const vec4 c = g > 0.f ? k_colorDark : k_colorLight; 
     finalColor = c;
+    entityID = -1;
  
     /*
     // Gradient across screen

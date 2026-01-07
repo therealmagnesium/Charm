@@ -1,5 +1,6 @@
 #include "CharmApp.h"
 #include "CharmHub.h"
+#include "Panels/AnimationPanel.h"
 #include "Panels/AssetRegistryPanel.h"
 #include "Panels/ContentBrowserPanel.h"
 #include "Panels/DebugStatsPanel.h"
@@ -162,20 +163,67 @@ namespace CharmApp
         Framebuffers::Bind(state.framebuffer);
         RenderCommand::Clear();
 
+        Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
+
+        if (state.sceneState == SceneState::Editor)
+        {
+            const bool isSceneViewportHovered = SceneViewportPanel::IsHovered();
+            const glm::vec2 sceneViewportPosition = SceneViewportPanel::GetPosition();
+            const glm::vec2 sceneViewportSize = SceneViewportPanel::GetSize();
+            Scenes::RenderEditor(*state.activeScene, SceneHeirarchyPanel::GetSelectedEntity());
+
+            Input::Capture(isSceneViewportHovered);
+            if (Input::IsMouseClicked(MOUSE_BUTTON_LEFT) && isSceneViewportHovered && !ImGuizmo::IsUsing())
+            {
+                const glm::vec2 glViewportMouse = Utils::ScreenToViewportGL(Input::GetMousePosition(),
+                                                                            sceneViewportPosition,
+                                                                            sceneViewportSize);
+
+                if (!Input::IsKeyDown(KEY_LEFT_ALT))
+                {
+                    state.pixelData = Framebuffers::ReadPixel(state.framebuffer, 1, (u32)glViewportMouse.x, (u32)glViewportMouse.y);
+
+                    Scene* activeScene = CharmApp::GetActiveScene();
+                    if (state.pixelData != -1)
+                    {
+                        Entity entity = Entities::Create((entt::entity)state.pixelData, activeScene);
+                        SceneHeirarchyPanel::SetSelectedEntity(entity);
+                    }
+                    else
+                        SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
+                }
+                else if (Input::IsKeyDown(KEY_LEFT_ALT) && Input::IsKeyDown(KEY_LEFT_SHIFT))
+                {
+                    Entity& entity = SceneHeirarchyPanel::GetSelectedEntity();
+                    if (entity.IsHandleValid())
+                    {
+                        const glm::vec4 pixelColor = Framebuffers::ReadPixelColor(state.framebuffer, 0, (u32)glViewportMouse.x, (u32)glViewportMouse.y);
+                        if (entity.HasComponent<SpriteRendererComponent>())
+                        {
+                            auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                            spriteRenderer.tint = pixelColor;
+                        }
+
+                        if (entity.HasComponent<Camera2DComponent>())
+                        {
+                            auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
+                            cameraComponent.clearColor = pixelColor;
+                        }
+                    }
+                }
+            }
+        }
+        else
+            Scenes::RenderRuntime(*state.activeScene);
+
         if (state.project.grid.isEnabled)
         {
             const u32 colorAttachmentWidth = Framebuffers::GetColorAttachmentWidth(state.framebuffer);
             const u32 colorAttachmentHeight = Framebuffers::GetColorAttachmentHeight(state.framebuffer);
             const glm::vec2 resolution = glm::vec2(colorAttachmentWidth, colorAttachmentHeight);
+
             Renderer::DrawGrid(state.editorScene.editorCamera2D, resolution, state.project.grid.tileScale);
         }
-
-        Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
-
-        if (state.sceneState == SceneState::Editor)
-            Scenes::RenderEditor(*state.activeScene, SceneHeirarchyPanel::GetSelectedEntity());
-        else
-            Scenes::RenderRuntime(*state.activeScene);
 
         Framebuffers::Unbind();
     }
@@ -188,9 +236,10 @@ namespace CharmApp
         DrawPreferencesMenu();
 
         ImGui::ShowDemoWindow();
-        DebugStatsPanel::Display();
+        AnimationPanel::Display();
         AssetRegistryPanel::Display();
         ContentBrowserPanel::Display();
+        DebugStatsPanel::Display();
         SceneHeirarchyPanel::Display();
         InspectorPanel::Display();
         TilePalettePanel::Display();
@@ -261,8 +310,8 @@ namespace CharmApp
 
         if (FileDialogs::Open(&filter, 1))
         {
-            std::string path = FileDialogs::GetSelectedPath().string();
-            CharmApp::OpenScene(path.c_str());
+            const std::filesystem::path path = FileDialogs::GetSelectedPath();
+            CharmApp::OpenScene(path);
         }
     }
 
@@ -386,11 +435,11 @@ namespace CharmApp
 
             if (ImGui::BeginMenu("Window"))
             {
+                if (ImGui::MenuItem("Animation", NULL, AnimationPanel::ShouldDisplay())) AnimationPanel::Toggle();
                 if (ImGui::MenuItem("Debug Stats", NULL, DebugStatsPanel::ShouldDisplay())) DebugStatsPanel::Toggle();
                 if (ImGui::MenuItem("Inspector", NULL, InspectorPanel::ShouldDisplay())) InspectorPanel::Toggle();
                 if (ImGui::MenuItem("Scene Heirarchy", NULL, SceneHeirarchyPanel::ShouldDisplay())) SceneHeirarchyPanel::Toggle();
                 if (ImGui::MenuItem("Tile Palette", NULL, TilePalettePanel::ShouldDisplay())) TilePalettePanel::Toggle();
-                if (ImGui::MenuItem("Texture Slicer", NULL, TextureSlicerPanel::ShouldDisplay())) TextureSlicerPanel::Toggle();
 
                 ImGui::EndMenu();
             }

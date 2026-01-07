@@ -274,7 +274,7 @@ namespace Charm
             ImGui::NextColumn();
 
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::ColorEdit3("##", glm::value_ptr(v));
+            ImGui::ColorEdit4("##", glm::value_ptr(v));
 
             ImGui::Columns(1);
             ImGui::PopID();
@@ -348,8 +348,9 @@ namespace Charm
         void DrawAssetControls_Animation(Animation* animation)
         {
             const float columnWidth = 150.f;
+            const Project& project = ProjectManager::GetActive();
             const std::filesystem::path path = AssetManager::GetAssetPath(animation->handle);
-            const std::string stringPath = path.string();
+            const std::filesystem::path absolutePath = ProjectManager::GetAssetFileSystemPath(path, project);
             const std::string fileName = path.filename().string();
             const char* name = fileName.c_str();
 
@@ -362,43 +363,44 @@ namespace Charm
             ImGui::Columns(1);
             ImGui::PopID();
 
-            ImGui::PushID("Sprite Sheet Type");
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, columnWidth);
-            ImGui::Text("Sprite Sheet Type");
-            ImGui::NextColumn();
+            /*
+                    ImGui::PushID("Sprite Sheet Type");
+                    ImGui::Columns(2);
+                    ImGui::SetColumnWidth(0, columnWidth);
+                    ImGui::Text("Sprite Sheet Type");
+                    ImGui::NextColumn();
 
-            std::string typeAsString = Utils::SpriteSheetAnimTypeToString(animation->spriteSheetType);
-            std::string placeholder = typeAsString;
-            ImGui::SetNextItemWidth(-1.f);
-            if (ImGui::BeginCombo("##", placeholder.c_str()))
-            {
-                const char* types[(u32)SpriteSheetAnimType::_TotalCount] = {"Horizontal", "Vertical"};
+                    std::string typeAsString = Utils::SpriteSheetAnimTypeToString(animation->spriteSheetType);
+                    std::string placeholder = typeAsString;
+                    ImGui::SetNextItemWidth(-1.f);
+                    if (ImGui::BeginCombo("##", placeholder.c_str()))
+                    {
+                        const char* types[(u32)SpriteSheetAnimType::_TotalCount] = {"Horizontal", "Vertical"};
 
-                for (u8 i = 0; i < LEN(types); i++)
-                {
-                    bool isSelected = typeAsString == types[i];
+                        for (u8 i = 0; i < LEN(types); i++)
+                        {
+                            bool isSelected = typeAsString == types[i];
 
-                    if (ImGui::Selectable(types[i], isSelected))
-                        animation->spriteSheetType = (SpriteSheetAnimType)i;
-                }
-                ImGui::EndCombo();
-            }
+                            if (ImGui::Selectable(types[i], isSelected))
+                                animation->spriteSheetType = (SpriteSheetAnimType)i;
+                        }
+                        ImGui::EndCombo();
+                    }
 
-            ImGui::Columns(1);
-            ImGui::PopID();
+                    ImGui::Columns(1);
+                    ImGui::PopID();*/
 
             DrawIntInputControl("Speed", (s32*)&animation->speed, 0, 0, columnWidth);
             DrawIntInputControl("Frame Count", (s32*)&animation->frameCount, 0, 0, columnWidth);
-            DrawIntInputControl("Row Offset", (s32*)&animation->rowOffset, 0, 0, columnWidth);
-            DrawIntInputControl("Column Offset", (s32*)&animation->columnOffset, 0, 0, columnWidth);
             DrawBoolControl("Should Loop?", &animation->shouldLoop, columnWidth);
+            // DrawIntInputControl("Row Offset", (s32*)&animation->rowOffset, 0, 0, columnWidth);
+            // DrawIntInputControl("Column Offset", (s32*)&animation->columnOffset, 0, 0, columnWidth);
 
             // DrawIntInputControl("Row Count", (s32*)&animation->rowCount, 0, 0, columnWidth);
             // DrawIntInputControl("Column Count", (s32*)&animation->columnCount, 0, 0, columnWidth);
 
             if (ImGui::Button("Save"))
-                Animations::Save(stringPath.c_str(), *animation);
+                Animations::Save(absolutePath.c_str(), *animation);
         }
 
         void DrawAssetControls_AnimationController(AnimationController* controller)
@@ -411,12 +413,11 @@ namespace Charm
 
                 if (FileDialogs::Open(&filter, 1))
                 {
-                    const Project& project = ProjectSerializer::GetContext();
+                    const Project& project = ProjectManager::GetActive();
                     const std::filesystem::path path = FileDialogs::GetSelectedPath();
-                    const std::filesystem::path relativePath = std::filesystem::relative(path, ProjectManager::GetAssetPath(project));
-                    const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(relativePath, project);
+                    const std::filesystem::path relativePath = std::filesystem::proximate(path, ProjectManager::GetAssetPath(project));
+                    const AssetHandle handle = AssetManager::FindAssetHandle(relativePath);
 
-                    AssetHandle handle = AssetManager::FindAssetHandle(projectPath.string());
                     if (AssetManager::IsHandleValid(handle))
                         controller->animations.emplace_back(handle);
                 }
@@ -426,9 +427,10 @@ namespace Charm
 
             if (ImGui::Button("Save"))
             {
-                // const std::filesystem::path& path = ContentBrowserPanel::GetSelectedFilePath();
+                const Project& project = ProjectManager::GetActive();
                 const std::filesystem::path path = AssetManager::GetAssetPath(controller->handle);
-                Animations::SaveController(path.string().c_str(), *controller);
+                const std::filesystem::path absolutePath = ProjectManager::GetAssetFileSystemPath(path, project);
+                Animations::SaveController(path.c_str(), *controller);
             }
 
             const ImGuiTableFlags flags =
@@ -577,10 +579,6 @@ namespace Charm
             }
 
             ImGui::Image(texture->id, aspectSize, ImVec2(0.f, 0.f), ImVec2(1.f, 1.f));
-
-            if (ImGui::Button("Apply"))
-                Textures::Invalidate(*texture);
-
             ImGui::PopID();
         }
 

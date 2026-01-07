@@ -27,6 +27,7 @@ namespace Charm
             glm::vec3 position;
             glm::vec4 color;
             glm::vec2 texCoord;
+            glm::vec2 tilingFactor = glm::vec2(1.f);
             u32 texIndex = 0;
             s32 entityID = -1;
         };

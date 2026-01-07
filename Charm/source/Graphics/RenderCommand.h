@@ -23,6 +23,8 @@ namespace Charm
             void SetLineWidth(float width);
             void ShowCursor();
             void HideCursor();
+            void EnableDepthWriting();
+            void DisableDepthWriting();
             void DrawArrays(PrimitiveType type, u32 vertexCount);
             void DrawIndexed(PrimitiveType type, u64 indexCount);
         }

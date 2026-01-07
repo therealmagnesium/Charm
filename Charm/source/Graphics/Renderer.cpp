@@ -503,75 +503,78 @@ namespace Charm
             void SetupBatchRendering()
             {
                 // Rectangles / quads
-                glGenVertexArrays(1, &batchData.quadVertexArray);
-                glGenBuffers(1, &batchData.quadVertexBuffer);
-                glGenBuffers(1, &batchData.indexBuffer);
+                batchData.quadVertexArray = VertexArray::Create();
+                batchData.quadVertexBuffer = VertexBuffer::Create();
+                batchData.indexBuffer = IndexBuffer::Create();
 
-                glBindVertexArray(batchData.quadVertexArray);
+                VertexArray::Bind(batchData.quadVertexArray);
 
-                glBindBuffer(GL_ARRAY_BUFFER, batchData.quadVertexBuffer);
-                glBufferData(GL_ARRAY_BUFFER, k_MaxVertexCount * sizeof(QuadVertex), NULL, GL_DYNAMIC_DRAW);
+                VertexBuffer::Bind(batchData.quadVertexBuffer);
+                VertexBuffer::SetData(k_MaxVertexCount * sizeof(QuadVertex), NULL, GL_DYNAMIC_DRAW);
 
-                glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, position));
+                VertexArray::EnableAttributeLocation(0);
+                VertexArray::SpecifyFormat(0, 3, GL_FLOAT, sizeof(QuadVertex), offsetof(QuadVertex, position));
 
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, color));
+                VertexArray::EnableAttributeLocation(1);
+                VertexArray::SpecifyFormat(1, 4, GL_FLOAT, sizeof(QuadVertex), offsetof(QuadVertex, color));
 
-                glEnableVertexAttribArray(2);
-                glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texCoord));
+                VertexArray::EnableAttributeLocation(2);
+                VertexArray::SpecifyFormat(2, 2, GL_FLOAT, sizeof(QuadVertex), offsetof(QuadVertex, texCoord));
 
-                glEnableVertexAttribArray(3);
-                glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(QuadVertex), (void*)offsetof(QuadVertex, texIndex));
+                VertexArray::EnableAttributeLocation(3);
+                VertexArray::SpecifyFormat(3, 2, GL_FLOAT, sizeof(QuadVertex), offsetof(QuadVertex, tilingFactor));
 
-                glEnableVertexAttribArray(4);
-                glVertexAttribIPointer(4, 1, GL_INT, sizeof(QuadVertex), (void*)offsetof(QuadVertex, entityID));
+                VertexArray::EnableAttributeLocation(4);
+                VertexArray::SpecifyFormat(4, 1, GL_UNSIGNED_INT, sizeof(QuadVertex), offsetof(QuadVertex, texIndex));
+
+                VertexArray::EnableAttributeLocation(5);
+                VertexArray::SpecifyFormat(5, 1, GL_INT, sizeof(QuadVertex), offsetof(QuadVertex, entityID));
 
                 batchData.quadBuffer = new QuadVertex[k_MaxVertexCount];
 
                 // Circles
-                glGenVertexArrays(1, &batchData.circleVertexArray);
-                glGenBuffers(1, &batchData.circleVertexBuffer);
+                batchData.circleVertexArray = VertexArray::Create();
+                batchData.circleVertexBuffer = VertexBuffer::Create();
 
-                glBindVertexArray(batchData.circleVertexArray);
+                VertexArray::Bind(batchData.circleVertexArray);
 
-                glBindBuffer(GL_ARRAY_BUFFER, batchData.circleVertexBuffer);
-                glBufferData(GL_ARRAY_BUFFER, k_MaxVertexCount * sizeof(CircleVertex), NULL, GL_DYNAMIC_DRAW);
+                VertexBuffer::Bind(batchData.circleVertexBuffer);
+                VertexBuffer::SetData(k_MaxVertexCount * sizeof(CircleVertex), NULL, GL_DYNAMIC_DRAW);
 
-                glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, worldPosition));
+                VertexArray::EnableAttributeLocation(0);
+                VertexArray::SpecifyFormat(0, 3, GL_FLOAT, sizeof(CircleVertex), offsetof(CircleVertex, worldPosition));
 
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, localPosition));
+                VertexArray::EnableAttributeLocation(1);
+                VertexArray::SpecifyFormat(1, 3, GL_FLOAT, sizeof(CircleVertex), offsetof(CircleVertex, localPosition));
 
-                glEnableVertexAttribArray(2);
-                glVertexAttribPointer(2, 3, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, color));
+                VertexArray::EnableAttributeLocation(2);
+                VertexArray::SpecifyFormat(2, 3, GL_FLOAT, sizeof(CircleVertex), offsetof(CircleVertex, color));
 
-                glEnableVertexAttribArray(3);
-                glVertexAttribPointer(3, 1, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, thickness));
+                VertexArray::EnableAttributeLocation(3);
+                VertexArray::SpecifyFormat(3, 1, GL_FLOAT, sizeof(CircleVertex), offsetof(CircleVertex, thickness));
 
-                glEnableVertexAttribArray(4);
-                glVertexAttribPointer(4, 1, GL_FLOAT, false, sizeof(CircleVertex), (void*)offsetof(CircleVertex, fade));
+                VertexArray::EnableAttributeLocation(4);
+                VertexArray::SpecifyFormat(4, 1, GL_FLOAT, sizeof(CircleVertex), offsetof(CircleVertex, fade));
 
-                glEnableVertexAttribArray(5);
-                glVertexAttribIPointer(5, 1, GL_INT, sizeof(CircleVertex), (void*)offsetof(CircleVertex, entityID));
+                VertexArray::EnableAttributeLocation(5);
+                VertexArray::SpecifyFormat(5, 1, GL_INT, sizeof(CircleVertex), offsetof(CircleVertex, entityID));
 
                 batchData.circleBuffer = new CircleVertex[k_MaxVertexCount];
 
                 // Lines
-                glGenVertexArrays(1, &batchData.lineVertexArray);
-                glGenBuffers(1, &batchData.lineVertexBuffer);
+                batchData.lineVertexArray = VertexArray::Create();
+                batchData.lineVertexBuffer = VertexBuffer::Create();
 
-                glBindVertexArray(batchData.lineVertexArray);
+                VertexArray::Bind(batchData.lineVertexArray);
 
-                glBindBuffer(GL_ARRAY_BUFFER, batchData.lineVertexBuffer);
-                glBufferData(GL_ARRAY_BUFFER, k_MaxVertexCount * sizeof(LineVertex), NULL, GL_DYNAMIC_DRAW);
+                VertexBuffer::Bind(batchData.lineVertexBuffer);
+                VertexBuffer::SetData(k_MaxVertexCount * sizeof(LineVertex), NULL, GL_DYNAMIC_DRAW);
 
-                glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)offsetof(LineVertex, position));
+                VertexArray::EnableAttributeLocation(0);
+                VertexArray::SpecifyFormat(0, 3, GL_FLOAT, sizeof(LineVertex), offsetof(LineVertex, position));
 
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(LineVertex), (void*)offsetof(LineVertex, color));
+                VertexArray::EnableAttributeLocation(1);
+                VertexArray::SpecifyFormat(1, 3, GL_FLOAT, sizeof(LineVertex), offsetof(LineVertex, color));
 
                 batchData.lineBuffer = new LineVertex[k_MaxVertexCount];
 
@@ -612,8 +615,8 @@ namespace Charm
                     offset += 4;
                 }
 
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, batchData.indexBuffer);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, k_MaxIndexCount * sizeof(u32), indices, GL_STATIC_DRAW);
+                IndexBuffer::Bind(batchData.indexBuffer);
+                IndexBuffer::SetData(k_MaxIndexCount * sizeof(u32), indices, GL_STATIC_DRAW);
 
                 delete[] indices;
             }
@@ -624,17 +627,16 @@ namespace Charm
                 delete[] batchData.circleBuffer;
                 delete[] batchData.lineBuffer;
 
-                glDeleteVertexArrays(1, &batchData.quadVertexArray);
-                glDeleteBuffers(1, &batchData.quadVertexBuffer);
+                VertexArray::Destroy(batchData.quadVertexArray);
+                VertexBuffer::Destroy(batchData.quadVertexBuffer);
 
-                glDeleteVertexArrays(1, &batchData.circleVertexArray);
-                glDeleteBuffers(1, &batchData.circleVertexBuffer);
+                VertexArray::Destroy(batchData.circleVertexArray);
+                VertexBuffer::Destroy(batchData.circleVertexBuffer);
 
                 glDeleteVertexArrays(1, &batchData.lineVertexArray);
                 glDeleteBuffers(1, &batchData.lineVertexBuffer);
 
-                glDeleteBuffers(1, &batchData.indexBuffer);
-
+                IndexBuffer::Destroy(batchData.indexBuffer);
                 Textures::Unload(batchData.whiteTexture);
             }
 
@@ -701,6 +703,7 @@ namespace Charm
                     batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[i];
                     batchData.quadBufferRef->color = color;
                     batchData.quadBufferRef->texCoord = textureCoords[i];
+                    batchData.quadBufferRef->tilingFactor = glm::vec2(1.f);
                     batchData.quadBufferRef->texIndex = textureIndex;
                     batchData.quadBufferRef->entityID = -1;
                     batchData.quadBufferRef++;
@@ -750,6 +753,7 @@ namespace Charm
                     batchData.quadBufferRef->position = transform * batchData.quadVertexPositions[i];
                     batchData.quadBufferRef->color = spriteRenderer.tint;
                     batchData.quadBufferRef->texCoord = textureCoords[i];
+                    batchData.quadBufferRef->tilingFactor = spriteRenderer.tilingFactor;
                     batchData.quadBufferRef->texIndex = textureIndex;
                     batchData.quadBufferRef->entityID = entityID;
                     batchData.quadBufferRef++;

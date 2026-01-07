@@ -60,24 +60,21 @@ namespace CharmApp
                         Texture* texture = (Texture*)state.selectedAsset;
                         UI::DrawAssetControls_Texture(texture);
 
-                        ImGui::SameLine();
-
-                        if (texture->mode != TextureMode::Single)
+                        if (ImGui::Button("Apply"))
                         {
-                            if (ImGui::Button("Slice"))
+                            Textures::Invalidate(*texture);
+
+                            Scene* context = SceneHeirarchyPanel::GetContext();
+                            auto sprites = context->registry.view<SpriteRendererComponent>();
+                            for (auto entityID : sprites)
                             {
-                                TextureSlicerPanel::SetSpriteSheet(texture->handle);
+                                Entity entity = Entities::Create(entityID, context);
+                                auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
 
-                                if (texture->rowCount > 1 || texture->columnCount > 1)
-                                {
-                                    TextureSlicerPanel::SetSliceWidth(texture->width / texture->columnCount);
-                                    TextureSlicerPanel::SetSliceHeight(texture->height / texture->rowCount);
-                                }
-
-                                TextureSlicerPanel::Toggle();
+                                if (texture->handle != spriteRenderer.sprite)
+                                    continue;
                             }
                         }
-
                         break;
                     }
 
@@ -170,16 +167,17 @@ namespace CharmApp
                     if (ImGui::Selectable("None", component.sprite == 0))
                         component.sprite = 0;
 
-                    const AssetRegistry& registry = AssetManager::GetRegistry();
-                    for (auto& [handle, metadata] : registry)
+                    const std::vector<AssetHandle> textures = AssetManager::GetAllHandlesOfType(AssetType::Texture);
+                    for (AssetHandle handle : textures)
                     {
-                        Asset* asset = AssetManager::GetAsset(handle);
-                        if (asset->GetType() == AssetType::Texture)
+                        Texture* texture = AssetManager::GetAsset<Texture>(handle);
+                        const bool isSelected = (component.sprite == handle);
+                        const std::string stemName = AssetManager::GetAssetPath(handle).stem().string();
+                        if (ImGui::Selectable(stemName.c_str(), isSelected))
                         {
-                            const bool isSelected = (component.sprite == handle);
-                            const std::string stemName = metadata.path.stem().string();
-                            if (ImGui::Selectable(stemName.c_str(), isSelected))
-                                component.sprite = handle;
+                            component.sprite = handle;
+                            component.crop.width = texture->width;
+                            component.crop.height = texture->height;
                         }
                     }
 
@@ -236,6 +234,7 @@ namespace CharmApp
                 ImGui::PopID();
 
                 UI::DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
+                UI::DrawVec2Control("Tiling Factor", component.tilingFactor, 0.2f, 1.f, columnWidth);
                 UI::DrawColorControl("Tint", component.tint, columnWidth);
             });
 
@@ -256,17 +255,13 @@ namespace CharmApp
                     if (ImGui::Selectable("None", component.controller == 0))
                         component.controller = 0;
 
-                    const AssetRegistry& registry = AssetManager::GetRegistry();
-                    for (auto& [handle, metadata] : registry)
+                    std::vector<AssetHandle> controllers = AssetManager::GetAllHandlesOfType(AssetType::AnimationController);
+                    for (AssetHandle handle : controllers)
                     {
-                        Asset* asset = AssetManager::GetAsset(handle);
-                        if (asset->GetType() == AssetType::AnimationController)
-                        {
-                            const bool isSelected = (component.controller == handle);
-                            const std::string stemName = metadata.path.stem().string();
-                            if (ImGui::Selectable(stemName.c_str(), isSelected))
-                                component.controller = handle;
-                        }
+                        const bool isSelected = (component.controller == handle);
+                        const std::string stemName = AssetManager::GetAssetPath(handle).stem().string();
+                        if (ImGui::Selectable(stemName.c_str(), isSelected))
+                            component.controller = handle;
                     }
 
                     ImGui::EndCombo();
@@ -298,7 +293,11 @@ namespace CharmApp
                 ImGui::PopID();
 
                 if (controller != NULL)
+                {
                     UI::DrawIntInputControl("Active Slot", &component.activeSlot, -1, controller->animations.size() - 1, columnWidth);
+                    if (controller->animations.size() < 1)
+                        component.activeSlot = -1;
+                }
             });
 
             DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {

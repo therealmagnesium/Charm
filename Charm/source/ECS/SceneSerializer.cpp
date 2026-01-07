@@ -203,8 +203,8 @@ namespace Charm
                             out << YAML::Key << "Texture Mode" << YAML::Value << Utils::TextureModeToString(texture->mode);
                             out << YAML::Key << "Texture Min Filter" << YAML::Value << Utils::TextureFilterToString(texture->minFilter);
                             out << YAML::Key << "Texture Mag Filter" << YAML::Value << Utils::TextureFilterToString(texture->magFilter);
-                            out << YAML::Key << "Texture Row Count" << YAML::Value << texture->rowCount;
-                            out << YAML::Key << "Texture Column Count" << YAML::Value << texture->columnCount;
+                            // out << YAML::Key << "Texture Row Count" << YAML::Value << texture->rowCount;
+                            // out << YAML::Key << "Texture Column Count" << YAML::Value << texture->columnCount;
                             out << YAML::Key << "Texture Pixels Per Unit" << YAML::Value << texture->pixelsPerUnit;
                             break;
                         }
@@ -281,8 +281,8 @@ namespace Charm
                         texture->mode = Utils::StringToTextureMode(asset["Texture Mode"].as<std::string>());
                         texture->minFilter = Utils::StringToTextureFilter(asset["Texture Min Filter"].as<std::string>());
                         texture->magFilter = Utils::StringToTextureFilter(asset["Texture Mag Filter"].as<std::string>());
-                        texture->rowCount = asset["Texture Row Count"].as<u32>();
-                        texture->columnCount = asset["Texture Column Count"].as<u32>();
+                        // texture->rowCount = asset["Texture Row Count"].as<u32>();
+                        // texture->columnCount = asset["Texture Column Count"].as<u32>();
                         texture->pixelsPerUnit = asset["Texture Pixels Per Unit"].as<u32>();
                         Textures::Invalidate(*texture);
                     }
@@ -354,6 +354,7 @@ namespace Charm
                     out << YAML::Key << "Sprite Renderer Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Texture Asset Handle" << YAML::Value << spriteRenderer.sprite;
                     out << YAML::Key << "Sorting Layer" << YAML::Value << spriteRenderer.sortingLayer;
+                    out << YAML::Key << "Tiling Factor" << YAML::Value << spriteRenderer.tilingFactor;
                     out << YAML::Key << "Origin" << YAML::Value << spriteRenderer.origin;
                     out << YAML::Key << "Origin Mode" << YAML::Value << Utils::OriginModeToString(spriteRenderer.originMode);
                     out << YAML::Key << "Crop" << YAML::Value << spriteRenderer.crop;
@@ -435,18 +436,18 @@ namespace Charm
 
             void DeserializeEntity(Entity& entity, YAML::Node& node)
             {
-                auto internalNode = node["Internal Component"];
+                const YAML::Node& internalNode = node["Internal Component"];
                 auto& internal = entity.GetComponent<InternalComponent>();
                 internal.tag = internalNode["Tag"].as<std::string>();
                 internal.isActive = internalNode["Is Active?"].as<bool>();
 
-                auto transformNode = node["Transform Component"];
+                const YAML::Node& transformNode = node["Transform Component"];
                 auto& transform = entity.GetComponent<TransformComponent>();
                 transform.position = transformNode["Position"].as<glm::vec3>();
                 transform.rotation = transformNode["Rotation"].as<glm::vec3>();
                 transform.scale = transformNode["Scale"].as<glm::vec3>();
 
-                auto circleRendererNode = node["Circle Renderer Component"];
+                const YAML::Node& circleRendererNode = node["Circle Renderer Component"];
                 if (circleRendererNode)
                 {
                     auto& circleRenderer = entity.AddComponent<CircleRendererComponent>();
@@ -456,19 +457,20 @@ namespace Charm
                     circleRenderer.color = circleRendererNode["Color"].as<glm::vec3>();
                 }
 
-                auto spriteRendererNode = node["Sprite Renderer Component"];
+                const YAML::Node& spriteRendererNode = node["Sprite Renderer Component"];
                 if (spriteRendererNode)
                 {
                     auto& spriteRenderer = entity.AddComponent<SpriteRendererComponent>();
                     spriteRenderer.sprite = spriteRendererNode["Texture Asset Handle"].as<AssetHandle>();
                     spriteRenderer.sortingLayer = spriteRendererNode["Sorting Layer"].as<s32>();
+                    spriteRenderer.tilingFactor = spriteRendererNode["Tiling Factor"].as<glm::vec2>();
                     spriteRenderer.origin = spriteRendererNode["Origin"].as<glm::vec2>();
                     spriteRenderer.originMode = Utils::StringToOriginMode(spriteRendererNode["Origin Mode"].as<std::string>());
                     spriteRenderer.crop = spriteRendererNode["Crop"].as<Rectangle>();
                     spriteRenderer.tint = spriteRendererNode["Tint"].as<glm::vec4>();
                 }
 
-                auto animator2DNode = node["Animator2D Component"];
+                const YAML::Node& animator2DNode = node["Animator2D Component"];
                 if (animator2DNode)
                 {
                     auto& animator2D = entity.AddComponent<Animator2DComponent>();
@@ -476,7 +478,7 @@ namespace Charm
                     animator2D.activeSlot = animator2DNode["Active Slot"].as<s32>();
                 }
 
-                auto camera2DNode = node["Camera2D Component"];
+                const YAML::Node& camera2DNode = node["Camera2D Component"];
                 if (camera2DNode)
                 {
                     auto& cameraComponent = entity.AddComponent<Camera2DComponent>();
@@ -488,7 +490,7 @@ namespace Charm
                     cameraComponent.camera.zoom = camera2DNode["Zoom"].as<float>();
                 }
 
-                auto rb2DNode = node["Rigidbody2D Component"];
+                const YAML::Node& rb2DNode = node["Rigidbody2D Component"];
                 if (rb2DNode)
                 {
                     auto& rb2D = entity.AddComponent<Rigidbody2DComponent>();
@@ -501,7 +503,7 @@ namespace Charm
                     rb2D.angularVelocity = rb2DNode["Angular Velocity"].as<float>();
                 }
 
-                auto bc2DNode = node["Box Collider2D Component"];
+                const YAML::Node& bc2DNode = node["Box Collider2D Component"];
                 if (bc2DNode)
                 {
                     auto& bc2D = entity.AddComponent<BoxCollider2DComponent>();
@@ -513,7 +515,7 @@ namespace Charm
                     bc2D.restitution = bc2DNode["Restitution"].as<float>();
                 }
 
-                auto nsNode = node["Native Script Component"];
+                const YAML::Node& nsNode = node["Native Script Component"];
                 if (nsNode)
                 {
                     auto& nsc = entity.AddComponent<NativeScriptComponent>();

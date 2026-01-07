@@ -37,13 +37,33 @@ namespace Charm
                 ASSERT_RETURN(data, animation, "Animations::Load - Failed to load animation \"%s\", the path may be invalid!", path);
                 ASSERT_RETURN(data["Animation"], animation, "Animations::Load - Failed to load animation \"%s\", the path may be an invalid animation file!", path);
 
-                YAML::Node properties = data["Properties"];
+                const YAML::Node& properties = data["Properties"];
                 animation.speed = properties["Speed"].as<u32>();
-                animation.frameCount = properties["Frame Count"].as<u32>();
-                animation.rowOffset = properties["Row Offset"].as<u32>();
-                animation.columnOffset = properties["Column Offset"].as<u32>();
                 animation.shouldLoop = properties["Should Loop"].as<bool>();
-                animation.spriteSheetType = Utils::StringToSpriteSheetAnimType(properties["Sprite Sheet Type"].as<std::string>());
+                animation.frameCount = properties["Frame Count"].as<u32>();
+
+                if (animation.frameCount > 0)
+                    animation.frames.resize(animation.frameCount);
+
+                const YAML::Node& framesNode = properties["Frames"];
+
+                u32 frameIndex = 0;
+                for (const auto& frameEntry : framesNode)
+                {
+                    const YAML::Node& frameNode = frameEntry["Frame " + std::to_string(frameIndex)];
+
+                    Rectangle& frame = animation.frames[frameIndex];
+                    frame.x = frameNode["X"].as<float>();
+                    frame.y = frameNode["Y"].as<float>();
+                    frame.width = frameNode["Width"].as<float>();
+                    frame.height = frameNode["Height"].as<float>();
+
+                    frameIndex++;
+                }
+
+                // animation.rowOffset = properties["Row Offset"].as<u32>();
+                // animation.columnOffset = properties["Column Offset"].as<u32>();
+                // animation.spriteSheetType = Utils::StringToSpriteSheetAnimType(properties["Sprite Sheet Type"].as<std::string>());
                 animation.isValid = true;
 
                 INFO("Animation \"%s\" was loaded successfully", path);
@@ -58,15 +78,31 @@ namespace Charm
                 out << YAML::Key << "Animation" << YAML::Value << animation.handle;
                 out << YAML::Key << "Properties" << YAML::Value << YAML::BeginMap;
                 out << YAML::Key << "Speed" << YAML::Value << animation.speed;
-                out << YAML::Key << "Frame Count" << YAML::Value << animation.frameCount;
-                out << YAML::Key << "Row Offset" << YAML::Value << animation.rowOffset;
-                out << YAML::Key << "Column Offset" << YAML::Value << animation.columnOffset;
                 out << YAML::Key << "Should Loop" << YAML::Value << animation.shouldLoop;
-                out << YAML::Key << "Sprite Sheet Type" << YAML::Value << Utils::SpriteSheetAnimTypeToString(animation.spriteSheetType);
+                out << YAML::Key << "Frame Count" << YAML::Value << animation.frameCount;
 
+                out << YAML::Key << "Frames" << YAML::Value << YAML::BeginSeq;
+
+                for (u32 i = 0; i < animation.frames.size(); i++)
+                {
+                    out << YAML::BeginMap;
+
+                    out << YAML::Key << "Frame " + std::to_string(i) << YAML::Value << YAML::BeginMap;
+                    out << YAML::Key << "X" << YAML::Value << animation.frames[i].x;
+                    out << YAML::Key << "Y" << YAML::Value << animation.frames[i].y;
+                    out << YAML::Key << "Width" << YAML::Value << animation.frames[i].width;
+                    out << YAML::Key << "Height" << YAML::Value << animation.frames[i].height;
+                    out << YAML::EndMap;
+
+                    out << YAML::EndMap;
+                }
+
+                out << YAML::EndSeq;
                 out << YAML::EndMap;
 
-                out << YAML::EndMap;
+                // out << YAML::Key << "Row Offset" << YAML::Value << animation.rowOffset;
+                // out << YAML::Key << "Column Offset" << YAML::Value << animation.columnOffset;
+                // out << YAML::Key << "Sprite Sheet Type" << YAML::Value << Utils::SpriteSheetAnimTypeToString(animation.spriteSheetType);
 
                 std::ofstream fout(path);
                 if (fout.is_open())
@@ -109,25 +145,31 @@ namespace Charm
 
             void Apply(Animation& animation, Rectangle& rect, const Texture& texture)
             {
-                rect.width = (float)texture.width / texture.columnCount;
-                rect.height = (float)texture.height / texture.rowCount;
+                if (animation.frames.size() < 1)
+                    return;
 
-                const u32 horizontalOffset = animation.columnOffset * rect.width;
-                const u32 verticalOffset = animation.rowOffset * rect.height;
+                rect = animation.frames[animation.currentFrame];
 
-                switch (animation.spriteSheetType)
-                {
-                    case SpriteSheetAnimType::Horizontal:
-                        rect.x = (float)animation.currentFrame * rect.width + horizontalOffset;
-                        break;
+                // TODO: Replace aLl of this shit with the line above so the user can use any frame from the sprite sheet
+                /*
+                            rect.width = (float)texture.width / texture.columnCount;
+                            rect.height = (float)texture.height / texture.rowCount;
 
-                    case SpriteSheetAnimType::Vertical:
-                        rect.y = (float)animation.currentFrame * rect.height + verticalOffset;
-                        break;
+                            const u32 horizontalOffset = animation.columnOffset * rect.width;
+                            const u32 verticalOffset = animation.rowOffset * rect.height;
 
-                    default:
-                        break;
-                }
+                            switch (animation.spriteSheetType)
+                            {
+                                case SpriteSheetAnimType::Horizontal:
+                                    rect.x = (float)animation.currentFrame * rect.width + horizontalOffset;
+                                    break;
+
+                                case SpriteSheetAnimType::Vertical:
+                                    rect.y = (float)animation.currentFrame * rect.height + verticalOffset;
+                                    break;
+
+                                default:
+                                    break;*/
             }
 
             AnimationController LoadController(const char* path)
@@ -153,12 +195,12 @@ namespace Charm
                 if (animationCount > 0)
                 {
                     controller.animations.reserve(animationCount);
-                    YAML::Node animations = data["Animations"];
+                    const YAML::Node& animations = data["Animations"];
 
                     const Project& project = ProjectManager::GetActive();
                     for (auto animationNode : animations)
                     {
-                        const YAML::Node animation = animationNode["Animation"];
+                        const YAML::Node& animation = animationNode["Animation"];
                         const AssetHandle animHandle = animation["Handle"].as<AssetHandle>();
                         const std::filesystem::path animSavedPath = animation["Path"].as<std::string>();
 
@@ -203,7 +245,6 @@ namespace Charm
                 }
 
                 out << YAML::EndSeq;
-
                 out << YAML::EndMap;
 
                 std::ofstream fout(path);
@@ -218,6 +259,7 @@ namespace Charm
 
                 INFO("Animation Controller \"%s\" was saved successfully", path);
             }
+
         }
     }
 }
