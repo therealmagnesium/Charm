@@ -8,6 +8,7 @@
 
 #include <string>
 #include <filesystem>
+#include <cmath>
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -37,6 +38,7 @@ namespace Charm
             return homePath;
         }
 
+        u32 GetDigitCount(s32 number) { return number != 0 ? (u32)floor(log10(abs((number)) + 1)) : 1; }
         const char* BoolToCString(bool value) { return (value) ? "true" : "false"; }
         std::string SpriteSheetAnimTypeToString(const SpriteSheetAnimType type) { return type == SpriteSheetAnimType::Horizontal ? "Horizontal" : "Vertical"; }
         Graphics::SpriteSheetAnimType StringToSpriteSheetAnimType(const std::string& str) { return str == "Horizontal" ? SpriteSheetAnimType::Horizontal : SpriteSheetAnimType::Vertical; }

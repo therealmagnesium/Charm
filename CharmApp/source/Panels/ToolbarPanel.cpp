@@ -12,11 +12,11 @@ namespace CharmApp
     {
         void Init()
         {
-            state.icons[ToolbarIcons::Play] = Textures::Load("assets/textures/button_play.png");
-            state.icons[ToolbarIcons::Stop] = Textures::Load("assets/textures/button_stop.png");
-            state.icons[ToolbarIcons::Translate] = Textures::Load("assets/textures/button_translate.png");
-            state.icons[ToolbarIcons::Rotate] = Textures::Load("assets/textures/button_rotate.png");
-            state.icons[ToolbarIcons::Scale] = Textures::Load("assets/textures/button_scale.png");
+            state.icons[(u32)ToolbarIcon::Play] = Textures::Load("assets/textures/button_play.png");
+            state.icons[(u32)ToolbarIcon::Stop] = Textures::Load("assets/textures/button_stop.png");
+            state.icons[(u32)ToolbarIcon::Translate] = Textures::Load("assets/textures/button_translate.png");
+            state.icons[(u32)ToolbarIcon::Rotate] = Textures::Load("assets/textures/button_rotate.png");
+            state.icons[(u32)ToolbarIcon::Scale] = Textures::Load("assets/textures/button_scale.png");
             state.windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
             state.manipulationType = ImGuizmo::OPERATION::TRANSLATE;
         }
@@ -51,17 +51,17 @@ namespace CharmApp
             if (iconSize > maxIconSize)
                 iconSize = maxIconSize;
 
-            if (ImGui::ImageButton("##TranslateButton", state.icons[ToolbarIcons::Translate].id, ImVec2(iconSize, iconSize)))
+            if (ImGui::ImageButton("##TranslateButton", state.icons[(u32)ToolbarIcon::Translate].id, ImVec2(iconSize, iconSize)))
                 state.manipulationType = ImGuizmo::OPERATION::TRANSLATE;
             ImGui::SameLine();
-            if (ImGui::ImageButton("##RotateButton", state.icons[ToolbarIcons::Rotate].id, ImVec2(iconSize, iconSize)))
+            if (ImGui::ImageButton("##RotateButton", state.icons[(u32)ToolbarIcon::Rotate].id, ImVec2(iconSize, iconSize)))
                 state.manipulationType = ImGuizmo::OPERATION::ROTATE;
             ImGui::SameLine();
-            if (ImGui::ImageButton("##ScaleButton", state.icons[ToolbarIcons::Scale].id, ImVec2(iconSize, iconSize)))
+            if (ImGui::ImageButton("##ScaleButton", state.icons[(u32)ToolbarIcon::Scale].id, ImVec2(iconSize, iconSize)))
                 state.manipulationType = ImGuizmo::OPERATION::SCALE;
             ImGui::SameLine();
 
-            ImTextureID runtimeIcon = (sceneState == SceneState::Editor) ? state.icons[ToolbarIcons::Play].id : state.icons[ToolbarIcons::Stop].id;
+            ImTextureID runtimeIcon = (sceneState == SceneState::Editor) ? state.icons[(u32)ToolbarIcon::Play].id : state.icons[(u32)ToolbarIcon::Stop].id;
             ImGui::SetCursorPosX((ImGui::GetContentRegionMax().x * 0.5f) - (iconSize * 0.5f));
             if (ImGui::ImageButton("##PlayButton", runtimeIcon, ImVec2(iconSize, iconSize)))
             {
@@ -78,6 +78,7 @@ namespace CharmApp
         }
 
         u32 GetManipulationType() { return state.manipulationType; }
+        const Texture& GetIcon(ToolbarIcon type) { return state.icons[(u32)type]; }
         void SetManipulationType(u32 type) { state.manipulationType = type; }
     }
 }

@@ -325,7 +325,8 @@ namespace Charm
                         if (firstAnimation->frames.size() < 1)
                             continue;
 
-                        spriteRenderer.crop = firstAnimation->frames[0];
+                        if (spriteRenderer.crop.width < 0.1f || spriteRenderer.crop.height < 0.1f)
+                            spriteRenderer.crop = firstAnimation->frames[0];
                     }
                 }
 

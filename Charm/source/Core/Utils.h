@@ -18,6 +18,7 @@ namespace Charm
     namespace Utils
     {
         std::filesystem::path GetHomeDirectory();
+        u32 GetDigitCount(s32 number);
         const char* BoolToCString(bool value);
         bool IsDepthFormat(Graphics::TextureFormat format);
         u32 TextureFilterToGL(Graphics::TextureFilter filter);

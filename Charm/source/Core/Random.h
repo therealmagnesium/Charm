@@ -22,5 +22,7 @@ namespace Charm
             u32 Generate(u32 min, u32 max);
             float Generate(float min, float max);
         }
+
+        inline const UUID UUID_Invalid = 0;
     }
 }

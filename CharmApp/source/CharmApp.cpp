@@ -47,6 +47,7 @@ namespace CharmApp
         AssetRegistryPanel::Init();
         ContentBrowserPanel::Init();
         ToolbarPanel::Init();
+        AnimationPanel::Init();
 
         const std::filesystem::path scriptModulePath = ProjectManager::GetScriptModulePath(state.project);
         if (std::filesystem::exists(scriptModulePath))
@@ -68,6 +69,7 @@ namespace CharmApp
         AssetManager::Clean();
         ContentBrowserPanel::Shutdown();
         ToolbarPanel::Shutdown();
+        AnimationPanel::Shutdown();
         Framebuffers::Destroy(state.framebuffer);
     }
 
