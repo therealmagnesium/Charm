@@ -133,7 +133,7 @@ namespace Charm
             return hasChanged;
         }
 
-        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth)
+        void DrawFloatControl(const char* label, float* v, float min, float max, float speed, float columnWidth)
         {
             ImGui::PushID(label);
             ImGui::Columns(2);
@@ -142,7 +142,7 @@ namespace Charm
             ImGui::NextColumn();
 
             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-            ImGui::DragFloat("##", v, 0.01f, min, max);
+            ImGui::DragFloat("##", v, speed, min, max);
 
             ImGui::Columns(1);
             ImGui::PopID();

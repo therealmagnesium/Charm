@@ -5,9 +5,11 @@
 
 #include "Core/AssetManager.h"
 #include "Core/Random.h"
+#include "Core/Utils.h"
 
 #include "Graphics/Animation.h"
 #include "Graphics/Camera.h"
+#include "Graphics/Lights.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 
@@ -60,6 +62,8 @@ namespace Charm
                 this->rotation = rotation;
                 this->scale = scale;
             }
+
+            inline glm::mat4 GetMatrix3D() const { return Utils::GetTransformMatrix3D(position, rotation, scale); }
         };
 
         struct SpriteRendererComponent
@@ -177,6 +181,23 @@ namespace Charm
 
             NativeScriptComponent() = default;
             NativeScriptComponent(const NativeScriptComponent&) = default;
+        };
+
+        struct MeshRendererComponent
+        {
+            AssetHandle model;
+            s32 submeshIndex = -1;
+
+            MeshRendererComponent() = default;
+            MeshRendererComponent(const MeshRendererComponent&) = default;
+        };
+
+        struct DirectionalLightComponent
+        {
+            DirectionalLight sun;
+
+            DirectionalLightComponent() = default;
+            DirectionalLightComponent(const DirectionalLightComponent&) = default;
         };
     }
 }

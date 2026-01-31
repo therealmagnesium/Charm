@@ -5,6 +5,7 @@
 #include "Core/Utils.h"
 
 #include "Graphics/Animation.h"
+#include "Graphics/Model.h"
 #include "Graphics/Texture.h"
 #include "Graphics/TilePalette.h"
 
@@ -48,6 +49,10 @@ namespace Charm
                             Textures::Unload(dynamic_cast<Texture&>(*asset));
                             break;
 
+                        case AssetType::Model:
+                            Models::Unload(dynamic_cast<Model&>(*asset));
+                            break;
+
                         default:
                             break;
                     }
@@ -62,8 +67,17 @@ namespace Charm
 
             AssetHandle Import(const std::filesystem::path& path, AssetType type)
             {
-                AssetHandle handle = Random::GenerateUUID();
-                AssetManager::Import(path, type, handle);
+                const Project& project = ProjectManager::GetActive();
+                const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(path, project);
+
+                if (IsAssetRegistered(relativePath))
+                {
+                    const AssetHandle handle = FindAssetHandle(relativePath);
+                    return handle;
+                }
+
+                const AssetHandle handle = Random::GenerateUUID();
+                AssetManager::Import(relativePath, type, handle);
                 return handle;
             }
 
@@ -227,6 +241,17 @@ namespace Charm
                         if (tilePalette.isValid)
                         {
                             asset = new TilePalette(std::move(tilePalette));
+                            asset->handle = handle;
+                        }
+                        break;
+                    }
+
+                    case AssetType::Model:
+                    {
+                        Model model = Models::Load(path);
+                        if (model.isValid)
+                        {
+                            asset = new Model(std::move(model));
                             asset->handle = handle;
                         }
                         break;

@@ -40,6 +40,7 @@ namespace CharmApp
         state.activeScene = &state.editorScene;
 
         state.project = CharmHub::GetProject();
+        state.project.type == ProjectType::ThreeDimensional ? RenderCommand::EnableDepthTest() : RenderCommand::DisableDepthTest();
 
         ProjectSerializer::SetContext(&state.project);
         SceneSerializer::SetContext(&state.editorScene);
@@ -51,7 +52,7 @@ namespace CharmApp
 
         const std::filesystem::path scriptModulePath = ProjectManager::GetScriptModulePath(state.project);
         if (std::filesystem::exists(scriptModulePath))
-            ScriptManager::LoadModule(scriptModulePath.c_str());
+            ScriptManager::LoadModule(scriptModulePath);
 
         if (!state.project.startScenePath.empty())
         {
@@ -170,12 +171,23 @@ namespace CharmApp
         if (state.sceneState == SceneState::Editor)
         {
             const bool isSceneViewportHovered = SceneViewportPanel::IsHovered();
+            const bool isSceneViewportFocused = SceneViewportPanel::IsFocused();
             const glm::vec2 sceneViewportPosition = SceneViewportPanel::GetPosition();
             const glm::vec2 sceneViewportSize = SceneViewportPanel::GetSize();
+
+            const Project& project = ProjectManager::GetActive();
+
+            if (project.type == ProjectType::TwoDimensional)
+                Renderer::BeginScene2D(state.activeScene->editorCamera2D);
+            else
+                Renderer::BeginScene3D(state.activeScene->editorCamera3D);
+
             Scenes::RenderEditor(*state.activeScene, SceneHeirarchyPanel::GetSelectedEntity());
 
+            Renderer::EndScene2D();
+
             Input::Capture(isSceneViewportHovered);
-            if (Input::IsMouseClicked(MOUSE_BUTTON_LEFT) && isSceneViewportHovered && !ImGuizmo::IsUsing())
+            if (Input::IsMouseClicked(MOUSE_BUTTON_LEFT) && isSceneViewportHovered && isSceneViewportFocused && !ImGuizmo::IsOver())
             {
                 const glm::vec2 glViewportMouse = Utils::ScreenToViewportGL(Input::GetMousePosition(),
                                                                             sceneViewportPosition,
@@ -194,7 +206,7 @@ namespace CharmApp
                     else
                         SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                 }
-                else if (Input::IsKeyDown(KEY_LEFT_ALT) && Input::IsKeyDown(KEY_LEFT_SHIFT))
+                else if (Input::IsKeyDown(KEY_LEFT_ALT) && Input::IsKeyDown(KEY_LEFT_SHIFT) && state.project.type == ProjectType::TwoDimensional)
                 {
                     Entity& entity = SceneHeirarchyPanel::GetSelectedEntity();
                     if (entity.IsHandleValid())
@@ -370,6 +382,13 @@ namespace CharmApp
         {
             const std::filesystem::path path = FileDialogs::GetSelectedPath();
             state.project = ProjectManager::Load(path);
+            state.project.type == ProjectType::ThreeDimensional ? RenderCommand::EnableDepthTest() : RenderCommand::DisableDepthTest();
+
+            ScriptManager::UnloadModule();
+
+            const std::filesystem::path scriptModulePath = ProjectManager::GetScriptModulePath(state.project);
+            if (std::filesystem::exists(scriptModulePath))
+                ScriptManager::LoadModule(scriptModulePath);
 
             const std::filesystem::path startScenePath = ProjectManager::GetStartScenePath(state.project);
             const std::filesystem::path assetsPath = ProjectManager::GetAssetPath(state.project);
@@ -387,14 +406,23 @@ namespace CharmApp
         state.currentScenePath = path;
         ScriptManager::ReloadModule();
 
-        if (Entities::FindWithTag("Main Camera", state.activeScene) == Entity_Null)
+        if (state.project.type == ProjectType::TwoDimensional && Entities::FindWithTag("Main Camera", state.activeScene) == Entity_Null)
         {
-            auto& config = Application::GetConfig();
+            const auto& config = Application::GetConfig();
             Entity mainCamera = Scenes::CreateEntity(state.editorScene, "Main Camera");
             auto& cameraComponent = mainCamera.AddComponent<Camera2DComponent>();
             cameraComponent.camera.offset.x = (float)config.virtualWidth / (float)Application::GetPixelsPerUnit() / 2.f;
             cameraComponent.camera.offset.y = (float)config.virtualHeight / (float)Application::GetPixelsPerUnit() / 2.f;
             cameraComponent.isPrimary = true;
+        }
+
+        if (state.project.type == ProjectType::ThreeDimensional)
+        {
+            if (Entities::FindWithTag("Directional Light", state.activeScene) == Entity_Null)
+            {
+                Entity entity = Scenes::CreateEntity(state.editorScene, "Directional Light");
+                entity.AddComponent<DirectionalLightComponent>();
+            }
         }
 
         if (std::filesystem::exists(state.currentScenePath))

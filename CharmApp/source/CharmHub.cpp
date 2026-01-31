@@ -74,8 +74,9 @@ namespace CharmHub
             if (ImGui::Button("Cancel", ImVec2(100.f, 25.f)))
                 state.shouldDisplayNewProject = false;
 
-            UI::DrawTextInputControl("Name", &state.project.name);
-            if (UI::DrawFilesystemInputControl("Path", &state.newProjectPath, ImGuiInputTextFlags_ElideLeft))
+            const float columnWidth = 70.f;
+            UI::DrawTextInputControl("Name", &state.project.name, 0, columnWidth);
+            if (UI::DrawFilesystemInputControl("Path", &state.newProjectPath, ImGuiInputTextFlags_ElideLeft, columnWidth))
             {
                 FileDialogFilter filter;
                 filter.name = "Project";
@@ -84,8 +85,29 @@ namespace CharmHub
                 {
                     state.newProjectPath = FileDialogs::GetSelectedPath();
                     state.project.name = state.newProjectPath.stem();
+                    state.project.directory = state.newProjectPath.parent_path();
                 }
             }
+
+            ImGui::Columns(2);
+            ImGui::SetColumnWidth(0, columnWidth);
+            ImGui::Text("Type");
+            ImGui::NextColumn();
+
+            std::string projectTypePlaceholder = Utils::ProjectTypeToString(state.project.type);
+            ImGui::SetNextItemWidth(-1.f);
+            if (ImGui::BeginCombo("##Project Type Selection", projectTypePlaceholder.c_str()))
+            {
+                if (ImGui::Selectable("2D", state.project.type == ProjectType::TwoDimensional))
+                    state.project.type = ProjectType::TwoDimensional;
+
+                if (ImGui::Selectable("3D", state.project.type == ProjectType::ThreeDimensional))
+                    state.project.type = ProjectType::ThreeDimensional;
+
+                ImGui::EndCombo();
+            }
+
+            ImGui::Columns(1);
 
             ImGui::SetCursorPosY(windowSize.y - 60.f);
             if (ImGui::Button("Open New Project", ImVec2(200.f, 50.f)) && !state.newProjectPath.empty() && !state.project.name.empty())
@@ -97,16 +119,19 @@ namespace CharmHub
                 const std::filesystem::path assetsDirectory = ProjectManager::GetAssetPath(state.project);
                 if (!std::filesystem::exists(assetsDirectory))
                     std::filesystem::create_directory(assetsDirectory);
+                WARN("%s", assetsDirectory.c_str());
 
                 const std::filesystem::path sampleSceneRoot = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath.parent_path(), state.project);
                 if (!std::filesystem::exists(sampleSceneRoot))
                     std::filesystem::create_directory(sampleSceneRoot);
+                WARN("%s", sampleSceneRoot.c_str());
 
                 const std::filesystem::path startScenePath = ProjectManager::GetAssetFileSystemPath(state.project.startScenePath, state.project);
                 Scene sampleScene = Scenes::Create();
                 SceneSerializer::SetContext(&sampleScene);
                 SceneSerializer::Serialize(startScenePath);
                 SceneSerializer::SetContext(NULL);
+                WARN("%s", startScenePath.c_str());
             }
 
             ImGui::PopFont();

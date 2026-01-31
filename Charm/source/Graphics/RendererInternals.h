@@ -21,7 +21,8 @@ namespace Charm
             u32 Create();
             void Destroy(u32& vbo);
             void Bind(u32 vbo);
-            void SetData(u64 size, const float* data, u32 usage);
+            void Unbind();
+            void SetData(u64 size, const void* data, u32 usage);
         }
 
         namespace IndexBuffer
@@ -29,6 +30,7 @@ namespace Charm
             u32 Create();
             void Destroy(u32& ebo);
             void Bind(u32 ebo);
+            void Unbind();
             void SetData(u64 size, const u32* data, u32 usage);
         }
     }

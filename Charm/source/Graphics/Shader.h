@@ -13,7 +13,12 @@ namespace Charm
         {
             u32 id = 0;
             std::unordered_map<std::string, s32> uniformLocations;
+
+            inline bool operator==(const Shader& other) { return id == other.id; }
+            inline bool operator!=(const Shader& other) { return id != other.id; }
         };
+
+        inline const Shader Shader_Invalid;
 
         namespace Shaders
         {

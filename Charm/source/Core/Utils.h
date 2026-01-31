@@ -3,6 +3,7 @@
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 #include "ECS/PhysicsWorld.h"
+#include "Projects/Project.h"
 
 #include <string>
 #include <filesystem>
@@ -18,6 +19,8 @@ namespace Charm
     namespace Utils
     {
         std::filesystem::path GetHomeDirectory();
+        std::string ProjectTypeToString(Projects::ProjectType type);
+        Projects::ProjectType StringToProjectType(const std::string& str);
         u32 GetDigitCount(s32 number);
         const char* BoolToCString(bool value);
         bool IsDepthFormat(Graphics::TextureFormat format);
@@ -38,7 +41,8 @@ namespace Charm
         glm::vec2 ScreenToVirtual(const glm::vec2& screenPosition);
         glm::vec2 ScreenToViewport(const glm::vec2& screenPosition, const glm::vec2& viewportPosition, const glm::vec2& viewportSize);
         glm::vec2 ScreenToViewportGL(const glm::vec2& screenPosition, const glm::vec2& viewportPosition, const glm::vec2& viewportSize);
-        glm::mat4 GetTransfomMatrix2D(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec2& origin);
+        glm::mat4 GetTransformMatrix2D(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec2& origin);
+        glm::mat4 GetTransformMatrix3D(const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale);
         glm::vec2 OriginModeToVec2(Graphics::OriginMode mode, const glm::vec2& position, const glm::vec2& size);
         std::string OriginModeToString(Graphics::OriginMode mode);
         Graphics::OriginMode StringToOriginMode(const std::string& str);

@@ -114,6 +114,26 @@ namespace Charm
                 Shaders::CreateUniform(state.lineShader, "viewMatrix");
                 Shaders::CreateUniform(state.lineShader, "projectionMatrix");
 
+                state.diffuseShader = Shaders::Load("assets/shaders/Diffuse_vs.glsl", "assets/shaders/Diffuse_fs.glsl");
+                Shaders::CreateUniform(state.diffuseShader, "u_entityID");
+                Shaders::CreateUniform(state.diffuseShader, "u_matrixTransform");
+                Shaders::CreateUniform(state.diffuseShader, "u_matrixView");
+                Shaders::CreateUniform(state.diffuseShader, "u_matrixProjection");
+                Shaders::CreateUniform(state.diffuseShader, "u_material.albedo");
+                Shaders::CreateUniform(state.diffuseShader, "u_material.albedoTexture");
+
+                state.blinnPhongShader = Shaders::Load("assets/shaders/Blinn-Phong_vs.glsl", "assets/shaders/Blinn-Phong_fs.glsl");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_entityID");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_matrixTransform");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_matrixView");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_matrixProjection");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_matrixNormal");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_material.albedo");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_material.albedoTexture");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_sun.direction");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_sun.color");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_sun.intensity");
+
                 state.grid.vao = VertexArray::Create();
                 state.grid.shader = Shaders::Load("assets/shaders/2DGrid_vs.glsl", "assets/shaders/2DGrid_fs.glsl");
                 Shaders::CreateUniform(state.grid.shader, "u_cameraPosition");
@@ -139,6 +159,8 @@ namespace Charm
                 Shaders::Unload(state.quadShader);
                 Shaders::Unload(state.circleShader);
                 Shaders::Unload(state.lineShader);
+                Shaders::Unload(state.diffuseShader);
+                Shaders::Unload(state.blinnPhongShader);
 
                 Shaders::Unload(state.grid.shader);
                 VertexArray::Destroy(state.grid.vao);
@@ -178,7 +200,6 @@ namespace Charm
 
             void BeginScene2D(const Camera3D& camera)
             {
-                const ApplicationConfig& config = Application::GetConfig();
                 state.viewMatrix = Cameras::GetViewMatrix3D(camera);
                 state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
                 batchData.quadCount = 0;
@@ -201,6 +222,22 @@ namespace Charm
                 BeginBatchQuad();
                 BeginBatchCircle();
                 BeginBatchLine();
+            }
+
+            void BeginScene3D(const Camera3D& camera)
+            {
+                BeginScene2D(camera);
+
+                state.viewMatrix = Cameras::GetViewMatrix3D(camera);
+                state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
+
+                Shaders::Bind(state.diffuseShader);
+                Shaders::SetUniform(state.diffuseShader, "u_matrixView", state.viewMatrix);
+                Shaders::SetUniform(state.diffuseShader, "u_matrixProjection", state.projectionMatrix);
+
+                Shaders::Bind(state.blinnPhongShader);
+                Shaders::SetUniform(state.blinnPhongShader, "u_matrixView", state.viewMatrix);
+                Shaders::SetUniform(state.blinnPhongShader, "u_matrixProjection", state.projectionMatrix);
             }
 
             void EndScene2D()
@@ -316,7 +353,7 @@ namespace Charm
 
                 const glm::vec3 position = glm::vec3(rectangle.x, rectangle.y, 0.f);
                 const glm::vec2 size = glm::vec2(rectangle.width, rectangle.height);
-                const glm::mat4 transform = Utils::GetTransfomMatrix2D(position, size, rotation, origin);
+                const glm::mat4 transform = Utils::GetTransformMatrix2D(position, size, rotation, origin);
                 const u32 textureIndex = 0;
 
                 Rectangle source;
@@ -388,7 +425,7 @@ namespace Charm
                 const glm::vec2 size = glm::vec2(dest.width, dest.height);
                 const glm::vec2 textureSize = glm::vec2(texture.width, texture.height);
                 const u32 textureIndex = CheckBatchForTextureIndex(texture);
-                const glm::mat4 transform = Utils::GetTransfomMatrix2D(position, size, rotation, origin);
+                const glm::mat4 transform = Utils::GetTransformMatrix2D(position, size, rotation, origin);
 
                 AddQuadToBatch(transform, source, textureIndex, textureSize, tint);
             }
@@ -403,7 +440,7 @@ namespace Charm
                 CheckForNewBatch(BatchMode::Circles);
 
                 const glm::vec2 size = glm::vec2(radius);
-                const glm::mat4 transform = Utils::GetTransfomMatrix2D(glm::vec3(center, 0.f), size, 0.f, glm::vec2(0.f));
+                const glm::mat4 transform = Utils::GetTransformMatrix2D(glm::vec3(center, 0.f), size, 0.f, glm::vec2(0.f));
 
                 AddCircleToBatch(transform, color, thickness, fade);
             }
@@ -455,6 +492,46 @@ namespace Charm
                 DrawLineEx(lineVertices[3], lineVertices[0], 6.f, color);
             }
 
+            void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform, s32 entityID)
+            {
+                if (mesh.indices.size() < 1 || material.shader == NULL)
+                    return;
+
+                const glm::mat4 matrixNormal = glm::transpose(glm::inverse(transform));
+                VertexArray::Bind(mesh.vertexArray);
+                IndexBuffer::Bind(mesh.indexBuffer);
+
+                Shaders::Bind(*material.shader);
+                Shaders::SetUniform(*material.shader, "u_entityID", entityID);
+                Shaders::SetUniform(*material.shader, "u_matrixTransform", transform);
+                Shaders::SetUniform(*material.shader, "u_matrixNormal", matrixNormal);
+                Shaders::SetUniform(*material.shader, "u_material.albedo", material.albedo);
+                Shaders::SetUniform(*material.shader, "u_material.albedoTexture", 0);
+
+                const Texture& albedoTexture = material.albedoTexture != NULL ? *material.albedoTexture : Texture_Invalid;
+                Textures::Bind(albedoTexture, 0);
+
+                RenderCommand::DrawIndexed(PrimitiveType::Triangles, mesh.indices.size());
+
+                Shaders::Unbind();
+                IndexBuffer::Unbind();
+                VertexArray::Unbind();
+            }
+
+            void DrawModel(Model& model, const glm::mat4& transform, Shader& shader, s32 entityID)
+            {
+                for (u32 i = 0; i < model.meshes.size(); i++)
+                {
+                    const Mesh& mesh = model.meshes[i];
+                    Material& material = model.materials[mesh.materialIndex];
+
+                    if (shader != Shader_Invalid)
+                        material.shader = &shader;
+
+                    DrawMesh(mesh, material, transform, entityID);
+                }
+            }
+
             void DrawEntity(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID)
             {
                 CheckForNewBatch(BatchMode::Quads);
@@ -485,6 +562,8 @@ namespace Charm
                 VertexArray::Unbind();
             }
 
+            Shader& GetShaderDiffuse() { return state.diffuseShader; }
+            Shader& GetShaderBlinnPhong() { return state.blinnPhongShader; }
             glm::vec3& GetClearColor() { return state.clearColor; }
             const glm::mat4& GetViewMatrix() { return state.viewMatrix; }
             const glm::mat4& GetProjectionMatrix() { return state.projectionMatrix; }

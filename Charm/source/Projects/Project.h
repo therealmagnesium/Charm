@@ -8,6 +8,12 @@ namespace Charm
 {
     namespace Projects
     {
+        enum class ProjectType : u8
+        {
+            TwoDimensional = 0,
+            ThreeDimensional,
+        };
+
         struct GridSettings
         {
             bool isEnabled = true;
@@ -22,6 +28,7 @@ namespace Charm
             std::filesystem::path assetsDirectory;
             std::filesystem::path startScenePath;
             std::filesystem::path scriptModulePath;
+            ProjectType type = ProjectType::TwoDimensional;
             GridSettings grid;
 
             bool operator==(const Project& other) const

@@ -9,10 +9,13 @@
 
 #include "Graphics/Renderer.h"
 
+#include "Projects/Project.h"
+
 #include <box2d/box2d.h>
 
 using namespace Charm::Core;
 using namespace Charm::Graphics;
+using namespace Charm::Projects;
 
 namespace Charm
 {
@@ -91,6 +94,13 @@ namespace Charm
                 CopyComponent<BoxCollider2DComponent>(newScene, scene, enttMap);
                 CopyComponent<NativeScriptComponent>(newScene, scene, enttMap);
 
+                const Project& project = ProjectManager::GetActive();
+                if (project.type == ProjectType::ThreeDimensional)
+                {
+                    CopyComponent<MeshRendererComponent>(newScene, scene, enttMap);
+                    CopyComponent<DirectionalLightComponent>(newScene, scene, enttMap);
+                }
+
                 return newScene;
             }
 
@@ -128,6 +138,13 @@ namespace Charm
                 CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
                 CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
                 CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
+
+                const Project& project = ProjectManager::GetActive();
+                if (project.type == ProjectType::ThreeDimensional)
+                {
+                    CopyComponentIfExists<MeshRendererComponent>(newEntity, entity);
+                    CopyComponentIfExists<DirectionalLightComponent>(newEntity, entity);
+                }
 
                 Entity activeCameraEntity = Scenes::GetActiveCameraEntity2D();
                 if (activeCameraEntity2D != Entity_Null && newEntity.HasComponent<Camera2DComponent>())
@@ -288,6 +305,8 @@ namespace Charm
 
             void UpdateEditor(Scene& scene)
             {
+                const Project& project = ProjectManager::GetActive();
+
                 for (u8 i = 0; i < LEN(scene.sortingLayers); i++)
                     scene.sortingLayers[i].clear();
 
@@ -295,7 +314,11 @@ namespace Charm
                 activeCamera3D = NULL;
                 activeCameraEntity2D = Entity_Null;
                 activeCameraEntity3D = Entity_Null;
-                Cameras::UpdateEditor(scene.editorCamera2D);
+
+                if (project.type == ProjectType::TwoDimensional)
+                    Cameras::UpdateEditor(scene.editorCamera2D);
+                else
+                    Cameras::UpdateEditor(scene.editorCamera3D);
 
                 auto sprites = scene.registry.view<SpriteRendererComponent>();
                 for (auto entityID : sprites)
@@ -345,7 +368,39 @@ namespace Charm
 
             void RenderEditor(Scene& scene, Entity& selectionContext)
             {
-                Renderer::BeginScene2D(scene.editorCamera2D);
+                auto meshes = scene.registry.view<MeshRendererComponent>();
+                for (auto entityID : meshes)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+
+                    const auto& internal = entity.GetComponent<InternalComponent>();
+                    if (!internal.isActive)
+                        continue;
+
+                    const auto& transform = entity.GetComponent<TransformComponent>();
+                    const auto& meshRenderer = entity.GetComponent<MeshRendererComponent>();
+
+                    if (!AssetManager::IsHandleValid(meshRenderer.model))
+                        continue;
+
+                    const glm::mat4 transformMatrix = transform.GetMatrix3D();
+                    Model* model = AssetManager::GetAsset<Model>(meshRenderer.model);
+                    Renderer::DrawModel(*model, transformMatrix, (Shader&)Shader_Invalid, (s32)entityID);
+                }
+
+                auto suns = scene.registry.view<DirectionalLightComponent>();
+                for (auto entityID : suns)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+
+                    const auto& internal = entity.GetComponent<InternalComponent>();
+                    if (!internal.isActive)
+                        continue;
+
+                    const auto& dlc = entity.GetComponent<DirectionalLightComponent>();
+                    Lights::UpdateUniforms(dlc.sun);
+                }
+
                 ApplyCircleSortingLayers(scene);
                 ApplySpriteSortingLayers(scene);
                 DrawEntitiesPerSortingLayer(scene, false);
@@ -379,11 +434,11 @@ namespace Charm
                         }
 
                         if (!internal.parent)
-                            transformMatrix = Utils::GetTransfomMatrix2D(transform.position, size, transform.rotation.z, spriteRenderer.origin);
+                            transformMatrix = Utils::GetTransformMatrix2D(transform.position, size, transform.rotation.z, spriteRenderer.origin);
                         else
                         {
                             auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
-                            transformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, size, transform.rotation.z, spriteRenderer.origin);
+                            transformMatrix = Utils::GetTransformMatrix2D(transform.position + parentTransform.position, size, transform.rotation.z, spriteRenderer.origin);
                         }
 
                         Renderer::DrawRectangleLines(transformMatrix, selectionColor);
@@ -392,13 +447,12 @@ namespace Charm
                     if (selectionContext.HasComponent<CircleRendererComponent>())
                     {
                         const auto& circleRenderer = selectionContext.GetComponent<CircleRendererComponent>();
-                        const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, transform.scale, transform.rotation.z, glm::vec2(0.f));
+                        const glm::mat4 transformMatrix = Utils::GetTransformMatrix2D(transform.position, transform.scale, transform.rotation.z, glm::vec2(0.f));
 
                         float thickness = GetHighlightThickness(circleRenderer.radius);
                         Renderer::DrawCirclePro(transform.position, circleRenderer.radius, thickness, 0.01f, selectionColor);
                     }
                 }
-                Renderer::EndScene2D();
             }
 
             void UpdateRuntime(Scene& scene)
@@ -516,8 +570,10 @@ namespace Charm
                     Entity entity = Entities::Create(entityID, &scene);
                     auto& nsc = entity.GetComponent<NativeScriptComponent>();
 
-                    if (nsc.scriptInstance != NULL)
-                        nsc.scriptInstance->OnUpdate();
+                    if (nsc.scriptInstance == NULL)
+                        continue;
+
+                    nsc.scriptInstance->OnUpdate();
 
                     if (contactBeginEntities.find(entity) != contactBeginEntities.end())
                     {
@@ -622,9 +678,19 @@ namespace Charm
 
             void RenderRuntime(Scene& scene)
             {
-                if (activeCamera2D != NULL)
+                const Project& project = ProjectManager::GetActive();
+                if (activeCamera2D != NULL && project.type == ProjectType::TwoDimensional)
                 {
                     Renderer::BeginScene2D(*activeCamera2D);
+                    ApplyCircleSortingLayers(scene);
+                    ApplySpriteSortingLayers(scene);
+                    DrawEntitiesPerSortingLayer(scene, true);
+                    Renderer::EndScene2D();
+                }
+
+                if (activeCamera3D != NULL && project.type == ProjectType::ThreeDimensional)
+                {
+                    Renderer::BeginScene3D(*activeCamera3D);
                     ApplyCircleSortingLayers(scene);
                     ApplySpriteSortingLayers(scene);
                     DrawEntitiesPerSortingLayer(scene, true);
@@ -645,7 +711,7 @@ namespace Charm
                 scene.editorCamera3D.target = glm::vec3(0.f);
                 scene.editorCamera3D.distance = 12.f;
                 scene.editorCamera3D.yaw = 0.f;
-                scene.editorCamera3D.pitch = 0.f;
+                scene.editorCamera3D.pitch = 25.f;
                 scene.editorCamera3D.fov = 45.f;
             }
 
@@ -720,8 +786,8 @@ namespace Charm
                         if (entity.HasComponent<CircleRendererComponent>())
                         {
                             const auto& circleRenderer = entity.GetComponent<CircleRendererComponent>();
-                            const glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, glm::vec2(circleRenderer.radius),
-                                                                                         transform.rotation.z, glm::vec2(0.f));
+                            const glm::mat4 transformMatrix = Utils::GetTransformMatrix2D(transform.position, glm::vec2(circleRenderer.radius),
+                                                                                          transform.rotation.z, glm::vec2(0.f));
                             Renderer::DrawEntity(transformMatrix, circleRenderer, (s32)entity.handle);
                         }
 
@@ -746,14 +812,14 @@ namespace Charm
                             }
 
                             spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position, size);
-                            glm::mat4 transformMatrix = Utils::GetTransfomMatrix2D(transform.position, size,
-                                                                                   transform.rotation.z, spriteRenderer.origin);
+                            glm::mat4 transformMatrix = Utils::GetTransformMatrix2D(transform.position, size,
+                                                                                    transform.rotation.z, spriteRenderer.origin);
                             if (internal.parent.IsHandleValid())
                             {
                                 const auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
                                 spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position + parentTransform.position, size);
-                                const glm::mat4 newTransformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, size,
-                                                                                                transform.rotation.z, spriteRenderer.origin);
+                                const glm::mat4 newTransformMatrix = Utils::GetTransformMatrix2D(transform.position + parentTransform.position, size,
+                                                                                                 transform.rotation.z, spriteRenderer.origin);
 
                                 if (entity.HasComponent<Rigidbody2DComponent>() && isRuntime)
                                 {
@@ -775,14 +841,14 @@ namespace Charm
                                 origin.x = bc2D.offset.x + bc2D.size.x;
                                 origin.y = bc2D.offset.y + bc2D.size.y;
 
-                                glm::mat4 colliderTransformMatrix = Utils::GetTransfomMatrix2D(transform.position, bc2D.size * 2.f,
-                                                                                               transform.rotation.z, origin);
+                                glm::mat4 colliderTransformMatrix = Utils::GetTransformMatrix2D(transform.position, bc2D.size * 2.f,
+                                                                                                transform.rotation.z, origin);
 
                                 if (internal.parent.IsHandleValid())
                                 {
                                     const auto& parentTransform = internal.parent.GetComponent<TransformComponent>();
-                                    const glm::mat4 newTransformMatrix = Utils::GetTransfomMatrix2D(transform.position + parentTransform.position, bc2D.size * 2.f,
-                                                                                                    transform.rotation.z, origin);
+                                    const glm::mat4 newTransformMatrix = Utils::GetTransformMatrix2D(transform.position + parentTransform.position, bc2D.size * 2.f,
+                                                                                                     transform.rotation.z, origin);
 
                                     if (entity.HasComponent<Rigidbody2DComponent>() && isRuntime)
                                     {

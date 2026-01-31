@@ -20,6 +20,7 @@
 using namespace Charm::Core;
 using namespace Charm::Graphics;
 using namespace Charm::ECS;
+using namespace Charm::Projects;
 
 namespace Charm
 {
@@ -37,6 +38,9 @@ namespace Charm
             std::filesystem::path homePath = std::getenv(environmentVariable);
             return homePath;
         }
+
+        std::string ProjectTypeToString(Projects::ProjectType type) { return type == ProjectType::TwoDimensional ? "2D" : "3D"; }
+        Projects::ProjectType StringToProjectType(const std::string& str) { return str == "2D" ? ProjectType::TwoDimensional : ProjectType::ThreeDimensional; }
 
         u32 GetDigitCount(s32 number) { return number != 0 ? (u32)floor(log10(abs((number)) + 1)) : 1; }
         const char* BoolToCString(bool value) { return (value) ? "true" : "false"; }
@@ -123,6 +127,8 @@ namespace Charm
             const char* types[(u32)AssetType::_TotalCount] = {"Invalid",
                                                               "Animation",
                                                               "Animation Controller",
+                                                              "Material",
+                                                              "Mesh",
                                                               "Shader",
                                                               "Texture",
                                                               "Tile Palette"};
@@ -135,6 +141,8 @@ namespace Charm
             list["Invalid"] = AssetType::Invalid;
             list["Animation"] = AssetType::Animation;
             list["Animation Controller"] = AssetType::AnimationController;
+            list["Material"] = AssetType::Material;
+            list["Mesh"] = AssetType::Model;
             list["Shader"] = AssetType::Shader;
             list["Texture"] = AssetType::Texture;
             list["Tile Palette"] = AssetType::TilePalette;
@@ -148,6 +156,11 @@ namespace Charm
             list[".png"] = AssetType::Texture;
             list[".jpg"] = AssetType::Texture;
             list[".jpeg"] = AssetType::Texture;
+            list[".chmat"] = AssetType::Material;
+            list[".glb"] = AssetType::Model;
+            list[".gltf"] = AssetType::Model;
+            list[".fbx"] = AssetType::Model;
+            list[".obj"] = AssetType::Model;
             list[".glsl"] = AssetType::Shader;
             list[".anim"] = AssetType::Animation;
             list[".ac"] = AssetType::AnimationController;
@@ -262,7 +275,7 @@ namespace Charm
             return position;
         }
 
-        glm::mat4 GetTransfomMatrix2D(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec2& origin)
+        glm::mat4 GetTransformMatrix2D(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec2& origin)
         {
             glm::mat4 transform = glm::mat4(1.f);
             transform = glm::translate(transform, position);
@@ -270,6 +283,17 @@ namespace Charm
             transform = glm::translate(transform, glm::vec3(-origin, 0.f));
             transform = glm::scale(transform, glm::vec3(size, 1.f));
 
+            return transform;
+        }
+
+        glm::mat4 GetTransformMatrix3D(const glm::vec3& position, const glm::vec3& rotation, const glm::vec3& scale)
+        {
+            glm::mat4 transform = glm::mat4(1.f);
+            transform = glm::translate(transform, position);
+            transform = glm::rotate(transform, glm::radians(rotation.z), glm::vec3(0.f, 0.f, 1.f));
+            transform = glm::rotate(transform, glm::radians(rotation.y), glm::vec3(0.f, 1.f, 0.f));
+            transform = glm::rotate(transform, glm::radians(rotation.x), glm::vec3(1.f, 0.f, 0.f));
+            transform = glm::scale(transform, scale);
             return transform;
         }
 

@@ -64,7 +64,7 @@ namespace Charm
                 };
 
                 const auto& MouseRotate = [&](const glm::vec2& delta) {
-                    const float rotationSpeed = 5.f;
+                    const float rotationSpeed = glm::degrees(10.f);
                     float yawSign = GetUpVector(camera).y < 0 ? -1.0f : 1.0f;
                     camera.yaw -= yawSign * delta.x * rotationSpeed;
                     camera.pitch -= delta.y * rotationSpeed;
@@ -168,7 +168,7 @@ namespace Charm
             glm::vec3 GetUpVector(const Camera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(0.f, 1.f, 0.f)); }
             glm::vec3 GetForwardVector(const Camera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(0.f, 0.f, -1.f)); }
             glm::vec3 CalculatePosition(const Camera3D& camera) { return camera.target - GetForwardVector(camera) * camera.distance; }
-            glm::quat GetOrientation(const Camera3D& camera) { return glm::quat(glm::vec3(-camera.pitch, -camera.yaw, 0.f)); }
+            glm::quat GetOrientation(const Camera3D& camera) { return glm::quat(glm::vec3(glm::radians(-camera.pitch), glm::radians(-camera.yaw), 0.f)); }
         }
     }
 }

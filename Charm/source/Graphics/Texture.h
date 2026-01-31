@@ -54,6 +54,8 @@ namespace Charm
             inline Core::AssetType GetType() const override { return Core::AssetType::Texture; }
         };
 
+        inline const Texture Texture_Invalid;
+
         namespace Textures
         {
             Texture Load(const char* path, TextureFilter minFilter = TextureFilter::LinearMipmapLinear, TextureFilter magFilter = TextureFilter::Linear);

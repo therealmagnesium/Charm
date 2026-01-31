@@ -8,28 +8,30 @@ pic("on")
 files({ "source/**.h", "source/**.cpp" })
 
 includedirs({
-	"source",
-	--IncludeDir.SDL3,
-	IncludeDir.box2d,
-	IncludeDir.entt,
-	IncludeDir.glad,
-	IncludeDir.glm,
-	IncludeDir.imgui,
-	IncludeDir.ImGuizmo,
-	IncludeDir.nfd,
-	IncludeDir.stb_image,
-	IncludeDir.yaml_cpp,
+    "source",
+    --IncludeDir.SDL3,
+    --IncludeDir.assimp,
+    IncludeDir.box2d,
+    IncludeDir.entt,
+    IncludeDir.glad,
+    IncludeDir.glm,
+    IncludeDir.imgui,
+    IncludeDir.ImGuizmo,
+    IncludeDir.nfd,
+    IncludeDir.stb_image,
+    IncludeDir.yaml_cpp,
 })
 
 links({
-	"SDL3",
-	"box2d",
-	"glad",
-	"imgui",
-	"ImGuizmo",
-	"native-file-dialog",
-	"stb_image",
-	"yaml-cpp",
+    "SDL3",
+    "assimp",
+    "box2d",
+    "glad",
+    "imgui",
+    "ImGuizmo",
+    "native-file-dialog",
+    "stb_image",
+    "yaml-cpp",
 })
 
 targetdir("../bin/" .. outputdir .. "/%{prj.name}")

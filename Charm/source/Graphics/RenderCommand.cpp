@@ -15,7 +15,7 @@ namespace Charm
             {
                 const glm::vec3& clearColor = Renderer::GetClearColor();
                 glClearColor(V3_OPEN(clearColor), 1.f);
-                glClear(GL_COLOR_BUFFER_BIT);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
             void SetViewport(u32 x, u32 y, u32 width, u32 height) { glViewport(x, y, width, height); }
@@ -24,6 +24,8 @@ namespace Charm
             void HideCursor() { SDL_HideCursor(); }
             void EnableDepthWriting() { glDepthMask(true); }
             void DisableDepthWriting() { glDepthMask(false); }
+            void EnableDepthTest() { glEnable(GL_DEPTH_TEST); }
+            void DisableDepthTest() { glDisable(GL_DEPTH_TEST); }
             void DrawArrays(PrimitiveType type, u32 vertexCount) { glDrawArrays(type, 0, vertexCount); }
             void DrawIndexed(PrimitiveType type, u64 indexCount) { glDrawElements(type, indexCount, GL_UNSIGNED_INT, NULL); }
         }

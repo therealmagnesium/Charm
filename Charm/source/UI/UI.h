@@ -23,7 +23,7 @@ namespace Charm
         void Display();
 
         bool DrawBoolControl(const char* label, bool* b, float columnWidth = 100.f);
-        void DrawFloatControl(const char* label, float* v, float min, float max, float columnWidth = 100.f);
+        void DrawFloatControl(const char* label, float* v, float min, float max, float speed = 0.01f, float columnWidth = 100.f);
         void DrawVec2Control(const char* label, glm::vec2& v, float speed, float resetValue, float columnWidth = 100.f);
         void DrawVec3Control(const char* label, glm::vec3& v, float speed, float resetValue, float columnWidth = 100.f);
         void DrawColorControl(const char* label, glm::vec3& v, float columnWidth = 100.f);

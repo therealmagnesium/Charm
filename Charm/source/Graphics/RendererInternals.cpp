@@ -48,7 +48,8 @@ namespace Charm
 
             void Destroy(u32& vbo) { glDeleteBuffers(1, &vbo); }
             void Bind(u32 vbo) { glBindBuffer(GL_ARRAY_BUFFER, vbo); }
-            void SetData(u64 size, const float* data, u32 usage) { glBufferData(GL_ARRAY_BUFFER, size, data, usage); }
+            void Unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+            void SetData(u64 size, const void* data, u32 usage) { glBufferData(GL_ARRAY_BUFFER, size, data, usage); }
         }
 
         namespace IndexBuffer
@@ -63,6 +64,7 @@ namespace Charm
 
             void Destroy(u32& ebo) { glDeleteBuffers(1, &ebo); }
             void Bind(u32 ebo) { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); }
+            void Unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
             void SetData(u64 size, const u32* data, u32 usage) { glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, usage); }
         }
     }

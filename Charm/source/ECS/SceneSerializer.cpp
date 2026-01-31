@@ -350,7 +350,7 @@ namespace Charm
 
                 if (entity.HasComponent<SpriteRendererComponent>())
                 {
-                    auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
+                    const auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
                     out << YAML::Key << "Sprite Renderer Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Texture Asset Handle" << YAML::Value << spriteRenderer.sprite;
                     out << YAML::Key << "Sorting Layer" << YAML::Value << spriteRenderer.sortingLayer;
@@ -364,7 +364,7 @@ namespace Charm
 
                 if (entity.HasComponent<CircleRendererComponent>())
                 {
-                    auto& circleRenderer = entity.GetComponent<CircleRendererComponent>();
+                    const auto& circleRenderer = entity.GetComponent<CircleRendererComponent>();
                     out << YAML::Key << "Circle Renderer Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Radius" << YAML::Value << circleRenderer.radius;
                     out << YAML::Key << "Thickness" << YAML::Value << circleRenderer.thickness;
@@ -375,7 +375,7 @@ namespace Charm
 
                 if (entity.HasComponent<Animator2DComponent>())
                 {
-                    auto& animator2D = entity.GetComponent<Animator2DComponent>();
+                    const auto& animator2D = entity.GetComponent<Animator2DComponent>();
                     out << YAML::Key << "Animator2D Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Controller" << YAML::Value << animator2D.controller;
                     out << YAML::Key << "Active Slot" << YAML::Value << animator2D.activeSlot;
@@ -385,7 +385,7 @@ namespace Charm
 
                 if (entity.HasComponent<Camera2DComponent>())
                 {
-                    auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
+                    const auto& cameraComponent = entity.GetComponent<Camera2DComponent>();
                     out << YAML::Key << "Camera2D Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Is Primary?" << YAML::Value << cameraComponent.isPrimary;
                     out << YAML::Key << "Clear Color" << YAML::Value << cameraComponent.clearColor;
@@ -398,7 +398,7 @@ namespace Charm
 
                 if (entity.HasComponent<Rigidbody2DComponent>())
                 {
-                    auto& rb2D = entity.GetComponent<Rigidbody2DComponent>();
+                    const auto& rb2D = entity.GetComponent<Rigidbody2DComponent>();
                     out << YAML::Key << "Rigidbody2D Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Type" << YAML::Value << Utils::BodyTypeToString(rb2D.type);
                     out << YAML::Key << "Fixed Rotation?" << YAML::Value << rb2D.hasFixedRotation;
@@ -412,7 +412,7 @@ namespace Charm
 
                 if (entity.HasComponent<BoxCollider2DComponent>())
                 {
-                    auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+                    const auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
                     out << YAML::Key << "Box Collider2D Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Offset" << YAML::Value << bc2d.offset;
                     out << YAML::Key << "Size" << YAML::Value << bc2d.size;
@@ -425,10 +425,33 @@ namespace Charm
 
                 if (entity.HasComponent<NativeScriptComponent>())
                 {
-                    auto& nsc = entity.GetComponent<NativeScriptComponent>();
+                    const auto& nsc = entity.GetComponent<NativeScriptComponent>();
                     out << YAML::Key << "Native Script Component" << YAML::Value << YAML::BeginMap;
                     out << YAML::Key << "Script Name" << YAML::Value << nsc.scriptName;
                     out << YAML::EndMap;
+                }
+
+                const Project& project = ProjectManager::GetActive();
+                if (project.type == ProjectType::ThreeDimensional)
+                {
+                    if (entity.HasComponent<MeshRendererComponent>())
+                    {
+                        const auto& meshRenderer = entity.GetComponent<MeshRendererComponent>();
+                        out << YAML::Key << "Mesh Renderer Component" << YAML::Value << YAML::BeginMap;
+                        out << YAML::Key << "Model" << YAML::Value << meshRenderer.model;
+                        out << YAML::Key << "Submesh Index" << YAML::Value << meshRenderer.submeshIndex;
+                        out << YAML::EndMap;
+                    }
+
+                    if (entity.HasComponent<DirectionalLightComponent>())
+                    {
+                        const auto& dlc = entity.GetComponent<DirectionalLightComponent>();
+                        out << YAML::Key << "Directional Light Component" << YAML::Value << YAML::BeginMap;
+                        out << YAML::Key << "Direction" << YAML::Value << dlc.sun.direction;
+                        out << YAML::Key << "Color" << YAML::Value << dlc.sun.color;
+                        out << YAML::Key << "Intensity" << YAML::Value << dlc.sun.intensity;
+                        out << YAML::EndMap;
+                    }
                 }
 
                 out << YAML::EndMap;
@@ -520,6 +543,23 @@ namespace Charm
                 {
                     auto& nsc = entity.AddComponent<NativeScriptComponent>();
                     nsc.scriptName = nsNode["Script Name"].as<std::string>();
+                }
+
+                const YAML::Node& meshRendererNode = node["Mesh Renderer Component"];
+                if (meshRendererNode)
+                {
+                    auto& meshRenderer = entity.AddComponent<MeshRendererComponent>();
+                    meshRenderer.model = meshRendererNode["Model"].as<AssetHandle>();
+                    meshRenderer.submeshIndex = meshRendererNode["Submesh Index"].as<s32>();
+                }
+
+                const YAML::Node& directionalLightNode = node["Directional Light Component"];
+                if (directionalLightNode)
+                {
+                    auto& dlc = entity.AddComponent<DirectionalLightComponent>();
+                    dlc.sun.direction = directionalLightNode["Direction"].as<glm::vec3>();
+                    dlc.sun.color = directionalLightNode["Color"].as<glm::vec3>();
+                    dlc.sun.intensity = directionalLightNode["Intensity"].as<float>();
                 }
             }
         }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics/Camera.h"
-#include "Graphics/Framebuffer.h"
+#include "Graphics/Mesh.h"
+#include "Graphics/Model.h"
 #include "Graphics/Shader.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
@@ -62,6 +63,8 @@ namespace Charm
             Shader quadShader;
             Shader circleShader;
             Shader lineShader;
+            Shader diffuseShader;
+            Shader blinnPhongShader;
             RendererGrid grid;
         };
 
@@ -72,6 +75,7 @@ namespace Charm
 
             void BeginScene2D(const Camera2D& camera);
             void BeginScene2D(const Camera3D& camera);
+            void BeginScene3D(const Camera3D& camera);
             void EndScene2D();
 
             void BeginBatchQuad();
@@ -84,6 +88,18 @@ namespace Charm
             void EndBatchLine();
 
             void Flush(BatchMode mode);
+
+            Shader& GetShaderDiffuse();
+            Shader& GetShaderBlinnPhong();
+            glm::vec3& GetClearColor();
+            const glm::mat4& GetViewMatrix();
+            const glm::mat4& GetProjectionMatrix();
+            u32 GetQuadCount();
+            u32 GetCircleCount();
+            u32 GetLineCount();
+            u32 GetDrawCount();
+
+            void SetClearColor(float r, float g, float b);
 
             void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
             void DrawRectangleRec(const Rectangle& rectangle, const glm::vec4& color);
@@ -102,20 +118,13 @@ namespace Charm
             void DrawRectangleLines(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color);
             void DrawRectangleLines(const glm::mat4& transform, const glm::vec3& color);
 
+            void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform, s32 entityID = -1);
+            void DrawModel(Model& model, const glm::mat4& transform, Shader& shader = (Shader&)Shader_Invalid, s32 entityID = -1);
+
             void DrawEntity(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);
             void DrawEntity(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
 
             void DrawGrid(const Camera2D& camera, const glm::vec2& resolution, u32 tileScale = 1);
-
-            glm::vec3& GetClearColor();
-            const glm::mat4& GetViewMatrix();
-            const glm::mat4& GetProjectionMatrix();
-            u32 GetQuadCount();
-            u32 GetCircleCount();
-            u32 GetLineCount();
-            u32 GetDrawCount();
-
-            void SetClearColor(float r, float g, float b);
         }
     }
 }

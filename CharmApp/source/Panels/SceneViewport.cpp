@@ -4,6 +4,7 @@
 #include "../CharmApp.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <ImGuizmo.h>
 #include <filesystem>
 #include <glm/gtc/type_ptr.hpp>
@@ -24,6 +25,7 @@ namespace CharmApp
         void Display(Framebuffer& framebuffer)
         {
             ImGui::Begin("Scene Viewport", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+            ImGui::SetKeyOwner(ImGuiMod_Alt, ImGui::GetID("Scene Viewport"));
 
             state.isHovered = ImGui::IsWindowHovered();
             state.isFocused = ImGui::IsWindowFocused();
@@ -61,7 +63,9 @@ namespace CharmApp
             Entity& selectedEntity = SceneHeirarchyPanel::GetSelectedEntity();
             if (selectedEntity.IsHandleValid() && activeSceneState == SceneState::Editor)
             {
-                ImGuizmo::SetOrthographic(true);
+                const Project& project = ProjectManager::GetActive();
+                const bool isOrthographic = project.type == ProjectType::TwoDimensional;
+                ImGuizmo::SetOrthographic(isOrthographic);
                 ImGuizmo::SetDrawlist();
                 ImGuizmo::SetRect(state.position.x, state.position.y, state.size.x, state.size.y);
 
@@ -69,8 +73,14 @@ namespace CharmApp
                 const glm::mat4 projectionMatrix = Renderer::GetProjectionMatrix();
 
                 auto& entityTransformComponent = selectedEntity.GetComponent<TransformComponent>();
-                glm::mat4 entityTransform = Utils::GetTransfomMatrix2D(entityTransformComponent.position, entityTransformComponent.scale,
-                                                                       entityTransformComponent.rotation.z, glm::vec2(0.f));
+
+                glm::mat4 entityTransform = glm::mat4(1.f);
+
+                if (isOrthographic)
+                    entityTransform = Utils::GetTransformMatrix2D(entityTransformComponent.position, entityTransformComponent.scale,
+                                                                  entityTransformComponent.rotation.z, glm::vec2(0.f));
+                else
+                    entityTransform = entityTransformComponent.GetMatrix3D();
 
                 const u32 manipulationType = ToolbarPanel::GetManipulationType();
                 ImGuizmo::Manipulate(glm::value_ptr(viewMatrix), glm::value_ptr(projectionMatrix), (ImGuizmo::OPERATION)manipulationType, ImGuizmo::LOCAL, glm::value_ptr(entityTransform));
@@ -79,7 +89,7 @@ namespace CharmApp
                 {
                     glm::vec3 position, rotation, scale;
                     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(entityTransform), glm::value_ptr(position), glm::value_ptr(rotation), glm::value_ptr(scale));
-                    glm::vec3 deltaRotation = rotation - entityTransformComponent.rotation;
+                    const glm::vec3 deltaRotation = rotation - entityTransformComponent.rotation;
 
                     entityTransformComponent.position = position;
                     entityTransformComponent.rotation += deltaRotation;

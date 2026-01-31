@@ -1,6 +1,7 @@
 #include "Projects/ProjectSerializer.h"
 #include "Core/Application.h"
 #include "Core/Log.h"
+#include "Core/Utils.h"
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
@@ -27,6 +28,7 @@ namespace Charm
 
                 out << YAML::Key << "Project" << YAML::Value << YAML::BeginMap; // Project
                 out << YAML::Key << "Name" << YAML::Value << context->name;
+                out << YAML::Key << "Type" << YAML::Value << Utils::ProjectTypeToString(context->type);
                 out << YAML::Key << "Start Scene" << YAML::Value << context->startScenePath.string();
                 out << YAML::Key << "Assets Directory" << YAML::Value << context->assetsDirectory.string();
                 out << YAML::Key << "Script Module" << YAML::Value << context->scriptModulePath.string();
@@ -77,6 +79,7 @@ namespace Charm
                 ASSERT_ERROR(projectNode && settingsNode, "ProjectSerialzier::Deserialize - Invalid project file \"%s\"!", path.c_str());
 
                 context->name = projectNode["Name"].as<std::string>();
+                context->type = Utils::StringToProjectType(projectNode["Type"].as<std::string>());
                 context->startScenePath = projectNode["Start Scene"].as<std::string>();
                 context->assetsDirectory = projectNode["Assets Directory"].as<std::string>();
                 context->scriptModulePath = projectNode["Script Module"].as<std::string>();

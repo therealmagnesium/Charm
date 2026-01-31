@@ -30,7 +30,7 @@ namespace Charm
 
         namespace ScriptManager
         {
-            void LoadModule(const char* path);
+            void LoadModule(const std::filesystem::path& path);
             void UnloadModule();
             void ReloadModule();
             void ClearBindings();

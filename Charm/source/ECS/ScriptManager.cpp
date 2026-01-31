@@ -10,10 +10,10 @@ namespace Charm
 
         namespace ScriptManager
         {
-            void LoadModule(const char* path)
+            void LoadModule(const std::filesystem::path& path)
             {
                 state.modulePath = path;
-                state.moduleHandle = dlopen(path, RTLD_NOW);
+                state.moduleHandle = dlopen(path.c_str(), RTLD_NOW);
                 ASSERT_ERROR(state.moduleHandle != NULL, "ScriptManager::LoadModule - Failed to load module \"%s\"!", dlerror());
 
                 state.RegisterScripts = (ScriptRegisterFunc)dlsym(state.moduleHandle, "RegisterScripts");
@@ -45,7 +45,7 @@ namespace Charm
                 {
                     std::string pathString = state.modulePath.string();
                     UnloadModule();
-                    LoadModule(pathString.c_str());
+                    LoadModule(pathString);
                 }
             }
 

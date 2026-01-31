@@ -108,6 +108,9 @@ namespace CharmApp
                 const bool shouldCreateAnimatedSprite = ImGui::MenuItem("Animated Sprite");
                 const bool shouldCreateCamera = ImGui::MenuItem("Camera");
 
+                ImGui::SeparatorText("3D");
+                const bool shouldCreateMesh = ImGui::MenuItem("Mesh");
+
                 if (shouldCreateSprite)
                 {
                     Entity entity = Scenes::CreateEntity(*state.context, "Sprite");
@@ -127,6 +130,13 @@ namespace CharmApp
                 {
                     Entity entity = Scenes::CreateEntity(*state.context, "Camera");
                     entity.AddComponent<Camera2DComponent>();
+                    state.selectionContext = entity;
+                }
+
+                if (shouldCreateMesh)
+                {
+                    Entity entity = Scenes::CreateEntity(*state.context, "Mesh");
+                    entity.AddComponent<MeshRendererComponent>();
                     state.selectionContext = entity;
                 }
 
@@ -151,10 +161,12 @@ namespace CharmApp
             }
             else
             {
+                const float indentWidth = 25.f;
                 ImGui::PushStyleVarY(ImGuiStyleVar_ItemSpacing, 4.f);
-                ImGui::PushStyleVarX(ImGuiStyleVar_SelectableTextAlign, 0.075f);
+                ImGui::Indent(indentWidth);
                 ImGui::Selectable(internal.tag.c_str(), state.selectionContext == entity);
-                ImGui::PopStyleVar(2);
+                ImGui::Unindent(indentWidth);
+                ImGui::PopStyleVar();
             }
 
             if (ImGui::IsItemClicked())

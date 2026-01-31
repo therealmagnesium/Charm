@@ -144,11 +144,18 @@ namespace CharmApp
                 UI::DrawVec3Control("Scale", component.scale, 0.1f, 1.f, columnWidth);
             });
 
+            DrawComponent<DirectionalLightComponent>("Directional Light", entity, [](DirectionalLightComponent& component) {
+                const float columnWidth = 100.f;
+                UI::DrawVec3Control("Direction", component.sun.direction, 0.01f, 1.f, columnWidth);
+                UI::DrawFloatControl("Intensity", &component.sun.intensity, 0.f, 100.f, 0.01f, columnWidth);
+                UI::DrawColorControl("Color", component.sun.color, columnWidth);
+            });
+
             DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
                 const float columnWidth = 110.f;
-                UI::DrawFloatControl("Radius", &component.radius, 0.f, 100.f, columnWidth);
-                UI::DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, columnWidth);
-                UI::DrawFloatControl("Fade", &component.fade, 0.f, 1.f, columnWidth);
+                UI::DrawFloatControl("Radius", &component.radius, 0.f, 100.f, 0.01f, columnWidth);
+                UI::DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, 0.01f, columnWidth);
+                UI::DrawFloatControl("Fade", &component.fade, 0.f, 1.f, 0.01f, columnWidth);
                 UI::DrawColorControl("Color", component.color, columnWidth);
                 UI::DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
             });
@@ -238,6 +245,35 @@ namespace CharmApp
                 UI::DrawColorControl("Tint", component.tint, columnWidth);
             });
 
+            DrawComponent<MeshRendererComponent>("Mesh Renderer", entity, [](MeshRendererComponent& component) {
+                const float columnWidth = 60.f;
+                ImGui::PushID("Mesh");
+                ImGui::Columns(2);
+                ImGui::SetColumnWidth(0, columnWidth);
+                ImGui::Text("Mesh");
+                ImGui::NextColumn();
+                std::string placeholder = (AssetManager::GetAsset<Model>(component.model) != NULL) ? AssetManager::GetAssetPath(component.model).stem().string() : "Select mesh";
+                ImGui::SetNextItemWidth(-1.f);
+                if (ImGui::BeginCombo("##Mesh", placeholder.c_str()))
+                {
+                    if (ImGui::Selectable("None", component.model == AssetHandle_Invalid))
+                        component.model = AssetHandle_Invalid;
+
+                    const std::vector<AssetHandle> models = AssetManager::GetAllHandlesOfType(AssetType::Model);
+                    for (AssetHandle handle : models)
+                    {
+                        Model* model = AssetManager::GetAsset<Model>(handle);
+                        const bool isSelected = (component.model == handle);
+                        const std::string stemName = AssetManager::GetAssetPath(handle).stem().string();
+                        if (ImGui::Selectable(stemName.c_str(), isSelected))
+                            component.model = handle;
+                    }
+
+                    ImGui::EndCombo();
+                }
+                ImGui::PopID();
+            });
+
             DrawComponent<Animator2DComponent>("Animator 2D", entity, [](Animator2DComponent& component) {
                 const float columnWidth = 120.f;
                 AnimationController* controller = AssetManager::GetAsset<AnimationController>(component.controller);
@@ -305,7 +341,7 @@ namespace CharmApp
                 Entity prevActiveCameraEntity = Scenes::GetActiveCameraEntity2D();
 
                 UI::DrawVec2Control("Offset", component.camera.offset, 0.1f, 0.f, columnWidth);
-                UI::DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, columnWidth);
+                UI::DrawFloatControl("Zoom", &component.camera.zoom, 0.1f, 100.f, 0.01f, columnWidth);
 
                 if (UI::DrawBoolControl("Is Primary?", &component.isPrimary, columnWidth))
                 {
@@ -357,9 +393,9 @@ namespace CharmApp
                 ImGui::Columns(1);
                 ImGui::PopID();
 
-                UI::DrawFloatControl("Gravity Scale", &component.gravityScale, 0.f, 0.f, columnWidth);
-                UI::DrawFloatControl("Linear Damping", &component.linearDamping, 0.f, 0.f, columnWidth);
-                UI::DrawFloatControl("Angular Damping", &component.angularDamping, 0.f, 0.f, columnWidth);
+                UI::DrawFloatControl("Gravity Scale", &component.gravityScale, 0.f, 0.f, 0.01f, columnWidth);
+                UI::DrawFloatControl("Linear Damping", &component.linearDamping, 0.f, 0.f, 0.01f, columnWidth);
+                UI::DrawFloatControl("Angular Damping", &component.angularDamping, 0.f, 0.f, 0.01f, columnWidth);
             });
 
             DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {
@@ -367,9 +403,9 @@ namespace CharmApp
                 UI::DrawVec2Control("Offset", component.offset, 0.1f, 0.f, columnWidth);
                 UI::DrawVec2Control("Size", component.size, 0.1f, 0.f, columnWidth);
                 UI::DrawBoolControl("Is Trigger?", &component.isTrigger, columnWidth);
-                UI::DrawFloatControl("Density", &component.density, 0.f, 0.f, columnWidth);
-                UI::DrawFloatControl("Friction", &component.friction, 0.f, 1.f, columnWidth);
-                UI::DrawFloatControl("Restitution", &component.restitution, 0.f, 1.f, columnWidth);
+                UI::DrawFloatControl("Density", &component.density, 0.f, 0.f, 0.01f, columnWidth);
+                UI::DrawFloatControl("Friction", &component.friction, 0.f, 1.f, 0.01f, columnWidth);
+                UI::DrawFloatControl("Restitution", &component.restitution, 0.f, 1.f, 0.01f, columnWidth);
             });
 
             DrawComponent<NativeScriptComponent>("Native Script", entity, [](NativeScriptComponent& component) {
@@ -410,51 +446,81 @@ namespace CharmApp
 
             if (ImGui::BeginPopup("Add Component"))
             {
-                if (ImGui::MenuItem("Transform"))
+                ImGui::SeparatorText("General");
+                const bool shouldAddTransform = ImGui::MenuItem("Transform");
+                const bool shouldAddNativeScript = ImGui::MenuItem("Native Script");
+
+                ImGui::SeparatorText("2D");
+                const bool shouldAddCircleRenderer = ImGui::MenuItem("Circle Renderer");
+                const bool shouldAddSpriteRenderer = ImGui::MenuItem("Sprite Renderer");
+                const bool shouldAddAnimator2D = ImGui::MenuItem("Animator 2D");
+                const bool shouldAddCamera2D = ImGui::MenuItem("Camera 2D");
+                const bool shouldAddRigidbody2D = ImGui::MenuItem("Rigidbody 2D");
+                const bool shouldAddBoxCollider2D = ImGui::MenuItem("Box Collider 2D");
+
+                ImGui::SeparatorText("3D");
+                const bool shouldAddMeshRenderer = ImGui::MenuItem("Mesh Renderer");
+
+                ImGui::SeparatorText("Lights");
+                const bool shouldAddDirectionalLight = ImGui::MenuItem("Directional Light");
+
+                if (shouldAddTransform)
                 {
                     entity.AddComponent<TransformComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
-                if (ImGui::MenuItem("Circle Renderer"))
+                if (shouldAddNativeScript)
+                {
+                    entity.AddComponent<NativeScriptComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (shouldAddCircleRenderer)
                 {
                     entity.AddComponent<CircleRendererComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
-                if (ImGui::MenuItem("Sprite Renderer"))
+                if (shouldAddSpriteRenderer)
                 {
                     entity.AddComponent<SpriteRendererComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
-                if (ImGui::MenuItem("Animator 2D"))
+                if (shouldAddAnimator2D)
                 {
                     entity.AddComponent<Animator2DComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
-                if (ImGui::MenuItem("Camera 2D"))
+                if (shouldAddCamera2D)
                 {
                     entity.AddComponent<Camera2DComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
-                if (ImGui::MenuItem("Rigidbody 2D"))
+                if (shouldAddRigidbody2D)
                 {
                     entity.AddComponent<Rigidbody2DComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
-                if (ImGui::MenuItem("Box Collider 2D"))
+                if (shouldAddBoxCollider2D)
                 {
                     entity.AddComponent<BoxCollider2DComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 
-                if (ImGui::MenuItem("Native Script"))
+                if (shouldAddMeshRenderer)
                 {
-                    entity.AddComponent<NativeScriptComponent>();
+                    entity.AddComponent<MeshRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (shouldAddDirectionalLight)
+                {
+                    entity.AddComponent<DirectionalLightComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 

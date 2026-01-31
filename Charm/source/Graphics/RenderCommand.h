@@ -25,6 +25,8 @@ namespace Charm
             void HideCursor();
             void EnableDepthWriting();
             void DisableDepthWriting();
+            void EnableDepthTest();
+            void DisableDepthTest();
             void DrawArrays(PrimitiveType type, u32 vertexCount);
             void DrawIndexed(PrimitiveType type, u64 indexCount);
         }

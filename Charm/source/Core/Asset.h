@@ -16,6 +16,8 @@ namespace Charm
             Invalid = 0,
             Animation,
             AnimationController,
+            Material,
+            Model,
             Shader,
             Texture,
             TilePalette,
