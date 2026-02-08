@@ -41,14 +41,14 @@ vec4 GetColorAlbedo()
 {
     const vec4 albedoTextureColor = texture(u_material.albedoTexture, v_input.texCoord);
     const bool isAlbedoTextureValid = length(albedoTextureColor) > 1;
-    const vec4 albedo = isAlbedoTextureValid ? u_material.albedo * albedoTextureColor : u_material.albedo;
+    const vec4 albedo =  u_material.albedo * albedoTextureColor;
     return albedo;
 }
 
 void main()
 {
     const vec3 N = normalize(v_input.normal);
-    const vec3 ambient = vec3(0.2f);
+    const vec3 ambient = vec3(0.4f);
     const vec4 albedo = GetColorAlbedo();
 
     const float diffuseFactor = CalculateDiffuse(N);

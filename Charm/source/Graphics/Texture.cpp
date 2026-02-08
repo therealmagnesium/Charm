@@ -1,9 +1,14 @@
 #include "Graphics/Texture.h"
+#include "Core/AssetManager.h"
 #include "Core/Log.h"
 #include "Core/Utils.h"
+#include "Projects/Project.h"
 
 #include <glad/glad.h>
 #include <stb_image.h>
+
+using namespace Charm::Core;
+using namespace Charm::Projects;
 
 namespace Charm
 {
@@ -45,6 +50,11 @@ namespace Charm
                 glGenTextures(1, &texture.id);
                 Invalidate(texture);
                 texture.isValid = true;
+
+                const Project& project = ProjectManager::GetActive();
+                const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(path, project);
+                if (AssetManager::IsAssetRegistered(relativePath))
+                    WARN("What: %s", relativePath.c_str());
 
                 INFO("Texture \"%s\" was loaded successfully with an ID of %d", path, texture.id);
                 return texture;

@@ -271,6 +271,7 @@ namespace CharmApp
 
                     ImGui::EndCombo();
                 }
+                ImGui::Columns(1);
                 ImGui::PopID();
             });
 
@@ -336,7 +337,7 @@ namespace CharmApp
                 }
             });
 
-            DrawComponent<Camera2DComponent>("Camera 2D", entity, [](Camera2DComponent& component) {
+            DrawComponent<Camera2DComponent>("Orthographic Camera", entity, [](Camera2DComponent& component) {
                 const float columnWidth = 105.f;
                 Entity prevActiveCameraEntity = Scenes::GetActiveCameraEntity2D();
 
@@ -348,6 +349,26 @@ namespace CharmApp
                     if (component.isPrimary && prevActiveCameraEntity != Entity_Null)
                     {
                         auto& prevCameraComponent = prevActiveCameraEntity.GetComponent<Camera2DComponent>();
+                        prevCameraComponent.isPrimary = false;
+                    }
+                }
+
+                UI::DrawColorControl("Clear Color", component.clearColor, columnWidth);
+            });
+
+            DrawComponent<Camera3DComponent>("Perspective Camera", entity, [](Camera3DComponent& component) {
+                const float columnWidth = 105.f;
+                Entity prevActiveCameraEntity = Scenes::GetActiveCameraEntity3D();
+
+                UI::DrawFloatControl("FOV", &component.camera.fov, 0.1f, 100.f, 0.01f, columnWidth);
+                UI::DrawFloatControl("Near Clip", &component.camera.nearClip, 0.01f, 10.f, 0.01f, columnWidth);
+                UI::DrawFloatControl("Far Clip", &component.camera.farClip, 1.f, 1000.f, 0.01f, columnWidth);
+
+                if (UI::DrawBoolControl("Is Primary?", &component.isPrimary, columnWidth))
+                {
+                    if (component.isPrimary && prevActiveCameraEntity != Entity_Null)
+                    {
+                        auto& prevCameraComponent = prevActiveCameraEntity.GetComponent<Camera3DComponent>();
                         prevCameraComponent.isPrimary = false;
                     }
                 }
@@ -460,6 +481,7 @@ namespace CharmApp
 
                 ImGui::SeparatorText("3D");
                 const bool shouldAddMeshRenderer = ImGui::MenuItem("Mesh Renderer");
+                const bool shouldAddCamera3D = ImGui::MenuItem("Camera 3D");
 
                 ImGui::SeparatorText("Lights");
                 const bool shouldAddDirectionalLight = ImGui::MenuItem("Directional Light");
@@ -515,6 +537,12 @@ namespace CharmApp
                 if (shouldAddMeshRenderer)
                 {
                     entity.AddComponent<MeshRendererComponent>();
+                    ImGui::CloseCurrentPopup();
+                }
+
+                if (shouldAddCamera3D)
+                {
+                    entity.AddComponent<Camera3DComponent>();
                     ImGui::CloseCurrentPopup();
                 }
 

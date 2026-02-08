@@ -40,7 +40,7 @@ namespace Charm
             template <typename T>
             inline T& GetComponent()
             {
-                return context->registry.get_or_emplace<T>(handle);
+                return context->registry.get<T>(handle);
             }
 
             template <typename T>

@@ -55,7 +55,7 @@ namespace Charm
                     MouseZoom(scrollSpeed);
             }
 
-            void UpdateEditor(Camera3D& camera)
+            void UpdateEditor(EditorCamera3D& camera)
             {
                 const auto& MousePan = [&](const glm::vec2& delta) {
                     const float panSpeed = 2.f * camera.distance;
@@ -140,7 +140,7 @@ namespace Charm
                 return projectionMatrix;
             }
 
-            glm::mat4 GetViewMatrix3D(const Camera3D& camera)
+            glm::mat4 GetViewMatrix3D(const EditorCamera3D& camera)
             {
                 // viewMatrix = glm::lookAt(camera.position, camera.target, camera.up);
 
@@ -153,10 +153,10 @@ namespace Charm
                 return viewMatrix;
             }
 
-            glm::mat4 GetProjectionMatrix3D(const Camera3D& camera)
+            glm::mat4 GetProjectionMatrix3D(const EditorCamera3D& camera)
             {
                 const ApplicationConfig& config = Application::GetConfig();
-                float aspectRatio = (float)config.virtualWidth / (float)config.virtualHeight;
+                const float aspectRatio = (float)config.virtualWidth / (float)config.virtualHeight;
 
                 glm::mat4 projectionMatrix = glm::mat4(1.f);
                 projectionMatrix = glm::perspective(glm::radians(camera.fov), aspectRatio, camera.nearClip, camera.farClip);
@@ -164,11 +164,33 @@ namespace Charm
                 return projectionMatrix;
             }
 
-            glm::vec3 GetRightVector(const Camera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(1.f, 0.f, 0.f)); }
-            glm::vec3 GetUpVector(const Camera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(0.f, 1.f, 0.f)); }
-            glm::vec3 GetForwardVector(const Camera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(0.f, 0.f, -1.f)); }
-            glm::vec3 CalculatePosition(const Camera3D& camera) { return camera.target - GetForwardVector(camera) * camera.distance; }
-            glm::quat GetOrientation(const Camera3D& camera) { return glm::quat(glm::vec3(glm::radians(-camera.pitch), glm::radians(-camera.yaw), 0.f)); }
+            glm::mat4 GetViewMatrix3D(const SceneCamera& camera)
+            {
+                const glm::vec3 up = glm::vec3(0.f, 1.f, 0.f);
+                glm::vec3 forward;
+                forward.x = cos(glm::radians(camera.rotation.x)) * cos(glm::radians(camera.rotation.y));
+                forward.y = sin(glm::radians(camera.rotation.y));
+                forward.z = sin(glm::radians(camera.rotation.x)) * cos(glm::radians(camera.rotation.y));
+                forward = glm::normalize(forward);
+                return glm::lookAt(camera.position, camera.position + forward, up);
+            }
+
+            glm::mat4 GetProjectionMatrix3D(const SceneCamera& camera)
+            {
+                const ApplicationConfig& config = Application::GetConfig();
+                const float aspectRatio = (float)config.virtualWidth / (float)config.virtualHeight;
+
+                glm::mat4 projectionMatrix = glm::mat4(1.f);
+                projectionMatrix = glm::perspective(glm::radians(camera.fov), aspectRatio, camera.nearClip, camera.farClip);
+
+                return projectionMatrix;
+            }
+
+            glm::vec3 GetRightVector(const EditorCamera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(1.f, 0.f, 0.f)); }
+            glm::vec3 GetUpVector(const EditorCamera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(0.f, 1.f, 0.f)); }
+            glm::vec3 GetForwardVector(const EditorCamera3D& camera) { return glm::rotate(GetOrientation(camera), glm::vec3(0.f, 0.f, -1.f)); }
+            glm::vec3 CalculatePosition(const EditorCamera3D& camera) { return camera.target - GetForwardVector(camera) * camera.distance; }
+            glm::quat GetOrientation(const EditorCamera3D& camera) { return glm::quat(glm::vec3(glm::radians(-camera.pitch), glm::radians(-camera.yaw), 0.f)); }
         }
     }
 }

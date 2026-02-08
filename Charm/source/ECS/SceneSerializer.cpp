@@ -187,7 +187,14 @@ namespace Charm
                 out << YAML::EndSeq;
 
                 out << YAML::Key << "Asset Registry" << YAML::Value << YAML::BeginSeq;
-                for (auto& [handle, metadata] : AssetManager::GetRegistry())
+                const AssetRegistry& registry = AssetManager::GetRegistry();
+                std::vector<std::pair<AssetHandle, AssetMetadata>> sortedRegistry;
+
+                const auto SortByAssetType = [](const std::pair<AssetHandle, AssetMetadata>& a, const std::pair<AssetHandle, AssetMetadata>& b) { return a.second.type < b.second.type; };
+                std::copy(registry.begin(), registry.end(), std::back_inserter(sortedRegistry));
+                std::sort(sortedRegistry.begin(), sortedRegistry.end(), SortByAssetType);
+
+                for (auto& [handle, metadata] : sortedRegistry)
                 {
                     out << YAML::BeginMap;
                     out << YAML::Key << "Asset" << YAML::Value << handle;
@@ -452,6 +459,20 @@ namespace Charm
                         out << YAML::Key << "Intensity" << YAML::Value << dlc.sun.intensity;
                         out << YAML::EndMap;
                     }
+
+                    if (entity.HasComponent<Camera3DComponent>())
+                    {
+                        const auto& cc = entity.GetComponent<Camera3DComponent>();
+                        out << YAML::Key << "Camera3D Component" << YAML::Value << YAML::BeginMap;
+                        out << YAML::Key << "Is Primary?" << YAML::Value << cc.isPrimary;
+                        out << YAML::Key << "Clear Color" << YAML::Value << cc.clearColor;
+                        out << YAML::Key << "Position" << YAML::Value << cc.camera.position;
+                        out << YAML::Key << "Rotation" << YAML::Value << cc.camera.rotation;
+                        out << YAML::Key << "FOV" << YAML::Value << cc.camera.fov;
+                        out << YAML::Key << "Near Clip" << YAML::Value << cc.camera.nearClip;
+                        out << YAML::Key << "Far Clip" << YAML::Value << cc.camera.farClip;
+                        out << YAML::EndMap;
+                    }
                 }
 
                 out << YAML::EndMap;
@@ -560,6 +581,19 @@ namespace Charm
                     dlc.sun.direction = directionalLightNode["Direction"].as<glm::vec3>();
                     dlc.sun.color = directionalLightNode["Color"].as<glm::vec3>();
                     dlc.sun.intensity = directionalLightNode["Intensity"].as<float>();
+                }
+
+                const YAML::Node& ccNode = node["Camera3D Component"];
+                if (ccNode)
+                {
+                    auto& cc = entity.AddComponent<Camera3DComponent>();
+                    cc.isPrimary = ccNode["Is Primary?"].as<bool>();
+                    cc.clearColor = ccNode["Clear Color"].as<glm::vec4>();
+                    cc.camera.position = ccNode["Position"].as<glm::vec3>();
+                    cc.camera.rotation = ccNode["Rotation"].as<glm::vec3>();
+                    cc.camera.fov = ccNode["FOV"].as<float>();
+                    cc.camera.nearClip = ccNode["Near Clip"].as<float>();
+                    cc.camera.farClip = ccNode["Far Clip"].as<float>();
                 }
             }
         }

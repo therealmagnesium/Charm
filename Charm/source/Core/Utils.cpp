@@ -124,14 +124,16 @@ namespace Charm
 
         std::string AssetTypeToString(AssetType type)
         {
-            const char* types[(u32)AssetType::_TotalCount] = {"Invalid",
-                                                              "Animation",
-                                                              "Animation Controller",
-                                                              "Material",
-                                                              "Mesh",
-                                                              "Shader",
-                                                              "Texture",
-                                                              "Tile Palette"};
+            const char* types[(u32)AssetType::_TotalCount] = {
+                "Invalid",
+                "Animation",
+                "Animation Controller",
+                "Shader",
+                "Texture",
+                "Tile Palette",
+                "Material",
+                "Mesh",
+            };
             return types[(u8)type];
         }
 

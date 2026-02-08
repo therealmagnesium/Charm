@@ -7,10 +7,13 @@
 #include "Core/Log.h"
 #include "Core/Utils.h"
 
+#include "Projects/Project.h"
+
 #include <glad/glad.h>
 #include <SDL3/SDL.h>
 
 using namespace Charm::Core;
+using namespace Charm::Projects;
 
 namespace Charm
 {
@@ -98,6 +101,15 @@ namespace Charm
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+                const Project& project = ProjectManager::GetActive();
+                if (project.type == ProjectType::ThreeDimensional)
+                {
+                    RenderCommand::EnableDepthBuffer();
+                    RenderCommand::SetDepthFunc(BufferFunc::Less);
+                    RenderCommand::EnableStencilBuffer();
+                    RenderCommand::SetStencilOperation(StencilOperation::Keep, StencilOperation::Replace, StencilOperation::Replace);
+                }
+
                 state.viewMatrix = glm::mat4(1.f);
                 state.projectionMatrix = glm::mat4(1.f);
 
@@ -134,6 +146,13 @@ namespace Charm
                 Shaders::CreateUniform(state.blinnPhongShader, "u_sun.color");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_sun.intensity");
 
+                state.outlineShader = Shaders::Load("assets/shaders/Outline_vs.glsl", "assets/shaders/Outline_fs.glsl");
+                Shaders::CreateUniform(state.outlineShader, "u_entityID");
+                Shaders::CreateUniform(state.outlineShader, "u_matrixTransform");
+                Shaders::CreateUniform(state.outlineShader, "u_matrixView");
+                Shaders::CreateUniform(state.outlineShader, "u_matrixProjection");
+                Shaders::CreateUniform(state.outlineShader, "u_matrixNormal");
+
                 state.grid.vao = VertexArray::Create();
                 state.grid.shader = Shaders::Load("assets/shaders/2DGrid_vs.glsl", "assets/shaders/2DGrid_fs.glsl");
                 Shaders::CreateUniform(state.grid.shader, "u_cameraPosition");
@@ -161,6 +180,7 @@ namespace Charm
                 Shaders::Unload(state.lineShader);
                 Shaders::Unload(state.diffuseShader);
                 Shaders::Unload(state.blinnPhongShader);
+                Shaders::Unload(state.outlineShader);
 
                 Shaders::Unload(state.grid.shader);
                 VertexArray::Destroy(state.grid.vao);
@@ -198,7 +218,7 @@ namespace Charm
                 BeginBatchLine();
             }
 
-            void BeginScene2D(const Camera3D& camera)
+            void BeginScene2D(const EditorCamera3D& camera)
             {
                 state.viewMatrix = Cameras::GetViewMatrix3D(camera);
                 state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
@@ -224,7 +244,53 @@ namespace Charm
                 BeginBatchLine();
             }
 
-            void BeginScene3D(const Camera3D& camera)
+            void BeginScene3D(const EditorCamera3D& camera)
+            {
+                BeginScene2D(camera);
+
+                state.viewMatrix = Cameras::GetViewMatrix3D(camera);
+                state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
+
+                Shaders::Bind(state.diffuseShader);
+                Shaders::SetUniform(state.diffuseShader, "u_matrixView", state.viewMatrix);
+                Shaders::SetUniform(state.diffuseShader, "u_matrixProjection", state.projectionMatrix);
+
+                Shaders::Bind(state.blinnPhongShader);
+                Shaders::SetUniform(state.blinnPhongShader, "u_matrixView", state.viewMatrix);
+                Shaders::SetUniform(state.blinnPhongShader, "u_matrixProjection", state.projectionMatrix);
+
+                Shaders::Bind(state.outlineShader);
+                Shaders::SetUniform(state.outlineShader, "u_matrixView", state.viewMatrix);
+                Shaders::SetUniform(state.outlineShader, "u_matrixProjection", state.projectionMatrix);
+            }
+
+            void BeginScene2D(const SceneCamera3D& camera)
+            {
+                state.viewMatrix = Cameras::GetViewMatrix3D(camera);
+                state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
+                batchData.quadCount = 0;
+                batchData.circleCount = 0;
+                batchData.lineCount = 0;
+                batchData.drawCount = 0;
+
+                Shaders::Bind(state.quadShader);
+                Shaders::SetUniform(state.quadShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.quadShader, "projectionMatrix", state.projectionMatrix);
+
+                Shaders::Bind(state.circleShader);
+                Shaders::SetUniform(state.circleShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.circleShader, "projectionMatrix", state.projectionMatrix);
+
+                Shaders::Bind(state.lineShader);
+                Shaders::SetUniform(state.lineShader, "viewMatrix", state.viewMatrix);
+                Shaders::SetUniform(state.lineShader, "projectionMatrix", state.projectionMatrix);
+
+                BeginBatchQuad();
+                BeginBatchCircle();
+                BeginBatchLine();
+            }
+
+            void BeginScene3D(const SceneCamera3D& camera)
             {
                 BeginScene2D(camera);
 
@@ -564,6 +630,7 @@ namespace Charm
 
             Shader& GetShaderDiffuse() { return state.diffuseShader; }
             Shader& GetShaderBlinnPhong() { return state.blinnPhongShader; }
+            Shader& GetShaderOutline() { return state.outlineShader; }
             glm::vec3& GetClearColor() { return state.clearColor; }
             const glm::mat4& GetViewMatrix() { return state.viewMatrix; }
             const glm::mat4& GetProjectionMatrix() { return state.projectionMatrix; }

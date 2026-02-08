@@ -8,10 +8,12 @@
 #include "Core/Utils.h"
 
 #include "Graphics/Renderer.h"
+#include "Graphics/RenderCommand.h"
 
 #include "Projects/Project.h"
 
 #include <box2d/box2d.h>
+#include <glad/glad.h>
 
 using namespace Charm::Core;
 using namespace Charm::Graphics;
@@ -21,8 +23,8 @@ namespace Charm
 {
     namespace ECS
     {
-        static Camera2D* activeCamera2D = NULL; // Active 2D runtime camera
-        static Camera3D* activeCamera3D = NULL; // Active 3D runtime camera
+        static Camera2D* activeCamera2D = NULL;      // Active 2D runtime camera
+        static SceneCamera3D* activeCamera3D = NULL; // Active 3D runtime camera
         static Entity activeCameraEntity2D = Entity_Null;
         static Entity activeCameraEntity3D = Entity_Null;
 
@@ -31,6 +33,8 @@ namespace Charm
             void ApplyCircleSortingLayers(Scene& scene);
             void ApplySpriteSortingLayers(Scene& scene);
             void DrawEntitiesPerSortingLayer(Scene& scene, bool isRuntime);
+            void DrawMeshesAndLights(Scene& scene, Entity& selectionContext, bool isRuntime);
+            void DrawSelectionContextOutline(Entity& selectionContext);
             float GetHighlightThickness(float radius);
 
             template <typename T>
@@ -99,6 +103,7 @@ namespace Charm
                 {
                     CopyComponent<MeshRendererComponent>(newScene, scene, enttMap);
                     CopyComponent<DirectionalLightComponent>(newScene, scene, enttMap);
+                    CopyComponent<Camera3DComponent>(newScene, scene, enttMap);
                 }
 
                 return newScene;
@@ -144,6 +149,7 @@ namespace Charm
                 {
                     CopyComponentIfExists<MeshRendererComponent>(newEntity, entity);
                     CopyComponentIfExists<DirectionalLightComponent>(newEntity, entity);
+                    CopyComponentIfExists<Camera3DComponent>(newEntity, entity);
                 }
 
                 Entity activeCameraEntity = Scenes::GetActiveCameraEntity2D();
@@ -364,42 +370,31 @@ namespace Charm
                         break;
                     }
                 }
+
+                if (project.type == ProjectType::TwoDimensional)
+                    return;
+
+                const auto cameras3D = scene.registry.view<Camera3DComponent>();
+                for (const auto entityID : cameras3D)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+
+                    const auto& transform = entity.GetComponent<TransformComponent>();
+                    auto& cc = entity.GetComponent<Camera3DComponent>();
+
+                    cc.camera.position = transform.position;
+                    cc.camera.rotation = transform.rotation;
+
+                    if (cc.isPrimary)
+                        activeCameraEntity3D = entity;
+                }
             }
 
             void RenderEditor(Scene& scene, Entity& selectionContext)
             {
-                auto meshes = scene.registry.view<MeshRendererComponent>();
-                for (auto entityID : meshes)
-                {
-                    Entity entity = Entities::Create(entityID, &scene);
-
-                    const auto& internal = entity.GetComponent<InternalComponent>();
-                    if (!internal.isActive)
-                        continue;
-
-                    const auto& transform = entity.GetComponent<TransformComponent>();
-                    const auto& meshRenderer = entity.GetComponent<MeshRendererComponent>();
-
-                    if (!AssetManager::IsHandleValid(meshRenderer.model))
-                        continue;
-
-                    const glm::mat4 transformMatrix = transform.GetMatrix3D();
-                    Model* model = AssetManager::GetAsset<Model>(meshRenderer.model);
-                    Renderer::DrawModel(*model, transformMatrix, (Shader&)Shader_Invalid, (s32)entityID);
-                }
-
-                auto suns = scene.registry.view<DirectionalLightComponent>();
-                for (auto entityID : suns)
-                {
-                    Entity entity = Entities::Create(entityID, &scene);
-
-                    const auto& internal = entity.GetComponent<InternalComponent>();
-                    if (!internal.isActive)
-                        continue;
-
-                    const auto& dlc = entity.GetComponent<DirectionalLightComponent>();
-                    Lights::UpdateUniforms(dlc.sun);
-                }
+                const auto& project = ProjectManager::GetActive();
+                if (project.type == ProjectType::ThreeDimensional)
+                    DrawMeshesAndLights(scene, selectionContext, false);
 
                 ApplyCircleSortingLayers(scene);
                 ApplySpriteSortingLayers(scene);
@@ -462,12 +457,12 @@ namespace Charm
                 activeCameraEntity2D = Entity_Null;
                 activeCameraEntity3D = Entity_Null;
 
-                auto animators = scene.registry.view<Animator2DComponent>();
-                auto boxColliders = scene.registry.view<BoxCollider2DComponent>();
-                auto cameras = scene.registry.view<Camera2DComponent>();
-                auto nativeScripts = scene.registry.view<NativeScriptComponent>();
-                auto rigidbodies = scene.registry.view<Rigidbody2DComponent>();
-                auto spriteRenderers = scene.registry.view<Animator2DComponent>();
+                const auto animators = scene.registry.view<Animator2DComponent>();
+                const auto boxColliders = scene.registry.view<BoxCollider2DComponent>();
+                const auto cameras = scene.registry.view<Camera2DComponent>();
+                const auto nativeScripts = scene.registry.view<NativeScriptComponent>();
+                const auto rigidbodies = scene.registry.view<Rigidbody2DComponent>();
+                const auto spriteRenderers = scene.registry.view<Animator2DComponent>();
 
                 std::vector<Animation*> updatedAnimations;
                 updatedAnimations.reserve(scene.entityCount / 2);
@@ -674,6 +669,27 @@ namespace Charm
                     auto& spriteRenderer = entity.GetComponent<SpriteRendererComponent>();
                     spriteRenderer.origin = Utils::OriginModeToVec2(spriteRenderer.originMode, transform.position, transform.scale);
                 }
+
+                const Project& project = ProjectManager::GetActive();
+                if (project.type == ProjectType::ThreeDimensional)
+                {
+                    const auto cameras3D = scene.registry.view<Camera3DComponent>();
+                    for (const auto entityID : cameras3D)
+                    {
+                        Entity entity = Entities::Create(entityID, &scene);
+                        const auto& transform = entity.GetComponent<TransformComponent>();
+                        auto& cc = entity.GetComponent<Camera3DComponent>();
+
+                        cc.camera.position = transform.position;
+                        cc.camera.rotation = transform.rotation;
+
+                        if (cc.isPrimary)
+                        {
+                            activeCamera3D = &cc.camera;
+                            activeCameraEntity3D = entity;
+                        }
+                    }
+                }
             }
 
             void RenderRuntime(Scene& scene)
@@ -691,6 +707,7 @@ namespace Charm
                 if (activeCamera3D != NULL && project.type == ProjectType::ThreeDimensional)
                 {
                     Renderer::BeginScene3D(*activeCamera3D);
+                    DrawMeshesAndLights(scene, (Entity&)Entity_Null, true);
                     ApplyCircleSortingLayers(scene);
                     ApplySpriteSortingLayers(scene);
                     DrawEntitiesPerSortingLayer(scene, true);
@@ -713,6 +730,8 @@ namespace Charm
                 scene.editorCamera3D.yaw = 0.f;
                 scene.editorCamera3D.pitch = 25.f;
                 scene.editorCamera3D.fov = 45.f;
+                scene.editorCamera3D.nearClip = 0.1f;
+                scene.editorCamera3D.farClip = 1000.f;
             }
 
             void AlignParentsAndChildren(Scene& scene)
@@ -868,6 +887,88 @@ namespace Charm
                 }
             }
 
+            void DrawMeshesAndLights(Scene& scene, Entity& selectionContext, bool isRuntime)
+            {
+                const auto meshes = scene.registry.view<MeshRendererComponent>();
+
+                for (const auto entityID : meshes)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+
+                    const auto& internal = entity.GetComponent<InternalComponent>();
+                    if (!internal.isActive)
+                        continue;
+
+                    const auto& transform = entity.GetComponent<TransformComponent>();
+                    const auto& meshRenderer = entity.GetComponent<MeshRendererComponent>();
+
+                    if (!AssetManager::IsHandleValid(meshRenderer.model))
+                        continue;
+
+                    if (entity == selectionContext)
+                    {
+                        RenderCommand::SetStencilFunc(BufferFunc::Always, 1, 0xFF);
+                        RenderCommand::EnableStencilWriting();
+                    }
+                    else
+                    {
+                        RenderCommand::SetStencilFunc(BufferFunc::Always, 0, 0xFF);
+                        RenderCommand::DisableStencilWriting();
+                    }
+
+                    const glm::mat4 transformMatrix = transform.GetMatrix3D();
+                    Shader& blinnPhongShader = Renderer::GetShaderBlinnPhong();
+                    Model* model = AssetManager::GetAsset<Model>(meshRenderer.model);
+                    Renderer::DrawModel(*model, transformMatrix, blinnPhongShader, (s32)entityID);
+                }
+
+                if (!isRuntime)
+                    DrawSelectionContextOutline(selectionContext);
+
+                const auto suns = scene.registry.view<DirectionalLightComponent>();
+                for (const auto entityID : suns)
+                {
+                    Entity entity = Entities::Create(entityID, &scene);
+
+                    const auto& internal = entity.GetComponent<InternalComponent>();
+                    if (!internal.isActive)
+                        continue;
+
+                    const auto& dlc = entity.GetComponent<DirectionalLightComponent>();
+                    Lights::UpdateUniforms(dlc.sun);
+                }
+            }
+
+            void DrawSelectionContextOutline(Entity& selectionContext)
+            {
+                if (selectionContext.IsHandleValid())
+                {
+                    if (!selectionContext.HasComponent<MeshRendererComponent>())
+                        return;
+
+                    auto& transform = selectionContext.GetComponent<TransformComponent>();
+                    const auto& meshRenderer = selectionContext.GetComponent<MeshRendererComponent>();
+                    const float scale = 1.1f;
+                    transform.scale *= scale;
+
+                    if (AssetManager::IsHandleValid(meshRenderer.model))
+                    {
+                        const glm::mat4 transformMatrix = transform.GetMatrix3D();
+                        Shader& outlineShader = Renderer::GetShaderOutline();
+                        Model* model = AssetManager::GetAsset<Model>(meshRenderer.model);
+
+                        RenderCommand::SetStencilFunc(BufferFunc::NotEqual, 1, 0xFF);
+                        RenderCommand::DisableStencilWriting();
+                        RenderCommand::DisableDepthBuffer();
+                        Renderer::DrawModel(*model, transformMatrix, outlineShader, (s32)selectionContext.handle);
+                        RenderCommand::EnableStencilWriting();
+                        RenderCommand::SetStencilFunc(BufferFunc::Always, 0, 0xFF);
+                        RenderCommand::EnableDepthBuffer();
+                    }
+                    transform.scale /= scale;
+                }
+            }
+
             template <typename T>
             void CopyComponent(Scene& dest, Scene& source, const std::unordered_map<UUID, entt::entity>& enttMap)
             {
@@ -915,10 +1016,10 @@ namespace Charm
             Entity GetActiveCameraEntity2D() { return activeCameraEntity2D; }
             Entity GetActiveCameraEntity3D() { return activeCameraEntity3D; }
             const Camera2D* GetActiveCamera2D() { return (activeCamera2D != NULL) ? activeCamera2D : &Camera2D_Null; }
-            const Camera3D* GetActiveCamera3D() { return (activeCamera3D != NULL) ? activeCamera3D : &Camera3D_Null; }
+            const SceneCamera3D* GetActiveCamera3D() { return (activeCamera3D != NULL) ? activeCamera3D : &SceneCamera3D_Null; }
 
             void SetActiveCamera2D(Camera2D* camera) { activeCamera2D = camera; }
-            void SetActiveCamera3D(Camera3D* camera) { activeCamera3D = camera; }
+            void SetActiveCamera3D(SceneCamera3D* camera) { activeCamera3D = camera; }
         }
     }
 }

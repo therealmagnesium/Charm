@@ -65,6 +65,7 @@ namespace Charm
             Shader lineShader;
             Shader diffuseShader;
             Shader blinnPhongShader;
+            Shader outlineShader;
             RendererGrid grid;
         };
 
@@ -74,8 +75,10 @@ namespace Charm
             void Shutdown();
 
             void BeginScene2D(const Camera2D& camera);
-            void BeginScene2D(const Camera3D& camera);
-            void BeginScene3D(const Camera3D& camera);
+            void BeginScene2D(const EditorCamera3D& camera);
+            void BeginScene3D(const EditorCamera3D& camera);
+            void BeginScene2D(const SceneCamera3D& camera);
+            void BeginScene3D(const SceneCamera3D& camera);
             void EndScene2D();
 
             void BeginBatchQuad();
@@ -91,6 +94,7 @@ namespace Charm
 
             Shader& GetShaderDiffuse();
             Shader& GetShaderBlinnPhong();
+            Shader& GetShaderOutline();
             glm::vec3& GetClearColor();
             const glm::mat4& GetViewMatrix();
             const glm::mat4& GetProjectionMatrix();

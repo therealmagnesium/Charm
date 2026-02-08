@@ -199,5 +199,15 @@ namespace Charm
             DirectionalLightComponent() = default;
             DirectionalLightComponent(const DirectionalLightComponent&) = default;
         };
+
+        struct Camera3DComponent
+        {
+            bool isPrimary = false;
+            glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.f);
+            SceneCamera3D camera;
+
+            Camera3DComponent() = default;
+            Camera3DComponent(const Camera3DComponent&) = default;
+        };
     }
 }

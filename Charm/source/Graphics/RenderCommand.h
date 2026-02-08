@@ -5,7 +5,7 @@ namespace Charm
 {
     namespace Graphics
     {
-        enum PrimitiveType : u8
+        enum class PrimitiveType : u8
         {
             Points = 0,
             Lines,
@@ -14,6 +14,24 @@ namespace Charm
             Triangles,
             TriangleStrip,
             TriangleFan
+        };
+
+        enum class BufferFunc : u8
+        {
+            Never = 0,
+            Less,
+            Equal,
+            LessOrEqual,
+            Greater,
+            NotEqual,
+            GreaterOrEqual,
+            Always
+        };
+
+        enum class StencilOperation : u8
+        {
+            Keep = 0,
+            Replace
         };
 
         namespace RenderCommand
@@ -25,8 +43,15 @@ namespace Charm
             void HideCursor();
             void EnableDepthWriting();
             void DisableDepthWriting();
-            void EnableDepthTest();
-            void DisableDepthTest();
+            void EnableDepthBuffer();
+            void DisableDepthBuffer();
+            void SetDepthFunc(BufferFunc func);
+            void EnableStencilWriting();
+            void DisableStencilWriting();
+            void EnableStencilBuffer();
+            void DisableStencilBuffer();
+            void SetStencilFunc(BufferFunc func, u32 reference, u32 mask);
+            void SetStencilOperation(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation bothPass);
             void DrawArrays(PrimitiveType type, u32 vertexCount);
             void DrawIndexed(PrimitiveType type, u64 indexCount);
         }

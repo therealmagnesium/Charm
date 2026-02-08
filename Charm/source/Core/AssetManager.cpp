@@ -90,13 +90,15 @@ namespace Charm
                 if (metadata.type == AssetType::Invalid)
                     return;
 
-                Asset* asset = (IsAssetRegistered(metadata.path) && IsAssetLoaded(handle)) ? assets->loadedAssets.at(handle) : LoadAsset(handle, metadata);
+                const Project& project = ProjectManager::GetActive();
+                const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(metadata.path, project);
+                const AssetHandle validHandle = IsAssetRegistered(relativePath) ? FindAssetHandle(relativePath) : handle;
+                Asset* asset = (IsAssetRegistered(relativePath) && IsAssetLoaded(validHandle)) ? assets->loadedAssets.at(validHandle) : LoadAsset(validHandle, metadata);
                 if (asset != NULL)
                 {
-                    const Project& project = ProjectManager::GetActive();
-                    metadata.path = ProjectManager::GetAssetRelativePath(path, project);
-                    assets->registry[handle] = metadata;
-                    assets->loadedAssets[handle] = asset;
+                    metadata.path = relativePath;
+                    assets->registry[validHandle] = metadata;
+                    assets->loadedAssets[validHandle] = asset;
                 }
             }
 

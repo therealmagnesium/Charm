@@ -32,6 +32,7 @@ namespace Charm
                 ProcessNode(model, scene->mRootNode, scene, modelDirectory);
                 model.isValid = true;
 
+                INFO("Model \"%s\" loaded successfully with %d meshes and %d materials", path.c_str(), model.meshes.size(), model.materials.size());
                 return model;
             }
 

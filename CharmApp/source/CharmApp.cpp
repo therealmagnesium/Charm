@@ -40,7 +40,6 @@ namespace CharmApp
         state.activeScene = &state.editorScene;
 
         state.project = CharmHub::GetProject();
-        state.project.type == ProjectType::ThreeDimensional ? RenderCommand::EnableDepthTest() : RenderCommand::DisableDepthTest();
 
         ProjectSerializer::SetContext(&state.project);
         SceneSerializer::SetContext(&state.editorScene);
@@ -129,14 +128,28 @@ namespace CharmApp
                 if (entity.IsHandleValid())
                 {
                     const auto& entityTransform = entity.GetComponent<TransformComponent>();
-                    const float min = glm::round(glm::min(entityTransform.scale.x, entityTransform.scale.y));
-                    const float max = glm::round(glm::max(entityTransform.scale.x, entityTransform.scale.y));
-                    float zoom = 1.f - min / max;
-                    if (zoom == 0.f)
-                        zoom = 1.f;
 
-                    state.editorScene.editorCamera2D.target = entityTransform.position;
-                    state.editorScene.editorCamera2D.zoom = zoom;
+                    if (state.project.type == ProjectType::TwoDimensional)
+                    {
+                        const float min = glm::round(glm::min(entityTransform.scale.x, entityTransform.scale.y));
+                        const float max = glm::round(glm::max(entityTransform.scale.x, entityTransform.scale.y));
+                        float zoom = 1.f - min / max;
+                        if (zoom == 0.f)
+                            zoom = 1.f;
+
+                        Camera2D& camera = state.editorScene.editorCamera2D;
+                        camera.target = entityTransform.position;
+                        camera.zoom = zoom;
+                    }
+
+                    if (state.project.type == ProjectType::ThreeDimensional)
+                    {
+                        EditorCamera3D& camera = state.editorScene.editorCamera3D;
+                        camera.target = entityTransform.position;
+                        camera.yaw = 39.5f;
+                        camera.pitch = 31.3f;
+                        camera.distance = 12.f;
+                    }
                 }
             }
 
@@ -151,11 +164,18 @@ namespace CharmApp
 
     void OnRender()
     {
+        const Project& project = ProjectManager::GetActive();
         Entity activeCameraEntity2D = Scenes::GetActiveCameraEntity2D();
+        Entity activeCameraEntity3D = Scenes::GetActiveCameraEntity3D();
         glm::vec3 clearColor = glm::vec3(0.f);
-        if (activeCameraEntity2D != Entity_Null)
+        if (activeCameraEntity2D != Entity_Null && project.type == ProjectType::TwoDimensional)
         {
             const auto& activeCameraComponent = activeCameraEntity2D.GetComponent<Camera2DComponent>();
+            clearColor = activeCameraComponent.clearColor;
+        }
+        else if (activeCameraEntity3D != Entity_Null && project.type == ProjectType::ThreeDimensional)
+        {
+            const auto& activeCameraComponent = activeCameraEntity3D.GetComponent<Camera3DComponent>();
             clearColor = activeCameraComponent.clearColor;
         }
         else
@@ -174,8 +194,6 @@ namespace CharmApp
             const bool isSceneViewportFocused = SceneViewportPanel::IsFocused();
             const glm::vec2 sceneViewportPosition = SceneViewportPanel::GetPosition();
             const glm::vec2 sceneViewportSize = SceneViewportPanel::GetSize();
-
-            const Project& project = ProjectManager::GetActive();
 
             if (project.type == ProjectType::TwoDimensional)
                 Renderer::BeginScene2D(state.activeScene->editorCamera2D);
@@ -382,7 +400,18 @@ namespace CharmApp
         {
             const std::filesystem::path path = FileDialogs::GetSelectedPath();
             state.project = ProjectManager::Load(path);
-            state.project.type == ProjectType::ThreeDimensional ? RenderCommand::EnableDepthTest() : RenderCommand::DisableDepthTest();
+            if (state.project.type == ProjectType::TwoDimensional)
+            {
+                RenderCommand::DisableDepthBuffer();
+                RenderCommand::DisableStencilBuffer();
+            }
+            if (state.project.type == ProjectType::ThreeDimensional)
+            {
+                RenderCommand::EnableDepthBuffer();
+                RenderCommand::SetDepthFunc(BufferFunc::Less);
+                RenderCommand::EnableStencilBuffer();
+                RenderCommand::SetStencilOperation(StencilOperation::Keep, StencilOperation::Replace, StencilOperation::Replace);
+            }
 
             ScriptManager::UnloadModule();
 
@@ -418,6 +447,12 @@ namespace CharmApp
 
         if (state.project.type == ProjectType::ThreeDimensional)
         {
+            if (Entities::FindWithTag("Main Camera", state.activeScene) == Entity_Null)
+            {
+                Entity entity = Scenes::CreateEntity(state.editorScene, "Main Camera");
+                entity.AddComponent<Camera3DComponent>();
+            }
+
             if (Entities::FindWithTag("Directional Light", state.activeScene) == Entity_Null)
             {
                 Entity entity = Scenes::CreateEntity(state.editorScene, "Directional Light");
