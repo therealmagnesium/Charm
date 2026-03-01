@@ -1,5 +1,5 @@
 #include "Graphics/Renderer.h"
-#include "Graphics/RenderCommand.h"
+#include "Graphics/RenderAPI.h"
 #include "Graphics/RendererInternals.h"
 #include "Graphics/Window.h"
 
@@ -7,10 +7,14 @@
 #include "Core/Log.h"
 #include "Core/Utils.h"
 
-#include "Projects/Project.h"
-
 #include <glad/glad.h>
 #include <SDL3/SDL.h>
+#include <imgui.h>
+#include <ImGuizmo.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/norm.hpp>
 
 using namespace Charm::Core;
 using namespace Charm::Projects;
@@ -77,6 +81,9 @@ namespace Charm
             void AddCircleToBatch(const glm::mat4& transform, const glm::vec3& color, float thickness, float fade);
             void AddEntityToBatch(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);
             void AddEntityToBatch(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
+            void SubmitCommand(const RenderCommand& command);
+            void WriteCommandToStencil(const RenderCommand& command, const Entity& selectionContext);
+            void DrawSelectionContextOutline(const Entity& selectionContext);
 
             void Initialize()
             {
@@ -104,14 +111,15 @@ namespace Charm
                 const Project& project = ProjectManager::GetActive();
                 if (project.type == ProjectType::ThreeDimensional)
                 {
-                    RenderCommand::EnableDepthBuffer();
-                    RenderCommand::SetDepthFunc(BufferFunc::Less);
-                    RenderCommand::EnableStencilBuffer();
-                    RenderCommand::SetStencilOperation(StencilOperation::Keep, StencilOperation::Replace, StencilOperation::Replace);
+                    RenderAPI::EnableDepthBuffer();
+                    RenderAPI::SetDepthFunc(BufferFunc::Less);
+                    RenderAPI::EnableStencilBuffer();
+                    RenderAPI::SetStencilOperation(StencilOperation::Keep, StencilOperation::Replace, StencilOperation::Replace);
                 }
 
                 state.viewMatrix = glm::mat4(1.f);
                 state.projectionMatrix = glm::mat4(1.f);
+                state.commands.reserve(8);
 
                 state.quadShader = Shaders::Load("assets/shaders/BatchingQuads_vs.glsl", "assets/shaders/BatchingQuads_fs.glsl");
                 Shaders::CreateUniform(state.quadShader, "viewMatrix");
@@ -136,6 +144,7 @@ namespace Charm
 
                 state.blinnPhongShader = Shaders::Load("assets/shaders/Blinn-Phong_vs.glsl", "assets/shaders/Blinn-Phong_fs.glsl");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_entityID");
+                Shaders::CreateUniform(state.blinnPhongShader, "u_cameraPosition");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_matrixTransform");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_matrixView");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_matrixProjection");
@@ -315,6 +324,59 @@ namespace Charm
                 Flush(BatchMode::Quads);
                 Flush(BatchMode::Circles);
                 Flush(BatchMode::Lines);
+            }
+
+            void EndScene3D(Entity& selectionContext)
+            {
+                const u32 commandCount = state.commands.size();
+                std::vector<RenderCommand> commandsOpaque;
+                std::vector<RenderCommand> commandsTranslucent;
+
+                commandsOpaque.reserve(commandCount);
+                commandsTranslucent.reserve(commandCount);
+
+                for (const RenderCommand& command : state.commands)
+                {
+                    if (command.material == NULL || command.mesh == NULL)
+                        return;
+
+                    if (command.material->shader == NULL || command.mesh->indices.size() < 1)
+                        return;
+
+                    if (!command.material->IsTranslucent())
+                        commandsOpaque.emplace_back(command);
+                    else
+                        commandsTranslucent.emplace_back(command);
+                }
+
+                const glm::vec3 cameraPosition = glm::vec3(glm::inverse(state.viewMatrix)[3]);
+                const auto SortByDistance = [&](const RenderCommand& a, const RenderCommand& b)
+                {
+                    const float distanceA = glm::distance2(cameraPosition, a.worldCenter);
+                    const float distanceB = glm::distance2(cameraPosition, b.worldCenter);
+                    return distanceA > distanceB;
+                };
+                std::sort(commandsTranslucent.begin(), commandsTranslucent.end(), SortByDistance);
+
+                for (const RenderCommand& command : commandsOpaque)
+                {
+                    WriteCommandToStencil(command, selectionContext);
+                    SubmitCommand(command);
+                }
+
+                for (const RenderCommand& command : commandsTranslucent)
+                {
+                    WriteCommandToStencil(command, selectionContext);
+                    SubmitCommand(command);
+                }
+
+                if (selectionContext.IsHandleValid())
+                    DrawSelectionContextOutline(selectionContext);
+
+                state.commands.clear();
+                state.commands.reserve(commandCount);
+
+                EndScene2D();
             }
 
             void BeginBatchQuad()
@@ -519,7 +581,7 @@ namespace Charm
             void DrawLineEx(const glm::vec3& p0, const glm::vec3& p1, float lineWidth, const glm::vec3& color)
             {
                 CheckForNewBatch(BatchMode::Lines);
-                RenderCommand::SetLineWidth(lineWidth);
+                RenderAPI::SetLineWidth(lineWidth);
 
                 batchData.lineBufferRef->position = p0;
                 batchData.lineBufferRef->color = color;
@@ -560,28 +622,15 @@ namespace Charm
 
             void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform, s32 entityID)
             {
-                if (mesh.indices.size() < 1 || material.shader == NULL)
-                    return;
+                RenderCommand command;
+                command.mesh = &mesh;
+                command.material = &material;
+                command.transform = transform;
+                command.worldCenter = glm::vec3(transform * glm::vec4(mesh.GetCenter(), 1.f));
+                command.entityID = entityID;
+                command.instanceCount = 1;
 
-                const glm::mat4 matrixNormal = glm::transpose(glm::inverse(transform));
-                VertexArray::Bind(mesh.vertexArray);
-                IndexBuffer::Bind(mesh.indexBuffer);
-
-                Shaders::Bind(*material.shader);
-                Shaders::SetUniform(*material.shader, "u_entityID", entityID);
-                Shaders::SetUniform(*material.shader, "u_matrixTransform", transform);
-                Shaders::SetUniform(*material.shader, "u_matrixNormal", matrixNormal);
-                Shaders::SetUniform(*material.shader, "u_material.albedo", material.albedo);
-                Shaders::SetUniform(*material.shader, "u_material.albedoTexture", 0);
-
-                const Texture& albedoTexture = material.albedoTexture != NULL ? *material.albedoTexture : Texture_Invalid;
-                Textures::Bind(albedoTexture, 0);
-
-                RenderCommand::DrawIndexed(PrimitiveType::Triangles, mesh.indices.size());
-
-                Shaders::Unbind();
-                IndexBuffer::Unbind();
-                VertexArray::Unbind();
+                state.commands.emplace_back(command);
             }
 
             void DrawModel(Model& model, const glm::mat4& transform, Shader& shader, s32 entityID)
@@ -622,7 +671,7 @@ namespace Charm
                 Shaders::SetUniform(state.grid.shader, "u_resolution", resolution);
                 Shaders::SetUniform(state.grid.shader, "u_pixelsPerUnit", Application::GetPixelsPerUnit());
                 Shaders::SetUniform(state.grid.shader, "u_tileScale", tileScale);
-                RenderCommand::DrawArrays(PrimitiveType::Triangles, quadVertexCount);
+                RenderAPI::DrawArrays(PrimitiveType::Triangles, quadVertexCount);
 
                 Shaders::Unbind();
                 VertexArray::Unbind();
@@ -924,6 +973,87 @@ namespace Charm
 
                 batchData.circleIndexCount += 6;
                 batchData.circleCount++;
+            }
+
+            void SubmitCommand(const RenderCommand& command)
+            {
+                const glm::mat4 matrixNormal = glm::transpose(glm::inverse(command.transform));
+                const glm::vec3 cameraPosition = glm::vec3(glm::inverse(state.viewMatrix)[3]);
+                VertexArray::Bind(command.mesh->vertexArray);
+                IndexBuffer::Bind(command.mesh->indexBuffer);
+
+                Shaders::Bind(*command.material->shader);
+                Shaders::SetUniform(*command.material->shader, "u_entityID", command.entityID);
+                Shaders::SetUniform(*command.material->shader, "u_cameraPosition", cameraPosition);
+                Shaders::SetUniform(*command.material->shader, "u_matrixTransform", command.transform);
+                Shaders::SetUniform(*command.material->shader, "u_matrixNormal", matrixNormal);
+                Shaders::SetUniform(*command.material->shader, "u_material.albedo", command.material->albedo);
+                Shaders::SetUniform(*command.material->shader, "u_material.albedoTexture", 0);
+
+                const Texture& albedoTexture = command.material->albedoTexture != NULL ? *command.material->albedoTexture : batchData.whiteTexture;
+                Textures::Bind(albedoTexture, 0);
+
+                RenderAPI::DrawIndexed(PrimitiveType::Triangles, command.mesh->indices.size());
+
+                Shaders::Unbind();
+                IndexBuffer::Unbind();
+                VertexArray::Unbind();
+            }
+
+            void DrawSelectionContextOutline(const Entity& selectionContext)
+            {
+                const auto& internal = selectionContext.GetComponent<InternalComponent>();
+                if (!internal.isActive || !selectionContext.HasComponent<MeshRendererComponent>())
+                    return;
+
+                auto& transform = selectionContext.GetComponent<TransformComponent>();
+                const auto& meshRenderer = selectionContext.GetComponent<MeshRendererComponent>();
+                const float scale = 1.1f;
+
+                transform.scale *= scale;
+                if (AssetManager::IsHandleValid(meshRenderer.model))
+                {
+                    const glm::mat4 transformMatrix = transform.GetMatrix3D();
+                    Shader& outlineShader = Renderer::GetShaderOutline();
+                    Model* model = AssetManager::GetAsset<Model>(meshRenderer.model);
+
+                    RenderAPI::SetStencilFunc(BufferFunc::NotEqual, 1, 0xFF);
+                    RenderAPI::DisableStencilWriting();
+                    RenderAPI::DisableDepthBuffer();
+
+                    for (const Mesh& mesh : model->meshes)
+                    {
+                        Material& material = model->materials[mesh.materialIndex];
+                        material.shader = &outlineShader;
+
+                        RenderCommand command;
+                        command.mesh = &mesh;
+                        command.material = &material;
+                        command.transform = transformMatrix;
+                        command.entityID = (s32)selectionContext.handle;
+                        command.instanceCount = 1;
+                        SubmitCommand(command);
+                    }
+
+                    RenderAPI::EnableStencilWriting();
+                    RenderAPI::EnableDepthBuffer();
+                }
+                transform.scale /= scale;
+            }
+
+            void WriteCommandToStencil(const RenderCommand& command, const Entity& selectionContext)
+            {
+                const Entity entity = Entities::Create((entt::entity)command.entityID, selectionContext.context);
+                if (entity == selectionContext && selectionContext.IsHandleValid())
+                {
+                    RenderAPI::SetStencilFunc(BufferFunc::Always, 1, 0xFF);
+                    RenderAPI::EnableStencilWriting();
+                }
+                else
+                {
+                    RenderAPI::SetStencilFunc(BufferFunc::Always, 0, 0xFF);
+                    RenderAPI::DisableStencilWriting();
+                }
             }
         }
     }

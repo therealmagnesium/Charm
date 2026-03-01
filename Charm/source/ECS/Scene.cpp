@@ -8,7 +8,6 @@
 #include "Core/Utils.h"
 
 #include "Graphics/Renderer.h"
-#include "Graphics/RenderCommand.h"
 
 #include "Projects/Project.h"
 
@@ -23,8 +22,9 @@ namespace Charm
 {
     namespace ECS
     {
-        static Camera2D* activeCamera2D = NULL;      // Active 2D runtime camera
-        static SceneCamera3D* activeCamera3D = NULL; // Active 3D runtime camera
+        static Camera2D* activeCamera2D = NULL;           // Active 2D runtime camera
+        static SceneCamera3D* activeCamera3D = NULL;      // Active 3D runtime camera
+        static EditorCamera3D* activeEditorCamera = NULL; // Active 3D editor camera
         static Entity activeCameraEntity2D = Entity_Null;
         static Entity activeCameraEntity3D = Entity_Null;
 
@@ -34,7 +34,6 @@ namespace Charm
             void ApplySpriteSortingLayers(Scene& scene);
             void DrawEntitiesPerSortingLayer(Scene& scene, bool isRuntime);
             void DrawMeshesAndLights(Scene& scene, Entity& selectionContext, bool isRuntime);
-            void DrawSelectionContextOutline(Entity& selectionContext);
             float GetHighlightThickness(float radius);
 
             template <typename T>
@@ -320,6 +319,7 @@ namespace Charm
                 activeCamera3D = NULL;
                 activeCameraEntity2D = Entity_Null;
                 activeCameraEntity3D = Entity_Null;
+                activeEditorCamera = &scene.editorCamera3D;
 
                 if (project.type == ProjectType::TwoDimensional)
                     Cameras::UpdateEditor(scene.editorCamera2D);
@@ -465,7 +465,7 @@ namespace Charm
                 const auto spriteRenderers = scene.registry.view<Animator2DComponent>();
 
                 std::vector<Animation*> updatedAnimations;
-                updatedAnimations.reserve(scene.entityCount / 2);
+                updatedAnimations.reserve(scene.entityCount);
 
                 b2World_Step(*(b2WorldId*)&scene.physicsWorldID, Time::GetDelta(), 4);
                 std::unordered_map<Entity, Entity> contactBeginEntities;
@@ -711,7 +711,7 @@ namespace Charm
                     ApplyCircleSortingLayers(scene);
                     ApplySpriteSortingLayers(scene);
                     DrawEntitiesPerSortingLayer(scene, true);
-                    Renderer::EndScene2D();
+                    Renderer::EndScene3D();
                 }
             }
 
@@ -905,25 +905,11 @@ namespace Charm
                     if (!AssetManager::IsHandleValid(meshRenderer.model))
                         continue;
 
-                    if (entity == selectionContext)
-                    {
-                        RenderCommand::SetStencilFunc(BufferFunc::Always, 1, 0xFF);
-                        RenderCommand::EnableStencilWriting();
-                    }
-                    else
-                    {
-                        RenderCommand::SetStencilFunc(BufferFunc::Always, 0, 0xFF);
-                        RenderCommand::DisableStencilWriting();
-                    }
-
                     const glm::mat4 transformMatrix = transform.GetMatrix3D();
                     Shader& blinnPhongShader = Renderer::GetShaderBlinnPhong();
                     Model* model = AssetManager::GetAsset<Model>(meshRenderer.model);
                     Renderer::DrawModel(*model, transformMatrix, blinnPhongShader, (s32)entityID);
                 }
-
-                if (!isRuntime)
-                    DrawSelectionContextOutline(selectionContext);
 
                 const auto suns = scene.registry.view<DirectionalLightComponent>();
                 for (const auto entityID : suns)
@@ -936,36 +922,6 @@ namespace Charm
 
                     const auto& dlc = entity.GetComponent<DirectionalLightComponent>();
                     Lights::UpdateUniforms(dlc.sun);
-                }
-            }
-
-            void DrawSelectionContextOutline(Entity& selectionContext)
-            {
-                if (selectionContext.IsHandleValid())
-                {
-                    if (!selectionContext.HasComponent<MeshRendererComponent>())
-                        return;
-
-                    auto& transform = selectionContext.GetComponent<TransformComponent>();
-                    const auto& meshRenderer = selectionContext.GetComponent<MeshRendererComponent>();
-                    const float scale = 1.1f;
-                    transform.scale *= scale;
-
-                    if (AssetManager::IsHandleValid(meshRenderer.model))
-                    {
-                        const glm::mat4 transformMatrix = transform.GetMatrix3D();
-                        Shader& outlineShader = Renderer::GetShaderOutline();
-                        Model* model = AssetManager::GetAsset<Model>(meshRenderer.model);
-
-                        RenderCommand::SetStencilFunc(BufferFunc::NotEqual, 1, 0xFF);
-                        RenderCommand::DisableStencilWriting();
-                        RenderCommand::DisableDepthBuffer();
-                        Renderer::DrawModel(*model, transformMatrix, outlineShader, (s32)selectionContext.handle);
-                        RenderCommand::EnableStencilWriting();
-                        RenderCommand::SetStencilFunc(BufferFunc::Always, 0, 0xFF);
-                        RenderCommand::EnableDepthBuffer();
-                    }
-                    transform.scale /= scale;
                 }
             }
 
@@ -1017,6 +973,7 @@ namespace Charm
             Entity GetActiveCameraEntity3D() { return activeCameraEntity3D; }
             const Camera2D* GetActiveCamera2D() { return (activeCamera2D != NULL) ? activeCamera2D : &Camera2D_Null; }
             const SceneCamera3D* GetActiveCamera3D() { return (activeCamera3D != NULL) ? activeCamera3D : &SceneCamera3D_Null; }
+            const EditorCamera* GetActiveEditorCamera() { return (activeEditorCamera != NULL) ? activeEditorCamera : &EditorCamera3D_Null; }
 
             void SetActiveCamera2D(Camera2D* camera) { activeCamera2D = camera; }
             void SetActiveCamera3D(SceneCamera3D* camera) { activeCamera3D = camera; }

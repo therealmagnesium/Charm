@@ -34,14 +34,30 @@ namespace Charm
                 switch (texture.channelCount)
                 {
                     case 3:
+                    {
                         texture.internalFormat = GL_RGB8;
                         texture.dataFormat = GL_RGB;
                         break;
+                    }
 
                     case 4:
+                    {
                         texture.internalFormat = GL_RGBA8;
                         texture.dataFormat = GL_RGBA;
+
+                        const u8* start = texture.data;
+                        const u8* end = texture.data + (texture.width * texture.height * 4);
+
+                        for (const u8* pixel = start; pixel < end; pixel += 4)
+                        {
+                            if (pixel[3] < 0xFF)
+                            {
+                                texture.hasTransparency = true;
+                                break;
+                            }
+                        }
                         break;
+                    }
 
                     default:
                         break;

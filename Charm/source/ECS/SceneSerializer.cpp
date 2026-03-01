@@ -190,7 +190,7 @@ namespace Charm
                 const AssetRegistry& registry = AssetManager::GetRegistry();
                 std::vector<std::pair<AssetHandle, AssetMetadata>> sortedRegistry;
 
-                const auto SortByAssetType = [](const std::pair<AssetHandle, AssetMetadata>& a, const std::pair<AssetHandle, AssetMetadata>& b) { return a.second.type < b.second.type; };
+                const auto SortByAssetType = [&](const std::pair<AssetHandle, AssetMetadata>& a, const std::pair<AssetHandle, AssetMetadata>& b) { return a.second.type < b.second.type; };
                 std::copy(registry.begin(), registry.end(), std::back_inserter(sortedRegistry));
                 std::sort(sortedRegistry.begin(), sortedRegistry.end(), SortByAssetType);
 

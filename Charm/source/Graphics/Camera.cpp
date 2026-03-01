@@ -1,7 +1,9 @@
 #include "Graphics/Camera.h"
+#include "Graphics/RenderAPI.h"
 
 #include "Core/Application.h"
 #include "Core/Input.h"
+#include "Core/Time.h"
 
 #include <imgui.h>
 #include <ImGuizmo.h>
@@ -21,13 +23,15 @@ namespace Charm
         {
             void UpdateEditor(Camera2D& camera)
             {
-                const auto& MousePan = [&](const glm::vec2& delta) {
+                const auto& MousePan = [&](const glm::vec2& delta)
+                {
                     const float panSpeed = 30.f / camera.zoom;
                     camera.target.x -= delta.x * panSpeed;
                     camera.target.y += delta.y * panSpeed;
                 };
 
-                const auto& CalculateZoomSpeed = [&]() {
+                const auto& CalculateZoomSpeed = [&]()
+                {
                     float distance = camera.zoom * 0.35f;
                     distance = std::max(distance, 0.0f);
                     float speed = distance * distance;
@@ -36,7 +40,8 @@ namespace Charm
                     return speed;
                 };
 
-                const auto& MouseZoom = [&](float delta) {
+                const auto& MouseZoom = [&](float delta)
+                {
                     camera.zoom += delta * CalculateZoomSpeed();
                     if (camera.zoom < 0.1f)
                         camera.zoom = 0.1f;
@@ -57,20 +62,31 @@ namespace Charm
 
             void UpdateEditor(EditorCamera3D& camera)
             {
-                const auto& MousePan = [&](const glm::vec2& delta) {
+                const auto& Move = [&](const glm::vec3& delta)
+                {
+                    const float speed = 20.f;
+                    camera.target += GetRightVector(camera) * delta.x * speed * (float)Time::GetDelta();
+                    camera.target += GetUpVector(camera) * delta.y * speed * (float)Time::GetDelta();
+                    camera.target += -GetForwardVector(camera) * delta.z * speed * (float)Time::GetDelta();
+                };
+
+                const auto& MousePan = [&](const glm::vec2& delta)
+                {
                     const float panSpeed = 2.f * camera.distance;
                     camera.target += -GetRightVector(camera) * delta.x * panSpeed;
                     camera.target += GetUpVector(camera) * delta.y * panSpeed;
                 };
 
-                const auto& MouseRotate = [&](const glm::vec2& delta) {
-                    const float rotationSpeed = glm::degrees(10.f);
+                const auto& MouseRotate = [&](const glm::vec2& delta)
+                {
+                    const float rotationSpeed = glm::degrees(7.5f);
                     float yawSign = GetUpVector(camera).y < 0 ? -1.0f : 1.0f;
-                    camera.yaw -= yawSign * delta.x * rotationSpeed;
-                    camera.pitch -= delta.y * rotationSpeed;
+                    camera.yaw += yawSign * delta.x * rotationSpeed;
+                    camera.pitch += delta.y * rotationSpeed;
                 };
 
-                const auto& CalculateZoomSpeed = [&]() {
+                const auto& CalculateZoomSpeed = [&]()
+                {
                     float distance = camera.distance * 0.1f;
                     distance = std::max(distance, 0.0f);
                     float speed = distance * distance;
@@ -79,7 +95,8 @@ namespace Charm
                     return speed;
                 };
 
-                const auto& MouseZoom = [&](float delta) {
+                const auto& MouseZoom = [&](float delta)
+                {
                     camera.distance -= delta * CalculateZoomSpeed();
                     if (camera.distance < 1.0f)
                     {
@@ -87,6 +104,12 @@ namespace Charm
                         camera.distance = 1.0f;
                     }
                 };
+
+                glm::vec3 moveDirection;
+                moveDirection.x = Input::GetAxisAlt(InputAxis::Horizontal);
+                moveDirection.y = Input::IsKeyDown(KEY_SPACE) - Input::IsKeyDown(KEY_LEFT_CTRL);
+                moveDirection.z = Input::GetAxisAlt(InputAxis::Vertical);
+                Move(moveDirection);
 
                 if (Input::IsKeyDown(KEY_LEFT_ALT))
                 {
@@ -96,11 +119,17 @@ namespace Charm
                         MousePan(mouseDelta);
 
                     if (Input::IsMouseDown(MOUSE_BUTTON_RIGHT))
+                    {
+                        RenderAPI::HideCursor();
                         MouseRotate(mouseDelta);
+                    }
 
                     if (Input::IsMouseDown(MOUSE_BUTTON_MIDDLE))
                         MouseZoom(mouseDelta.y);
                 }
+
+                if (Input::IsMouseReleased(MOUSE_BUTTON_RIGHT))
+                    RenderAPI::ShowCursor();
 
                 const float scrollSpeed = Input::GetMouseScroll().y;
                 if (glm::abs(scrollSpeed) > 0.f)

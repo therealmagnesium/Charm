@@ -32,39 +32,39 @@ namespace Charm
             inline bool IsHandleValid() const { return (*this) ? context->registry.valid(handle) : false; }
 
             template <typename T>
-            inline bool HasComponent()
+            inline bool HasComponent() const
             {
                 return IsHandleValid() && context->registry.all_of<T>(handle);
             }
 
             template <typename T>
-            inline T& GetComponent()
+            inline T& GetComponent() const
             {
                 return context->registry.get<T>(handle);
             }
 
             template <typename T>
-            inline T* TryGetComponent()
+            inline T* TryGetComponent() const
             {
                 return IsHandleValid() ? context->registry.try_get<T>(handle) : NULL;
             }
 
             template <typename T, typename... Args>
-            inline T& AddComponent(Args&&... args)
+            inline T& AddComponent(Args&&... args) const
             {
                 return context->registry.emplace_or_replace<T>(handle, std::forward<Args>(args)...);
             }
 
             template <typename T>
-            inline void RemoveComponent()
+            inline void RemoveComponent() const
             {
                 if (IsHandleValid())
                     context->registry.remove<T>(handle);
             }
 
             inline operator bool() const { return handle != entt::null && context != NULL; }
-            inline bool operator==(const Entity& other) { return handle == other.handle && context == other.context; }
-            inline bool operator!=(const Entity& other) { return handle != other.handle || context != other.context; }
+            inline bool operator==(const Entity& other) const { return handle == other.handle && context == other.context; }
+            inline bool operator!=(const Entity& other) const { return handle != other.handle || context != other.context; }
         };
 
         class Scriptable

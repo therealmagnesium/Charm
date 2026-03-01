@@ -30,6 +30,7 @@ namespace Charm
             std::filesystem::path scriptModulePath;
             ProjectType type = ProjectType::TwoDimensional;
             GridSettings grid;
+            bool isRuntime = false;
 
             bool operator==(const Project& other) const
             {

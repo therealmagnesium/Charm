@@ -20,24 +20,32 @@ namespace Charm
                 state.mouse.scroll = glm::vec2(0.f);
 
                 for (u32 i = 0; i < KEY_COUNT; i++)
+                {
                     state.keyboard.keysPressed[i] = false;
+                    state.keyboard.keysReleased[i] = false;
+                }
 
                 for (u32 i = 0; i < MOUSE_BUTTON_COUNT; i++)
+                {
                     state.mouse.buttonsClicked[i] = false;
+                    state.mouse.buttonsReleased[i] = false;
+                }
             }
 
             void Capture(bool shouldCapture) { state.shouldCapture = shouldCapture; }
 
             bool GetCapture() { return state.shouldCapture; }
 
-            bool IsMouseDown(MouseButton button) { return (state.shouldCapture) ? state.mouse.buttonsHeld[button] : false; }
-            bool IsMouseClicked(MouseButton button) { return (state.shouldCapture) ? state.mouse.buttonsClicked[button] : false; }
-            glm::vec2 GetMousePosition() { return (state.shouldCapture) ? state.mouse.position : glm::vec2(0.f); }
-            glm::vec2 GetMouseRelative() { return (state.shouldCapture) ? state.mouse.relative : glm::vec2(0.f); }
-            glm::vec2 GetMouseScroll() { return (state.shouldCapture) ? state.mouse.scroll : glm::vec2(0.f); }
+            bool IsMouseDown(MouseButton button) { return state.shouldCapture ? state.mouse.buttonsHeld[button] : false; }
+            bool IsMouseClicked(MouseButton button) { return state.shouldCapture ? state.mouse.buttonsClicked[button] : false; }
+            bool IsMouseReleased(MouseButton button) { return state.shouldCapture ? state.mouse.buttonsReleased[button] : false; }
+            glm::vec2 GetMousePosition() { return state.shouldCapture ? state.mouse.position : glm::vec2(0.f); }
+            glm::vec2 GetMouseRelative() { return state.shouldCapture ? state.mouse.relative : glm::vec2(0.f); }
+            glm::vec2 GetMouseScroll() { return state.shouldCapture ? state.mouse.scroll : glm::vec2(0.f); }
 
-            bool IsKeyDown(u32 scancode) { return (state.shouldCapture) ? state.keyboard.keysHeld[scancode] : false; }
-            bool IsKeyPressed(u32 scancode) { return (state.shouldCapture) ? state.keyboard.keysPressed[scancode] : false; }
+            bool IsKeyDown(KeyboardKey scancode) { return state.shouldCapture ? state.keyboard.keysHeld[scancode] : false; }
+            bool IsKeyPressed(KeyboardKey scancode) { return state.shouldCapture ? state.keyboard.keysPressed[scancode] : false; }
+            bool IsKeyReleased(KeyboardKey scancode) { return state.shouldCapture ? state.keyboard.keysReleased[scancode] : false; }
 
             float GetAxis(InputAxis axis)
             {

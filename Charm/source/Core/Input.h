@@ -20,12 +20,14 @@ namespace Charm
             glm::vec2 scroll;
             bool buttonsHeld[MOUSE_BUTTON_COUNT];
             bool buttonsClicked[MOUSE_BUTTON_COUNT];
+            bool buttonsReleased[MOUSE_BUTTON_COUNT];
         };
 
         struct InputKeyboardState
         {
             bool keysHeld[KEY_COUNT];
             bool keysPressed[KEY_COUNT];
+            bool keysReleased[KEY_COUNT];
         };
 
         struct InputState
@@ -47,12 +49,14 @@ namespace Charm
 
             bool IsMouseDown(MouseButton button);
             bool IsMouseClicked(MouseButton button);
+            bool IsMouseReleased(MouseButton button);
             glm::vec2 GetMousePosition();
             glm::vec2 GetMouseRelative();
             glm::vec2 GetMouseScroll();
 
-            bool IsKeyDown(u32 scancode);
-            bool IsKeyPressed(u32 scancode);
+            bool IsKeyDown(KeyboardKey scancode);
+            bool IsKeyPressed(KeyboardKey scancode);
+            bool IsKeyReleased(KeyboardKey scancode);
             float GetAxis(InputAxis axis);
             float GetAxisAlt(InputAxis axis);
         }

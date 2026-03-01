@@ -34,7 +34,7 @@ namespace Charm
             Replace
         };
 
-        namespace RenderCommand
+        namespace RenderAPI
         {
             void Clear();
             void SetViewport(u32 x, u32 y, u32 width, u32 height);

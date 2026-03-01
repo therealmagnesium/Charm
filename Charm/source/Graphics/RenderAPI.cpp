@@ -1,4 +1,4 @@
-#include "Graphics/RenderCommand.h"
+#include "Graphics/RenderAPI.h"
 #include "Graphics/Renderer.h"
 #include "Core/Base.h"
 #include "Projects/Project.h"
@@ -12,7 +12,7 @@ namespace Charm
 {
     namespace Graphics
     {
-        namespace RenderCommand
+        namespace RenderAPI
         {
             void Clear()
             {

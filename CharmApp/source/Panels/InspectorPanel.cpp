@@ -1,7 +1,6 @@
 #include "InspectorPanel.h"
 #include "ContentBrowserPanel.h"
 #include "SceneHeirarchyPanel.h"
-#include "TextureSlicerPanel.h"
 #include "../CharmApp.h"
 
 #include <Core/Utils.h>
@@ -137,30 +136,34 @@ namespace CharmApp
             if (ImGui::InputText("##Tag", tagBuffer, sizeof(tagBuffer)))
                 internal.tag = std::string(tagBuffer);
 
-            DrawComponent<TransformComponent>("Transform", entity, [](TransformComponent& component) {
+            const auto DrawTransformComponent = [](TransformComponent& component)
+            {
                 const float columnWidth = 80.f;
                 UI::DrawVec3Control("Position", component.position, 0.1f, 0.f, columnWidth);
                 UI::DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, columnWidth);
                 UI::DrawVec3Control("Scale", component.scale, 0.1f, 1.f, columnWidth);
-            });
+            };
 
-            DrawComponent<DirectionalLightComponent>("Directional Light", entity, [](DirectionalLightComponent& component) {
+            const auto DrawDirectionalLightComponent = [](DirectionalLightComponent& component)
+            {
                 const float columnWidth = 100.f;
                 UI::DrawVec3Control("Direction", component.sun.direction, 0.01f, 1.f, columnWidth);
                 UI::DrawFloatControl("Intensity", &component.sun.intensity, 0.f, 100.f, 0.01f, columnWidth);
                 UI::DrawColorControl("Color", component.sun.color, columnWidth);
-            });
+            };
 
-            DrawComponent<CircleRendererComponent>("Circle Renderer", entity, [](CircleRendererComponent& component) {
+            const auto DrawCircleRendererComponent = [](CircleRendererComponent& component)
+            {
                 const float columnWidth = 110.f;
                 UI::DrawFloatControl("Radius", &component.radius, 0.f, 100.f, 0.01f, columnWidth);
                 UI::DrawFloatControl("Thickness", &component.thickness, 0.f, 1.f, 0.01f, columnWidth);
                 UI::DrawFloatControl("Fade", &component.fade, 0.f, 1.f, 0.01f, columnWidth);
                 UI::DrawColorControl("Color", component.color, columnWidth);
                 UI::DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
-            });
+            };
 
-            DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
+            const auto DrawSpriteRendererComponent = [](SpriteRendererComponent& component)
+            {
                 const float columnWidth = 115.f;
                 ImGui::PushID("Texture");
                 ImGui::Columns(2);
@@ -243,9 +246,10 @@ namespace CharmApp
                 UI::DrawIntInputControl("Sorting Layer", &component.sortingLayer, 0, MAX_SORTING_LAYERS, columnWidth);
                 UI::DrawVec2Control("Tiling Factor", component.tilingFactor, 0.2f, 1.f, columnWidth);
                 UI::DrawColorControl("Tint", component.tint, columnWidth);
-            });
+            };
 
-            DrawComponent<MeshRendererComponent>("Mesh Renderer", entity, [](MeshRendererComponent& component) {
+            const auto DrawMeshRendererComponent = [](MeshRendererComponent& component)
+            {
                 const float columnWidth = 60.f;
                 ImGui::PushID("Mesh");
                 ImGui::Columns(2);
@@ -273,9 +277,10 @@ namespace CharmApp
                 }
                 ImGui::Columns(1);
                 ImGui::PopID();
-            });
+            };
 
-            DrawComponent<Animator2DComponent>("Animator 2D", entity, [](Animator2DComponent& component) {
+            const auto DrawAnimator2DComponent = [](Animator2DComponent& component)
+            {
                 const float columnWidth = 120.f;
                 AnimationController* controller = AssetManager::GetAsset<AnimationController>(component.controller);
                 std::string placeholder = (controller != NULL) ? AssetManager::GetAssetPath(component.controller).stem().string() : "Select Animation Controller";
@@ -335,9 +340,10 @@ namespace CharmApp
                     if (controller->animations.size() < 1)
                         component.activeSlot = -1;
                 }
-            });
+            };
 
-            DrawComponent<Camera2DComponent>("Orthographic Camera", entity, [](Camera2DComponent& component) {
+            const auto DrawCamera2DComponent = [](Camera2DComponent& component)
+            {
                 const float columnWidth = 105.f;
                 Entity prevActiveCameraEntity = Scenes::GetActiveCameraEntity2D();
 
@@ -354,9 +360,10 @@ namespace CharmApp
                 }
 
                 UI::DrawColorControl("Clear Color", component.clearColor, columnWidth);
-            });
+            };
 
-            DrawComponent<Camera3DComponent>("Perspective Camera", entity, [](Camera3DComponent& component) {
+            const auto DrawCamera3DComponent = [](Camera3DComponent& component)
+            {
                 const float columnWidth = 105.f;
                 Entity prevActiveCameraEntity = Scenes::GetActiveCameraEntity3D();
 
@@ -374,9 +381,10 @@ namespace CharmApp
                 }
 
                 UI::DrawColorControl("Clear Color", component.clearColor, columnWidth);
-            });
+            };
 
-            DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](Rigidbody2DComponent& component) {
+            const auto DrawRigidbody2DComponent = [](Rigidbody2DComponent& component)
+            {
                 const float columnWidth = 150.f;
                 ImGui::PushID("Body Type");
                 ImGui::Columns(2);
@@ -417,9 +425,10 @@ namespace CharmApp
                 UI::DrawFloatControl("Gravity Scale", &component.gravityScale, 0.f, 0.f, 0.01f, columnWidth);
                 UI::DrawFloatControl("Linear Damping", &component.linearDamping, 0.f, 0.f, 0.01f, columnWidth);
                 UI::DrawFloatControl("Angular Damping", &component.angularDamping, 0.f, 0.f, 0.01f, columnWidth);
-            });
+            };
 
-            DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {
+            const auto DrawBoxCollider2DComponent = [](BoxCollider2DComponent& component)
+            {
                 const float columnWidth = 100.f;
                 UI::DrawVec2Control("Offset", component.offset, 0.1f, 0.f, columnWidth);
                 UI::DrawVec2Control("Size", component.size, 0.1f, 0.f, columnWidth);
@@ -427,9 +436,10 @@ namespace CharmApp
                 UI::DrawFloatControl("Density", &component.density, 0.f, 0.f, 0.01f, columnWidth);
                 UI::DrawFloatControl("Friction", &component.friction, 0.f, 1.f, 0.01f, columnWidth);
                 UI::DrawFloatControl("Restitution", &component.restitution, 0.f, 1.f, 0.01f, columnWidth);
-            });
+            };
 
-            DrawComponent<NativeScriptComponent>("Native Script", entity, [](NativeScriptComponent& component) {
+            const auto DrawNativeScriptComponent = [](NativeScriptComponent& component)
+            {
                 ImGui::PushID("Script Name");
                 ImGui::Columns(2);
                 ImGui::SetColumnWidth(0, 110.f);
@@ -455,7 +465,19 @@ namespace CharmApp
 
                 ImGui::Columns(1);
                 ImGui::PopID();
-            });
+            };
+
+            DrawComponent<TransformComponent>("Transform", entity, DrawTransformComponent);
+            DrawComponent<DirectionalLightComponent>("Directional Light", entity, DrawDirectionalLightComponent);
+            DrawComponent<CircleRendererComponent>("Circle Renderer", entity, DrawCircleRendererComponent);
+            DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, DrawSpriteRendererComponent);
+            DrawComponent<MeshRendererComponent>("Mesh Renderer", entity, DrawMeshRendererComponent);
+            DrawComponent<Animator2DComponent>("Animator 2D", entity, DrawAnimator2DComponent);
+            DrawComponent<Camera2DComponent>("Orthographic Camera", entity, DrawCamera2DComponent);
+            DrawComponent<Camera3DComponent>("Perspective Camera", entity, DrawCamera3DComponent);
+            DrawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, DrawRigidbody2DComponent);
+            DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, DrawBoxCollider2DComponent);
+            DrawComponent<NativeScriptComponent>("Native Script", entity, DrawNativeScriptComponent);
 
             const float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.f;
             const float availableWidth = ImGui::GetContentRegionAvail().x;

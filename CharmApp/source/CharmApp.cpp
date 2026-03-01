@@ -184,7 +184,7 @@ namespace CharmApp
         Renderer::SetClearColor(V3_OPEN(clearColor));
 
         Framebuffers::Bind(state.framebuffer);
-        RenderCommand::Clear();
+        RenderAPI::Clear();
 
         Framebuffers::ClearAttachment(state.framebuffer, 1, -1);
 
@@ -196,13 +196,18 @@ namespace CharmApp
             const glm::vec2 sceneViewportSize = SceneViewportPanel::GetSize();
 
             if (project.type == ProjectType::TwoDimensional)
+            {
                 Renderer::BeginScene2D(state.activeScene->editorCamera2D);
+                Scenes::RenderEditor(*state.activeScene, SceneHeirarchyPanel::GetSelectedEntity());
+                Renderer::EndScene2D();
+            }
             else
+            {
+                Entity& selectedEntity = SceneHeirarchyPanel::GetSelectedEntity();
                 Renderer::BeginScene3D(state.activeScene->editorCamera3D);
-
-            Scenes::RenderEditor(*state.activeScene, SceneHeirarchyPanel::GetSelectedEntity());
-
-            Renderer::EndScene2D();
+                Scenes::RenderEditor(*state.activeScene, selectedEntity);
+                Renderer::EndScene3D(selectedEntity);
+            }
 
             Input::Capture(isSceneViewportHovered);
             if (Input::IsMouseClicked(MOUSE_BUTTON_LEFT) && isSceneViewportHovered && isSceneViewportFocused && !ImGuizmo::IsOver())
@@ -287,6 +292,7 @@ namespace CharmApp
         state.sceneState = SceneState::Runtime;
         state.runtimeScene = Scenes::Copy(state.editorScene);
         state.activeScene = &state.runtimeScene;
+        state.project.isRuntime = true;
 
         SceneHeirarchyPanel::SetContext(*state.activeScene);
         Scenes::AlignParentsAndChildren(*state.activeScene);
@@ -308,6 +314,7 @@ namespace CharmApp
         SceneHeirarchyPanel::SetContext(state.editorScene);
         state.sceneState = SceneState::Editor;
         state.activeScene = &state.editorScene;
+        state.project.isRuntime = false;
 
         if (prev.IsHandleValid())
         {
@@ -317,7 +324,9 @@ namespace CharmApp
 
         Scenes::OnRuntimeStop(state.runtimeScene);
         state.runtimeScene = Scenes::Create();
-        state.project.grid.isEnabled = true;
+
+        if (state.project.type == ProjectType::TwoDimensional)
+            state.project.grid.isEnabled = true;
     }
 
     void OnSceneNew()
@@ -402,15 +411,15 @@ namespace CharmApp
             state.project = ProjectManager::Load(path);
             if (state.project.type == ProjectType::TwoDimensional)
             {
-                RenderCommand::DisableDepthBuffer();
-                RenderCommand::DisableStencilBuffer();
+                RenderAPI::DisableDepthBuffer();
+                RenderAPI::DisableStencilBuffer();
             }
             if (state.project.type == ProjectType::ThreeDimensional)
             {
-                RenderCommand::EnableDepthBuffer();
-                RenderCommand::SetDepthFunc(BufferFunc::Less);
-                RenderCommand::EnableStencilBuffer();
-                RenderCommand::SetStencilOperation(StencilOperation::Keep, StencilOperation::Replace, StencilOperation::Replace);
+                RenderAPI::EnableDepthBuffer();
+                RenderAPI::SetDepthFunc(BufferFunc::Less);
+                RenderAPI::EnableStencilBuffer();
+                RenderAPI::SetStencilOperation(StencilOperation::Keep, StencilOperation::Replace, StencilOperation::Replace);
             }
 
             ScriptManager::UnloadModule();

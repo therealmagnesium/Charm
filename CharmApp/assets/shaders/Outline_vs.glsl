@@ -22,7 +22,8 @@ uniform mat4 u_matrixNormal;
 
 void main()
 {
-    const vec4 worldPosition = u_matrixTransform * vec4(a_position, 1.f);
+    const vec4 localPosition = vec4(a_position, 1.f);
+    const vec4 worldPosition = u_matrixTransform * localPosition;
     v_output.position = worldPosition.xyz;
     v_output.color = a_color;
     v_output.texCoord = a_texCoord;

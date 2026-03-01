@@ -1,5 +1,5 @@
 #include "Graphics/Framebuffer.h"
-#include "Graphics/RenderCommand.h"
+#include "Graphics/RenderAPI.h"
 
 #include "Core/Log.h"
 #include "Core/Utils.h"
@@ -38,7 +38,7 @@ namespace Charm
             void Bind(Framebuffer& framebuffer)
             {
                 glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.id);
-                RenderCommand::SetViewport(0, 0, framebuffer.specification.width, framebuffer.specification.height);
+                RenderAPI::SetViewport(0, 0, framebuffer.specification.width, framebuffer.specification.height);
             }
 
             void Unbind()

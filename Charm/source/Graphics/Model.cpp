@@ -86,7 +86,16 @@ namespace Charm
                     }
                 }
 
+                u32 indexCount = 0;
+                for (u32 i = 0; i < assimpMesh->mNumFaces; i++)
+                {
+                    aiFace& face = assimpMesh->mFaces[i];
+                    indexCount += face.mNumIndices;
+                }
+
                 std::vector<u32> indices;
+                indices.reserve(indexCount);
+
                 for (u32 i = 0; i < assimpMesh->mNumFaces; i++)
                 {
                     aiFace& face = assimpMesh->mFaces[i];

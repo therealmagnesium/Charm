@@ -1,5 +1,5 @@
 #include "Graphics/Window.h"
-#include "Graphics/RenderCommand.h"
+#include "Graphics/RenderAPI.h"
 
 #include "Core/Application.h"
 #include "Core/Input.h"
@@ -73,81 +73,63 @@ namespace Charm
                     switch (event.type)
                     {
                         case SDL_EVENT_QUIT:
-                        {
                             Application::Quit();
                             break;
-                        }
 
                         case SDL_EVENT_KEY_DOWN:
-                        {
                             _Input->keyboard.keysPressed[event.key.scancode] = !_Input->keyboard.keysHeld[event.key.scancode];
                             _Input->keyboard.keysHeld[event.key.scancode] = true;
+                            _Input->keyboard.keysReleased[event.key.scancode] = false;
                             break;
-                        }
 
                         case SDL_EVENT_KEY_UP:
-                        {
                             _Input->keyboard.keysPressed[event.key.scancode] = false;
                             _Input->keyboard.keysHeld[event.key.scancode] = false;
+                            _Input->keyboard.keysReleased[event.key.scancode] = true;
                             break;
-                        }
 
                         case SDL_EVENT_MOUSE_MOTION:
-                        {
                             _Input->mouse.position.x = event.motion.x;
                             _Input->mouse.position.y = event.motion.y;
                             _Input->mouse.relative.x = event.motion.xrel;
                             _Input->mouse.relative.y = event.motion.yrel;
                             break;
-                        }
 
                         case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                        {
                             _Input->mouse.buttonsClicked[event.button.button] = !_Input->mouse.buttonsHeld[event.button.button];
                             _Input->mouse.buttonsHeld[event.button.button] = true;
+                            _Input->mouse.buttonsReleased[event.button.button] = false;
                             break;
-                        }
 
                         case SDL_EVENT_MOUSE_BUTTON_UP:
-                        {
                             _Input->mouse.buttonsClicked[event.button.button] = false;
                             _Input->mouse.buttonsHeld[event.button.button] = false;
+                            _Input->mouse.buttonsReleased[event.button.button] = true;
                             break;
-                        }
 
                         case SDL_EVENT_MOUSE_WHEEL:
-                        {
                             _Input->mouse.scroll.x = event.wheel.x;
                             _Input->mouse.scroll.y = event.wheel.y;
                             break;
-                        }
 
                         case SDL_EVENT_WINDOW_RESIZED:
-                        {
                             state.width = event.window.data1;
                             state.height = event.window.data2;
-                            RenderCommand::SetViewport(0, 0, state.width, state.height);
+                            RenderAPI::SetViewport(0, 0, state.width, state.height);
                             break;
-                        }
 
                         case SDL_EVENT_WINDOW_MAXIMIZED:
-                        {
                             state.isMaximized = true;
                             break;
-                        }
 
                         case SDL_EVENT_WINDOW_MINIMIZED:
-                        {
                             state.isMinimized = true;
                             break;
-                        }
 
                         case SDL_EVENT_WINDOW_RESTORED:
-                        {
                             state.isMinimized = false;
                             state.isMaximized = false;
                             break;
-                        }
 
                         default:
                             break;

@@ -7,7 +7,7 @@
 #include "Core/Time.h"
 
 #include "Graphics/Renderer.h"
-#include "Graphics/RenderCommand.h"
+#include "Graphics/RenderAPI.h"
 #include "Graphics/Window.h"
 
 #include "UI/UI.h"
@@ -79,7 +79,7 @@ namespace Charm
                     Window::HandleEvents();
                     state.config.funcs.OnUpdate();
 
-                    RenderCommand::Clear();
+                    RenderAPI::Clear();
 
                     state.config.funcs.OnRender();
 

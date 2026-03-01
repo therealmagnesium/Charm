@@ -55,6 +55,16 @@ namespace Charm
             Shader shader;
         };
 
+        struct RenderCommand
+        {
+            glm::mat4 transform = glm::mat4(1.f);
+            glm::vec3 worldCenter = glm::vec3(0.f);
+            const Mesh* mesh = NULL;
+            const Material* material = NULL;
+            u32 instanceCount = 0;
+            s32 entityID = -1;
+        };
+
         struct RenderState
         {
             glm::vec3 clearColor;
@@ -67,6 +77,7 @@ namespace Charm
             Shader blinnPhongShader;
             Shader outlineShader;
             RendererGrid grid;
+            std::vector<RenderCommand> commands;
         };
 
         namespace Renderer
@@ -80,6 +91,7 @@ namespace Charm
             void BeginScene2D(const SceneCamera3D& camera);
             void BeginScene3D(const SceneCamera3D& camera);
             void EndScene2D();
+            void EndScene3D(Entity& selectionContext = (Entity&)Entity_Null);
 
             void BeginBatchQuad();
             void EndBatchQuad();

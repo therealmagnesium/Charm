@@ -64,6 +64,7 @@ namespace Charm
             Entity GetActiveCameraEntity3D();
             const Camera2D* GetActiveCamera2D();
             const SceneCamera3D* GetActiveCamera3D();
+            const EditorCamera* GetActiveEditorCamera();
 
             void SetActiveCamera2D(Camera2D* camera);
             void SetActiveCamera3D(SceneCamera3D* camera);
