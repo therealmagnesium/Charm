@@ -15,7 +15,8 @@ namespace Charm
     {
         namespace Models
         {
-            void ProcessNode(Model& model, aiNode* assimpNode, const aiScene* scene, const std::filesystem::path& directory);
+            using MeshMap = std::unordered_map<u32, u32>;
+            void ProcessNode(Model& model, aiNode* assimpNode, const aiScene* scene, const std::filesystem::path& directory, MeshMap& processedMeshes);
             Mesh ProcessMesh(Model& model, aiMesh* assimpMesh, const aiScene* scene, const std::filesystem::path& directory);
 
             Model Load(const std::filesystem::path& path)
@@ -28,8 +29,15 @@ namespace Charm
                 ASSERT_RETURN((scene != NULL && !(scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && scene->mRootNode != NULL), model, "Failed to load model %s!", path.c_str());
 
                 model.materials.resize(scene->mNumMaterials);
+
+                // Maps an Assimp mesh index to the index of its already-processed Mesh in model.meshes.
+                // When a node references the same aiMesh index a second time, we reuse the canonical
+                // Mesh entry (sharing GPU resources) rather than allocating a new VAO/VBO.
+                MeshMap processedMeshes;
+                processedMeshes.reserve(scene->mNumMeshes);
+
                 const std::filesystem::path modelDirectory = path.parent_path();
-                ProcessNode(model, scene->mRootNode, scene, modelDirectory);
+                ProcessNode(model, scene->mRootNode, scene, modelDirectory, processedMeshes);
                 model.isValid = true;
 
                 INFO("Model \"%s\" loaded successfully with %d meshes and %d materials", path.c_str(), model.meshes.size(), model.materials.size());
@@ -42,17 +50,34 @@ namespace Charm
                     Meshes::Unload(mesh);
             }
 
-            void ProcessNode(Model& model, aiNode* assimpNode, const aiScene* scene, const std::filesystem::path& directory)
+            void ProcessNode(Model& model, aiNode* assimpNode, const aiScene* scene, const std::filesystem::path& directory, MeshMap& processedMeshes)
             {
                 for (u32 i = 0; i < assimpNode->mNumMeshes; i++)
                 {
-                    aiMesh* assimpMesh = scene->mMeshes[assimpNode->mMeshes[i]];
-                    const Mesh& mesh = ProcessMesh(model, assimpMesh, scene, directory);
-                    model.meshes.emplace_back(mesh);
+                    const u32 assimpMeshIndex = assimpNode->mMeshes[i];
+                    const auto it = processedMeshes.find(assimpMeshIndex);
+
+                    if (it != processedMeshes.end())
+                    {
+                        // This aiMesh has already been processed. Copy the canonical Mesh struct
+                        // so it shares the same VAO/VBO/IBO, but mark it as non-owning to
+                        // prevent Unload() from double-deleting those GPU resources.
+                        Mesh duplicate = model.meshes[it->second];
+                        duplicate.ownsGPUResources = false;
+                        model.meshes.emplace_back(std::move(duplicate));
+                    }
+                    else
+                    {
+                        const u32 canonicalIndex = (u32)model.meshes.size();
+                        processedMeshes[assimpMeshIndex] = canonicalIndex;
+
+                        aiMesh* assimpMesh = scene->mMeshes[assimpMeshIndex];
+                        model.meshes.emplace_back(ProcessMesh(model, assimpMesh, scene, directory));
+                    }
                 }
 
                 for (u32 i = 0; i < assimpNode->mNumChildren; i++)
-                    ProcessNode(model, assimpNode->mChildren[i], scene, directory);
+                    ProcessNode(model, assimpNode->mChildren[i], scene, directory, processedMeshes);
             }
 
             Mesh ProcessMesh(Model& model, aiMesh* assimpMesh, const aiScene* scene, const std::filesystem::path& directory)

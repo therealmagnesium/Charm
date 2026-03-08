@@ -64,7 +64,7 @@ namespace Charm
             {
                 const auto& Move = [&](const glm::vec3& delta)
                 {
-                    const float speed = 20.f;
+                    const float speed = 15.f;
                     camera.target += GetRightVector(camera) * delta.x * speed * (float)Time::GetDelta();
                     camera.target += GetUpVector(camera) * delta.y * speed * (float)Time::GetDelta();
                     camera.target += -GetForwardVector(camera) * delta.z * speed * (float)Time::GetDelta();

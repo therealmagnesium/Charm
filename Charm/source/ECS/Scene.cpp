@@ -889,9 +889,33 @@ namespace Charm
 
             void DrawMeshesAndLights(Scene& scene, Entity& selectionContext, bool isRuntime)
             {
-                const auto meshes = scene.registry.view<MeshRendererComponent>();
+                // Group every active MeshRenderer entity by its (model asset, VAO) key.
+                // Two Mesh entries that share a vertexArray — including duplicate submeshes
+                // deduplicated at load time — land in the same group and produce a single
+                // instanced draw call. Single-entity groups fall back to DrawMesh.
+                using MeshKey = std::pair<AssetHandle, u32>;
 
-                for (const auto entityID : meshes)
+                struct MeshKeyHash
+                {
+                    std::size_t operator()(const MeshKey& key) const
+                    {
+                        const std::size_t h0 = std::hash<AssetHandle>()(key.first);
+                        const std::size_t h1 = std::hash<u32>()(key.second);
+                        return h0 ^ (h1 << 32 | h1 >> 32);
+                    }
+                };
+
+                struct InstanceGroup
+                {
+                    Mesh* mesh = NULL;
+                    Material* material = NULL;
+                    std::vector<InstanceData> instances;
+                };
+
+                std::unordered_map<MeshKey, InstanceGroup, MeshKeyHash> instanceGroups;
+
+                const auto meshRenderers = scene.registry.view<MeshRendererComponent>();
+                for (const auto entityID : meshRenderers)
                 {
                     Entity entity = Entities::Create(entityID, &scene);
 
@@ -905,10 +929,43 @@ namespace Charm
                     if (!AssetManager::IsHandleValid(meshRenderer.model))
                         continue;
 
-                    const glm::mat4 transformMatrix = transform.GetMatrix3D();
-                    Shader& blinnPhongShader = Renderer::GetShaderBlinnPhong();
                     Model* model = AssetManager::GetAsset<Model>(meshRenderer.model);
-                    Renderer::DrawModel(*model, transformMatrix, blinnPhongShader, (s32)entityID);
+                    const glm::mat4 transformMatrix = transform.GetMatrix3D();
+
+                    // submeshIndex >= 0 targets a single mesh within the model.
+                    // submeshIndex == -1 (the default) includes all meshes in the model.
+                    if (meshRenderer.submeshIndex >= 0 && meshRenderer.submeshIndex < (s32)model->meshes.size())
+                    {
+                        Mesh& mesh = model->meshes[meshRenderer.submeshIndex];
+                        const MeshKey key = {meshRenderer.model, mesh.vertexArray};
+                        auto& group = instanceGroups[key];
+                        group.mesh = &mesh;
+                        group.material = &model->materials[mesh.materialIndex];
+                        group.instances.push_back({transformMatrix, (s32)entity.handle});
+                    }
+                    else
+                    {
+                        for (u32 i = 0; i < (u32)model->meshes.size(); i++)
+                        {
+                            Mesh& mesh = model->meshes[i];
+                            const MeshKey key = {meshRenderer.model, mesh.vertexArray};
+                            auto& group = instanceGroups[key];
+                            group.mesh = &mesh;
+                            group.material = &model->materials[mesh.materialIndex];
+                            group.instances.push_back({transformMatrix, (s32)entity.handle});
+                        }
+                    }
+                }
+
+                Shader& blinnPhongShader = Renderer::GetShaderBlinnPhong();
+                for (auto& [key, group] : instanceGroups)
+                {
+                    group.material->shader = &blinnPhongShader;
+
+                    if (group.instances.size() == 1)
+                        Renderer::DrawMesh(*group.mesh, *group.material, group.instances[0].transform, group.instances[0].entityID);
+                    else
+                        Renderer::DrawMeshInstanced(*group.mesh, *group.material, group.instances.data(), (u32)group.instances.size());
                 }
 
                 const auto suns = scene.registry.view<DirectionalLightComponent>();

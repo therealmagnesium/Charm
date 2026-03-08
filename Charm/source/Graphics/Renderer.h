@@ -57,6 +57,7 @@ namespace Charm
 
         struct RenderCommand
         {
+            std::vector<InstanceData> instanceData;
             glm::mat4 transform = glm::mat4(1.f);
             glm::vec3 worldCenter = glm::vec3(0.f);
             const Mesh* mesh = NULL;
@@ -134,7 +135,8 @@ namespace Charm
             void DrawRectangleLines(const glm::vec2& position, const glm::vec2& size, const glm::vec3& color);
             void DrawRectangleLines(const glm::mat4& transform, const glm::vec3& color);
 
-            void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform, s32 entityID = -1);
+            void DrawMesh(Mesh& mesh, const Material& material, const glm::mat4& transform, s32 entityID = -1);
+            void DrawMeshInstanced(Mesh& mesh, const Material& material, const InstanceData* data, u32 count);
             void DrawModel(Model& model, const glm::mat4& transform, Shader& shader = (Shader&)Shader_Invalid, s32 entityID = -1);
 
             void DrawEntity(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);

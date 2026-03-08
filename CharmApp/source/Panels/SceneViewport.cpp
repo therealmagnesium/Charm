@@ -89,10 +89,9 @@ namespace CharmApp
                 {
                     glm::vec3 position, rotation, scale;
                     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(entityTransform), glm::value_ptr(position), glm::value_ptr(rotation), glm::value_ptr(scale));
-                    const glm::vec3 deltaRotation = rotation - entityTransformComponent.rotation;
 
                     entityTransformComponent.position = position;
-                    entityTransformComponent.rotation += deltaRotation;
+                    entityTransformComponent.rotation = rotation;
                     entityTransformComponent.scale = scale;
                 }
             }

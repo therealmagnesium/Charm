@@ -27,6 +27,7 @@ namespace Charm
         const static u32 k_MaxVertexCount = k_MaxQuadCount * 4;
         const static u32 k_MaxIndexCount = k_MaxQuadCount * 6;
         const static u32 k_MaxTextures = 32;
+        const static u32 k_MaxInstances = 4096;
 
         struct BatchData
         {
@@ -82,8 +83,8 @@ namespace Charm
             void AddEntityToBatch(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);
             void AddEntityToBatch(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
             void SubmitCommand(const RenderCommand& command);
-            void WriteCommandToStencil(const RenderCommand& command, const Entity& selectionContext);
             void DrawSelectionContextOutline(const Entity& selectionContext);
+            bool WriteCommandToStencil(const RenderCommand& command, const Entity& selectionContext);
 
             void Initialize()
             {
@@ -143,12 +144,9 @@ namespace Charm
                 Shaders::CreateUniform(state.diffuseShader, "u_material.albedoTexture");
 
                 state.blinnPhongShader = Shaders::Load("assets/shaders/Blinn-Phong_vs.glsl", "assets/shaders/Blinn-Phong_fs.glsl");
-                Shaders::CreateUniform(state.blinnPhongShader, "u_entityID");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_cameraPosition");
-                Shaders::CreateUniform(state.blinnPhongShader, "u_matrixTransform");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_matrixView");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_matrixProjection");
-                Shaders::CreateUniform(state.blinnPhongShader, "u_matrixNormal");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_material.albedo");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_material.albedoTexture");
                 Shaders::CreateUniform(state.blinnPhongShader, "u_sun.direction");
@@ -156,11 +154,8 @@ namespace Charm
                 Shaders::CreateUniform(state.blinnPhongShader, "u_sun.intensity");
 
                 state.outlineShader = Shaders::Load("assets/shaders/Outline_vs.glsl", "assets/shaders/Outline_fs.glsl");
-                Shaders::CreateUniform(state.outlineShader, "u_entityID");
-                Shaders::CreateUniform(state.outlineShader, "u_matrixTransform");
                 Shaders::CreateUniform(state.outlineShader, "u_matrixView");
                 Shaders::CreateUniform(state.outlineShader, "u_matrixProjection");
-                Shaders::CreateUniform(state.outlineShader, "u_matrixNormal");
 
                 state.grid.vao = VertexArray::Create();
                 state.grid.shader = Shaders::Load("assets/shaders/2DGrid_vs.glsl", "assets/shaders/2DGrid_fs.glsl");
@@ -264,9 +259,11 @@ namespace Charm
                 Shaders::SetUniform(state.diffuseShader, "u_matrixView", state.viewMatrix);
                 Shaders::SetUniform(state.diffuseShader, "u_matrixProjection", state.projectionMatrix);
 
+                const glm::vec3 cameraPosition = glm::vec3(glm::inverse(state.viewMatrix)[3]);
                 Shaders::Bind(state.blinnPhongShader);
                 Shaders::SetUniform(state.blinnPhongShader, "u_matrixView", state.viewMatrix);
                 Shaders::SetUniform(state.blinnPhongShader, "u_matrixProjection", state.projectionMatrix);
+                Shaders::SetUniform(state.blinnPhongShader, "u_cameraPosition", cameraPosition);
 
                 Shaders::Bind(state.outlineShader);
                 Shaders::SetUniform(state.outlineShader, "u_matrixView", state.viewMatrix);
@@ -360,14 +357,14 @@ namespace Charm
 
                 for (const RenderCommand& command : commandsOpaque)
                 {
-                    WriteCommandToStencil(command, selectionContext);
-                    SubmitCommand(command);
+                    if (!WriteCommandToStencil(command, selectionContext))
+                        SubmitCommand(command);
                 }
 
                 for (const RenderCommand& command : commandsTranslucent)
                 {
-                    WriteCommandToStencil(command, selectionContext);
-                    SubmitCommand(command);
+                    if (!WriteCommandToStencil(command, selectionContext))
+                        SubmitCommand(command);
                 }
 
                 if (selectionContext.IsHandleValid())
@@ -620,8 +617,11 @@ namespace Charm
                 DrawLineEx(lineVertices[3], lineVertices[0], 6.f, color);
             }
 
-            void DrawMesh(const Mesh& mesh, const Material& material, const glm::mat4& transform, s32 entityID)
+            void DrawMesh(Mesh& mesh, const Material& material, const glm::mat4& transform, s32 entityID)
             {
+                if (mesh.instanceBuffer == 0)
+                    Meshes::SetupInstanceBuffer(mesh, k_MaxInstances);
+
                 RenderCommand command;
                 command.mesh = &mesh;
                 command.material = &material;
@@ -633,11 +633,37 @@ namespace Charm
                 state.commands.emplace_back(command);
             }
 
+            void DrawMeshInstanced(Mesh& mesh, const Material& material, const InstanceData* data, u32 count)
+            {
+                if (count == 0)
+                    return;
+
+                if (material.IsTranslucent())
+                {
+                    for (u32 i = 0; i < count; i++)
+                        DrawMesh(mesh, material, data[i].transform, data[i].entityID);
+                    return;
+                }
+
+                if (mesh.instanceBuffer == 0)
+                    Meshes::SetupInstanceBuffer(mesh, k_MaxInstances);
+
+                RenderCommand command;
+                command.mesh = &mesh;
+                command.material = &material;
+                command.worldCenter = glm::vec3(data[0].transform * glm::vec4(mesh.GetCenter(), 1.f));
+                command.entityID = data[0].entityID;
+                command.instanceCount = count;
+                command.instanceData.assign(data, data + count);
+
+                state.commands.emplace_back(std::move(command));
+            }
+
             void DrawModel(Model& model, const glm::mat4& transform, Shader& shader, s32 entityID)
             {
                 for (u32 i = 0; i < model.meshes.size(); i++)
                 {
-                    const Mesh& mesh = model.meshes[i];
+                    Mesh& mesh = model.meshes[i];
                     Material& material = model.materials[mesh.materialIndex];
 
                     if (shader != Shader_Invalid)
@@ -977,23 +1003,38 @@ namespace Charm
 
             void SubmitCommand(const RenderCommand& command)
             {
-                const glm::mat4 matrixNormal = glm::transpose(glm::inverse(command.transform));
-                const glm::vec3 cameraPosition = glm::vec3(glm::inverse(state.viewMatrix)[3]);
+                // For single draws, wrap the transform + entityID into a temporary InstanceData.
+                // For instanced draws, the instanceData vector already contains per-instance values.
+                InstanceData singleData;
+                const InstanceData* data = nullptr;
+                u32 instanceCount = 0;
+
+                if (command.instanceData.empty())
+                {
+                    singleData.transform = command.transform;
+                    singleData.entityID = command.entityID;
+                    data = &singleData;
+                    instanceCount = 1;
+                }
+                else
+                {
+                    data = command.instanceData.data();
+                    instanceCount = command.instanceCount;
+                }
+
+                Meshes::UploadInstanceData(*command.mesh, data, instanceCount);
+
                 VertexArray::Bind(command.mesh->vertexArray);
                 IndexBuffer::Bind(command.mesh->indexBuffer);
 
                 Shaders::Bind(*command.material->shader);
-                Shaders::SetUniform(*command.material->shader, "u_entityID", command.entityID);
-                Shaders::SetUniform(*command.material->shader, "u_cameraPosition", cameraPosition);
-                Shaders::SetUniform(*command.material->shader, "u_matrixTransform", command.transform);
-                Shaders::SetUniform(*command.material->shader, "u_matrixNormal", matrixNormal);
                 Shaders::SetUniform(*command.material->shader, "u_material.albedo", command.material->albedo);
                 Shaders::SetUniform(*command.material->shader, "u_material.albedoTexture", 0);
 
                 const Texture& albedoTexture = command.material->albedoTexture != NULL ? *command.material->albedoTexture : batchData.whiteTexture;
                 Textures::Bind(albedoTexture, 0);
 
-                RenderAPI::DrawIndexed(PrimitiveType::Triangles, command.mesh->indices.size());
+                RenderAPI::DrawIndexedInstanced(PrimitiveType::Triangles, command.mesh->indices.size(), instanceCount);
 
                 Shaders::Unbind();
                 IndexBuffer::Unbind();
@@ -1041,19 +1082,72 @@ namespace Charm
                 transform.scale /= scale;
             }
 
-            void WriteCommandToStencil(const RenderCommand& command, const Entity& selectionContext)
+            // Sets stencil state and submits the command. For single-instance commands the
+            // caller is responsible for calling SubmitCommand (returns false). For multi-instance
+            // commands the batch is split into a selected sub-command and a non-selected
+            // sub-command which are both submitted here (returns true so the caller skips its
+            // own SubmitCommand call).
+            bool WriteCommandToStencil(const RenderCommand& command, const Entity& selectionContext)
             {
-                const Entity entity = Entities::Create((entt::entity)command.entityID, selectionContext.context);
-                if (entity == selectionContext && selectionContext.IsHandleValid())
+                if (command.instanceCount == 1)
                 {
-                    RenderAPI::SetStencilFunc(BufferFunc::Always, 1, 0xFF);
-                    RenderAPI::EnableStencilWriting();
+                    const entt::entity handle = (entt::entity)command.entityID;
+                    const Entity entity = Entities::Create(handle, selectionContext.context);
+
+                    if (entity == selectionContext && selectionContext.IsHandleValid())
+                    {
+                        RenderAPI::SetStencilFunc(BufferFunc::Always, 1, 0xFF);
+                        RenderAPI::EnableStencilWriting();
+                    }
+                    else
+                    {
+                        RenderAPI::SetStencilFunc(BufferFunc::Always, 0, 0xFF);
+                        RenderAPI::DisableStencilWriting();
+                    }
+
+                    // Caller submits.
+                    return false;
                 }
-                else
+
+                // Multi-instance path: split instanceData into two sub-commands so each
+                // group gets its own draw call under the correct stencil state.
+                // This is necessary because a single glDrawElementsInstanced call uses one
+                // stencil state for all instances — per-instance stencil toggling is not
+                // possible without splitting the draw.
+                RenderCommand selectedCommand = command;
+                RenderCommand otherCommand = command;
+                selectedCommand.instanceData.clear();
+                otherCommand.instanceData.clear();
+
+                for (const InstanceData& instance : command.instanceData)
                 {
+                    const entt::entity handle = (entt::entity)instance.entityID;
+                    const Entity entity = Entities::Create(handle, selectionContext.context);
+
+                    if (entity == selectionContext && selectionContext.IsHandleValid())
+                        selectedCommand.instanceData.push_back(instance);
+                    else
+                        otherCommand.instanceData.push_back(instance);
+                }
+
+                if (!otherCommand.instanceData.empty())
+                {
+                    otherCommand.instanceCount = (u32)otherCommand.instanceData.size();
                     RenderAPI::SetStencilFunc(BufferFunc::Always, 0, 0xFF);
                     RenderAPI::DisableStencilWriting();
+                    SubmitCommand(otherCommand);
                 }
+
+                if (!selectedCommand.instanceData.empty())
+                {
+                    selectedCommand.instanceCount = (u32)selectedCommand.instanceData.size();
+                    RenderAPI::SetStencilFunc(BufferFunc::Always, 1, 0xFF);
+                    RenderAPI::EnableStencilWriting();
+                    SubmitCommand(selectedCommand);
+                }
+
+                // Both sub-commands submitted here; caller must not call SubmitCommand again.
+                return true;
             }
         }
     }

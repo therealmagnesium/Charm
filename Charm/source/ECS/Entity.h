@@ -1,6 +1,5 @@
 #pragma once
 #include "ECS/Scene.h"
-#include "Core/Log.h"
 
 #include <entt/entt.hpp>
 #include <utility>

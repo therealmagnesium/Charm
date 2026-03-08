@@ -14,6 +14,7 @@ namespace Charm
             void EnableAttributeLocation(u32 location);
             void DisableAttributeLocation(u32 location);
             void SpecifyFormat(u32 location, u32 numComponents, u32 type, u64 stride, u64 offset);
+            void SetAttributeDivisor(u32 location, u32 divisor);
         }
 
         namespace VertexBuffer
@@ -23,6 +24,7 @@ namespace Charm
             void Bind(u32 vbo);
             void Unbind();
             void SetData(u64 size, const void* data, u32 usage);
+            void SubData(u64 offset, u64 size, const void* data);
         }
 
         namespace IndexBuffer

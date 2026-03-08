@@ -41,6 +41,7 @@ namespace Charm
             void SetStencilOperation(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation bothPass) { glStencilOp(0x1E00 + (u8)stencilFail, 0x1E00 + (u8)depthFail, 0x1E00 + (u8)bothPass); }
             void DrawArrays(PrimitiveType type, u32 vertexCount) { glDrawArrays((u8)type, 0, vertexCount); }
             void DrawIndexed(PrimitiveType type, u64 indexCount) { glDrawElements((u8)type, indexCount, GL_UNSIGNED_INT, NULL); }
+            void DrawIndexedInstanced(PrimitiveType type, u64 indexCount, u32 instanceCount) { glDrawElementsInstanced((u8)type, indexCount, GL_UNSIGNED_INT, NULL, instanceCount); }
         }
     }
 }

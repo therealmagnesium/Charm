@@ -16,7 +16,7 @@ namespace Charm
     {
         namespace Textures
         {
-            Texture Load(const char* path, TextureFilter minFilter, TextureFilter magFilter)
+            Texture Load(const char* path, bool gammaCorrection, TextureFilter minFilter, TextureFilter magFilter)
             {
                 Texture texture;
                 texture.minFilter = minFilter;
@@ -35,14 +35,14 @@ namespace Charm
                 {
                     case 3:
                     {
-                        texture.internalFormat = GL_RGB8;
+                        texture.internalFormat = gammaCorrection ? GL_SRGB8 : GL_RGB8;
                         texture.dataFormat = GL_RGB;
                         break;
                     }
 
                     case 4:
                     {
-                        texture.internalFormat = GL_RGBA8;
+                        texture.internalFormat = gammaCorrection ? GL_SRGB8_ALPHA8 : GL_RGBA8;
                         texture.dataFormat = GL_RGBA;
 
                         const u8* start = texture.data;

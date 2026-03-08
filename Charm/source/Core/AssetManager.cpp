@@ -150,7 +150,10 @@ namespace Charm
 
             bool IsAssetTypeRegistered(AssetType type)
             {
-                auto HasType = [=](const std::pair<AssetHandle, AssetMetadata>& pair) { return pair.second.type == type; };
+                auto HasType = [=](const std::pair<AssetHandle, AssetMetadata>& pair)
+                {
+                    return pair.second.type == type;
+                };
                 auto it = std::find_if(assets->registry.begin(), assets->registry.end(), HasType);
                 return it != assets->registry.end();
             }
@@ -167,7 +170,10 @@ namespace Charm
 
             bool IsAssetRegistered(const std::filesystem::path& path)
             {
-                auto IsPathRegistered = [&](const std::pair<AssetHandle, AssetMetadata>& pair) { return pair.second.path == path; };
+                auto IsPathRegistered = [&](const std::pair<AssetHandle, AssetMetadata>& pair)
+                {
+                    return pair.second.path == path;
+                };
                 auto it = std::find_if(assets->registry.begin(), assets->registry.end(), IsPathRegistered);
                 return it != assets->registry.end();
             }
@@ -175,7 +181,10 @@ namespace Charm
             AssetHandle FindAssetHandle(const std::filesystem::path& path)
             {
                 AssetHandle searchedAssetHandle = AssetHandle_Invalid;
-                auto IsPathRegistered = [&](const std::pair<AssetHandle, AssetMetadata>& pair) { return pair.second.path == path; };
+                auto IsPathRegistered = [&](const std::pair<AssetHandle, AssetMetadata>& pair)
+                {
+                    return pair.second.path == path;
+                };
                 auto it = std::find_if(assets->registry.begin(), assets->registry.end(), IsPathRegistered);
 
                 if (it != assets->registry.end())
@@ -206,7 +215,8 @@ namespace Charm
                 {
                     case AssetType::Texture:
                     {
-                        Texture texture = Textures::Load(path.c_str());
+                        const bool gammaCorrection = project.type == ProjectType::ThreeDimensional;
+                        Texture texture = Textures::Load(path.c_str(), gammaCorrection);
                         if (texture.isValid)
                         {
                             asset = new Texture(std::move(texture));

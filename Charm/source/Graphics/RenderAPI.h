@@ -54,6 +54,7 @@ namespace Charm
             void SetStencilOperation(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation bothPass);
             void DrawArrays(PrimitiveType type, u32 vertexCount);
             void DrawIndexed(PrimitiveType type, u64 indexCount);
+            void DrawIndexedInstanced(PrimitiveType type, u64 indexCount, u32 instanceCount);
         }
     }
 }

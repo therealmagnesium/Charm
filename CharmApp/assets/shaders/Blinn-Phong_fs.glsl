@@ -22,6 +22,7 @@ struct DirectionalLight
 };
 
 layout (location = 0) in VertexData v_input;
+layout (location = 4) in flat int v_entityID;
 
 layout (location = 0) out vec4 finalColor;
 layout (location = 1) out int entityID;
@@ -29,7 +30,6 @@ layout (location = 1) out int entityID;
 uniform Material u_material;
 uniform DirectionalLight u_sun;
 uniform vec3 u_cameraPosition = vec3(0.f);
-uniform int u_entityID = -1;
 
 float CalculateDiffuse(vec3 N, vec3 lightDirection)
 {
@@ -40,9 +40,9 @@ float CalculateDiffuse(vec3 N, vec3 lightDirection)
 float CalculateSpecular(vec3 N, vec3 lightDirection)
 {
     const vec3 viewDirection = normalize(u_cameraPosition - v_input.position);
-    const vec3 reflectDirection = reflect(-lightDirection, N);
+    const vec3 halfwayDirection = normalize(lightDirection + viewDirection);
     const float shininess = 32.f;
-    const float specularFactor = pow(max(dot(viewDirection, reflectDirection), 0.f), shininess);
+    const float specularFactor = pow(max(dot(N, halfwayDirection), 0.f), shininess);
     return specularFactor;
 }
 
@@ -56,7 +56,7 @@ vec4 GetColorAlbedo()
 void main()
 {
     const vec3 N = normalize(v_input.normal);
-    const vec3 ambient = vec3(0.4f);
+    const vec3 ambient = vec3(0.5f);
     const vec4 albedo = GetColorAlbedo();
     const vec3 lightDirection = normalize(-u_sun.direction); 
 
@@ -68,5 +68,8 @@ void main()
 
     const vec3 lighting = ambient + (diffuse + specular) * u_sun.intensity;
     finalColor = vec4(lighting, 1.f) * albedo;
-    entityID = u_entityID;
+
+    const float gamma = 2.2f;
+    finalColor.rgb = pow(finalColor.rgb, vec3(1.f / gamma));
+    entityID = v_entityID;
 }

@@ -34,6 +34,7 @@ namespace Charm
                         break;
                 }
             }
+            void SetAttributeDivisor(u32 location, u32 divisor) { glVertexAttribDivisor(location, divisor); }
         }
 
         namespace VertexBuffer
@@ -50,6 +51,7 @@ namespace Charm
             void Bind(u32 vbo) { glBindBuffer(GL_ARRAY_BUFFER, vbo); }
             void Unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
             void SetData(u64 size, const void* data, u32 usage) { glBufferData(GL_ARRAY_BUFFER, size, data, usage); }
+            void SubData(u64 offset, u64 size, const void* data) { glBufferSubData(GL_ARRAY_BUFFER, offset, size, data); }
         }
 
         namespace IndexBuffer

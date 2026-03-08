@@ -69,15 +69,15 @@ namespace Charm
 
             void Validate(Mesh& mesh, MeshVertex* vertices, u32 vertexCount, u32* indices, u32 indexCount)
             {
+                mesh.vertexArray = VertexArray::Create();
+                mesh.vertexBuffer = VertexBuffer::Create();
+                mesh.indexBuffer = IndexBuffer::Create();
+
                 mesh.vertices.reserve(vertexCount);
                 mesh.indices.reserve(indexCount);
 
                 std::copy(vertices, vertices + vertexCount, std::back_inserter(mesh.vertices));
                 std::copy(indices, indices + indexCount, std::back_inserter(mesh.indices));
-
-                mesh.vertexArray = VertexArray::Create();
-                mesh.vertexBuffer = VertexBuffer::Create();
-                mesh.indexBuffer = IndexBuffer::Create();
 
                 VertexArray::Bind(mesh.vertexArray);
 
@@ -102,6 +102,37 @@ namespace Charm
                 VertexArray::Unbind();
             }
 
+            void SetupInstanceBuffer(Mesh& mesh, u32 maxInstances)
+            {
+                mesh.instanceBuffer = VertexBuffer::Create();
+
+                VertexArray::Bind(mesh.vertexArray);
+                VertexBuffer::Bind(mesh.instanceBuffer);
+                VertexBuffer::SetData(maxInstances * sizeof(InstanceData), NULL, GL_STREAM_DRAW);
+
+                for (u32 i = 0; i < 4; i++)
+                {
+                    const u32 location = 4 + i;
+                    VertexArray::EnableAttributeLocation(location);
+                    VertexArray::SpecifyFormat(location, 4, GL_FLOAT, sizeof(InstanceData), i * sizeof(glm::vec4));
+                    VertexArray::SetAttributeDivisor(location, 1);
+                }
+
+                VertexArray::EnableAttributeLocation(8);
+                VertexArray::SpecifyFormat(8, 1, GL_INT, sizeof(InstanceData), sizeof(glm::mat4));
+                VertexArray::SetAttributeDivisor(8, 1);
+
+                VertexArray::Unbind();
+                VertexBuffer::Unbind();
+            }
+
+            void UploadInstanceData(const Mesh& mesh, const InstanceData* data, u32 count)
+            {
+                VertexBuffer::Bind(mesh.instanceBuffer);
+                VertexBuffer::SubData(0, count * sizeof(InstanceData), data);
+                VertexBuffer::Unbind();
+            }
+
             void Unload(Mesh& mesh)
             {
                 mesh.vertices.clear();
@@ -113,6 +144,9 @@ namespace Charm
                     VertexBuffer::Destroy(mesh.vertexBuffer);
                     IndexBuffer::Destroy(mesh.indexBuffer);
                 }
+
+                if (mesh.ownsGPUResources && mesh.instanceBuffer != 0)
+                    VertexBuffer::Destroy(mesh.instanceBuffer);
             }
         }
     }
