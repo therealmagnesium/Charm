@@ -1,12 +1,8 @@
 #pragma once
 #include "Core/Base.h"
-#include "Graphics/Texture.h"
-#include "Graphics/Shader.h"
 
 #include <vector>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <glm/glm.hpp>
 
 namespace Charm
 {
@@ -18,20 +14,6 @@ namespace Charm
             glm::vec4 color;
             glm::vec2 texCoord;
             glm::vec3 normal;
-        };
-
-        struct Material
-        {
-            glm::vec4 albedo = glm::vec4(1.f);
-            Texture* albedoTexture = NULL;
-            Shader* shader = NULL;
-
-            inline bool IsTranslucent() const
-            {
-                const bool colorHasTransparency = albedo.a < 1.f;
-                const bool textureHasTransparency = albedoTexture != NULL && albedoTexture->hasTransparency;
-                return colorHasTransparency || textureHasTransparency;
-            }
         };
 
         // Per-instance data streamed into the instance buffer each frame.

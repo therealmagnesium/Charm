@@ -7,17 +7,11 @@
 #include "Core/Random.h"
 #include "Core/Utils.h"
 
-#include "Graphics/Animation.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Lights.h"
-#include "Graphics/Shapes.h"
-#include "Graphics/Texture.h"
 
 #include <glm/glm.hpp>
 #include <string>
-
-using namespace Charm::Core;
-using namespace Charm::Graphics;
 
 namespace Charm
 {
@@ -187,6 +181,7 @@ namespace Charm
         {
             AssetHandle model;
             s32 submeshIndex = -1;
+            std::vector<Core::AssetHandle> materialOverrides;
 
             MeshRendererComponent() = default;
             MeshRendererComponent(const MeshRendererComponent&) = default;

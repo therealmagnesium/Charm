@@ -3,6 +3,7 @@
 #include "InspectorPanel.h"
 #include "../CharmApp.h"
 
+#include <Graphics/Material.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
@@ -199,7 +200,7 @@ namespace CharmApp
                 if (ImGui::MenuItem("Delete"))
                 {
                     INFO("Deleting file %s...", entryPath.c_str());
-                    if (!entry.is_directory() && AssetManager::IsAssetRegistered(entryPath))
+                    if (!entry.is_directory() && AssetManager::IsAssetRegistered(relativeAssetPath))
                     {
                         const AssetHandle handle = AssetManager::FindAssetHandle(relativeAssetPath);
                         AssetManager::Remove(handle);
@@ -321,6 +322,7 @@ namespace CharmApp
                         AssetHandle handle = AssetManager::Import(projectPath, AssetType::Animation);
                         SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                         InspectorPanel::SetSelectedAsset(handle);
+                        state.selectedFilePath = projectPath;
                     }
                 }
 
@@ -341,6 +343,32 @@ namespace CharmApp
                         AssetHandle handle = AssetManager::Import(projectPath, AssetType::AnimationController);
                         SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                         InspectorPanel::SetSelectedAsset(handle);
+                        state.selectedFilePath = projectPath;
+                    }
+                }
+
+                // Bring up a file dialog to allow the user to create and save a material asset on disk
+                if (ImGui::MenuItem("Material"))
+                {
+                    FileDialogFilter filter;
+                    filter.name = "Material";
+                    filter.specification = "chmat";
+
+                    FileDialogs::SetDefaultPath(state.currentDirectory);
+                    if (FileDialogs::Save(&filter, 1))
+                    {
+                        Material material;
+                        const std::filesystem::path path = FileDialogs::GetSelectedPath();
+                        const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(path, project);
+
+                        material.name = projectPath.stem().string();
+                        material.shader = &Renderer::GetShaderBlinnPhong();
+                        Materials::Save(material, projectPath);
+
+                        const AssetHandle handle = AssetManager::Import(projectPath, AssetType::Material);
+                        SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
+                        InspectorPanel::SetSelectedAsset(handle);
+                        state.selectedFilePath = projectPath;
                     }
                 }
 
@@ -356,11 +384,12 @@ namespace CharmApp
                     {
                         const std::filesystem::path path = FileDialogs::GetSelectedPath();
                         const std::filesystem::path projectPath = ProjectManager::GetAssetFileSystemPath(path, project);
-
                         TilePalettes::Save(TilePalette_Null, projectPath);
-                        AssetHandle handle = AssetManager::Import(projectPath, AssetType::TilePalette);
+
+                        const AssetHandle handle = AssetManager::Import(projectPath, AssetType::TilePalette);
                         SceneHeirarchyPanel::SetSelectedEntity(Entity_Null);
                         InspectorPanel::SetSelectedAsset(handle);
+                        state.selectedFilePath = projectPath;
                     }
                 }
 

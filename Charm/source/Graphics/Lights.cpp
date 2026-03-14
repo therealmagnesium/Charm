@@ -3,22 +3,19 @@
 #include <Graphics/Renderer.h>
 #include <glm/vec3.hpp>
 
-namespace Charm
+namespace Charm::Graphics
 {
-    namespace Graphics
+    namespace Lights
     {
-        namespace Lights
+        void UpdateUniforms(const DirectionalLight& sun)
         {
-            void UpdateUniforms(const DirectionalLight& sun)
-            {
-                Shader& validShader = sun.shader != NULL ? *sun.shader : Renderer::GetShaderBlinnPhong();
+            Shader& validShader = sun.shader != NULL ? *sun.shader : Renderer::GetShaderBlinnPhong();
 
-                Shaders::Bind(validShader);
-                Shaders::SetUniform(validShader, "u_sun.direction", sun.direction);
-                Shaders::SetUniform(validShader, "u_sun.color", sun.color);
-                Shaders::SetUniform(validShader, "u_sun.intensity", sun.intensity);
-                Shaders::Unbind();
-            }
+            Shaders::Bind(validShader);
+            Shaders::SetUniform(validShader, "u_sun.direction", sun.direction);
+            Shaders::SetUniform(validShader, "u_sun.color", sun.color);
+            Shaders::SetUniform(validShader, "u_sun.intensity", sun.intensity);
+            Shaders::Unbind();
         }
     }
 }

@@ -3985,6 +3985,19 @@ void ImGui::RenderFrame(ImVec2 p_min, ImVec2 p_max, ImU32 fill_col, bool borders
     }
 }
 
+void ImGui::RenderFrameLines(ImVec2 p_min, ImVec2 p_max, ImU32 color, float rounding, float thickness)
+{
+    ImGuiContext& g = *GImGui;
+    ImGuiWindow* window = g.CurrentWindow;
+    window->DrawList->AddRect(p_min, p_max, color, rounding, 0, thickness);
+    const float border_size = g.Style.FrameBorderSize;
+    if (border_size > 0.0f)
+    {
+        window->DrawList->AddRect(p_min + ImVec2(1, 1), p_max + ImVec2(1, 1), GetColorU32(ImGuiCol_BorderShadow), rounding, 0, border_size);
+        window->DrawList->AddRect(p_min, p_max, GetColorU32(ImGuiCol_Border), rounding, 0, border_size);
+    }
+}
+
 void ImGui::RenderFrameBorder(ImVec2 p_min, ImVec2 p_max, float rounding)
 {
     ImGuiContext& g = *GImGui;

@@ -34,6 +34,8 @@ links({
     "yaml-cpp",
 })
 
+defines({ " IMGUI_DEFINE_MATH_OPERATORS" })
+
 targetdir("../bin/" .. outputdir .. "/%{prj.name}")
 objdir("../build/" .. outputdir .. "/%{prj.name}")
 

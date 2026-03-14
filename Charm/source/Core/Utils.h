@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/FileDialogs.h"
 #include "Graphics/Animation.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
@@ -33,6 +34,7 @@ namespace Charm
         Graphics::SpriteSheetAnimType StringToSpriteSheetAnimType(const std::string& str);
         std::string GetFileName(const char* path, bool hasExtension = false);
         std::string AssetTypeToString(Core::AssetType type);
+        Core::FileDialogFilter AssetTypeToFileDialogFilter(Core::AssetType type);
         Core::AssetType StringToAssetType(const std::string& str);
         Core::AssetType ExtensionToAssetType(const std::string& extension);
         ECS::PhysicsBodyType StringToBodyType(const std::string& str);

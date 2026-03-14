@@ -12,6 +12,13 @@ namespace Charm
         {
             const char* name = "";
             const char* specification = "";
+
+            FileDialogFilter() = default;
+            FileDialogFilter(const char* name, const char* specification)
+            {
+                this->name = name;
+                this->specification = specification;
+            }
         };
 
         struct FileDialogState

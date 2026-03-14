@@ -98,6 +98,13 @@ namespace CharmApp
                         break;
                     }
 
+                    case AssetType::Material:
+                    {
+                        Material* material = dynamic_cast<Material*>(state.selectedAsset);
+                        UI::DrawAssetControls_Material(material);
+                        break;
+                    }
+
                     default:
                         break;
                 }
@@ -138,7 +145,7 @@ namespace CharmApp
 
             const auto DrawTransformComponent = [](TransformComponent& component)
             {
-                const float columnWidth = 80.f;
+                const float columnWidth = 110.f;
                 UI::DrawVec3Control("Position", component.position, 0.1f, 0.f, columnWidth);
                 UI::DrawVec3Control("Rotation", component.rotation, 0.1f, 0.f, columnWidth);
                 UI::DrawVec3Control("Scale", component.scale, 0.1f, 1.f, columnWidth);
@@ -250,9 +257,11 @@ namespace CharmApp
 
             const auto DrawMeshRendererComponent = [](MeshRendererComponent& component)
             {
-                const float columnWidth = 60.f;
-                ImGui::PushID("Mesh");
-                ImGui::Columns(2);
+                const float columnWidth = 100.f;
+                ImGui::PushID(component.model);
+
+                ImGui::PushID("Mesh Data");
+                ImGui::Columns(2, NULL, false);
                 ImGui::SetColumnWidth(0, columnWidth);
                 ImGui::Text("Mesh");
                 ImGui::NextColumn();
@@ -276,6 +285,68 @@ namespace CharmApp
                     ImGui::EndCombo();
                 }
                 ImGui::Columns(1);
+                ImGui::PopID();
+
+                if (component.model == AssetHandle_Invalid)
+                {
+                    ImGui::PopID();
+                    return;
+                }
+
+                ImGui::SetCursorScreenPos(ImVec2(ImGui::GetWindowPos().x + ImGui::GetStyle().FramePadding.x * 2.f, ImGui::GetCursorScreenPos().y));
+                ImGui::PushStyleVarX(ImGuiStyleVar_FramePadding, 2.f);
+                const bool isMaterialListOpen = ImGui::TreeNodeEx("Materials", ImGuiTreeNodeFlags_SpanFullWidth);
+                ImGui::PopStyleVar();
+
+                if (isMaterialListOpen)
+                {
+                    ImGui::Columns(2, NULL, false);
+                    ImGui::SetColumnWidth(0, 120.f);
+
+                    Model* model = AssetManager::GetAsset<Model>(component.model);
+                    for (u32 i = 0; i < model->meshes.size(); i++)
+                    {
+                        const std::string label = "Material " + std::to_string(i);
+                        ImGui::TextUnformatted(label.c_str());
+                        ImGui::NextColumn();
+
+                        std::string name = "Default";
+                        if (component.materialOverrides.size() > i && component.materialOverrides[i] != AssetHandle_Invalid)
+                        {
+                            Material* material = AssetManager::GetAsset<Material>(component.materialOverrides[i]);
+                            name = material->name;
+                        }
+
+                        ImGui::PushID(i);
+                        if (UI::DrawAssetInputWidget(name.c_str(), AssetType::Material))
+                        {
+                            const Project& project = ProjectManager::GetActive();
+                            const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(FileDialogs::GetSelectedPath(), project);
+                            if (AssetManager::IsAssetRegistered(relativePath))
+                            {
+                                const AssetHandle handle = AssetManager::FindAssetHandle(relativePath);
+
+                                if (component.materialOverrides.size() < i + 1)
+                                    component.materialOverrides.resize(i + 1);
+
+                                component.materialOverrides[i] = handle;
+                            }
+                        }
+                        ImGui::PopID();
+                        ImGui::NextColumn();
+                    }
+                    ImGui::Columns(1);
+
+                    const float availWidth = ImGui::GetContentRegionAvail().x;
+                    const ImVec2 restoreButtonSize = ImVec2(availWidth * 0.8f, 0.f);
+                    ImGui::Indent(availWidth * 0.5f - restoreButtonSize.x * 0.5f - ImGui::GetStyle().IndentSpacing);
+                    if (ImGui::Button("Restore Default Materials", restoreButtonSize))
+                        component.materialOverrides.clear();
+                    ImGui::Unindent();
+
+                    ImGui::TreePop();
+                }
+
                 ImGui::PopID();
             };
 
@@ -486,6 +557,7 @@ namespace CharmApp
             ImGui::Indent(availableWidth * 0.5f - buttonSize.x * 0.5f);
             if (ImGui::Button("Add component", buttonSize))
                 ImGui::OpenPopup("Add Component");
+            ImGui::Unindent();
 
             if (ImGui::BeginPopup("Add Component"))
             {

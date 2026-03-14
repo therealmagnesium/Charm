@@ -10,178 +10,175 @@
 using namespace Charm::Core;
 using namespace Charm::Projects;
 
-namespace Charm
+namespace Charm::Graphics
 {
-    namespace Graphics
+    namespace Textures
     {
-        namespace Textures
+        Texture Load(const char* path, TextureFilter minFilter, TextureFilter magFilter)
         {
-            Texture Load(const char* path, bool gammaCorrection, TextureFilter minFilter, TextureFilter magFilter)
-            {
-                Texture texture;
-                texture.minFilter = minFilter;
-                texture.magFilter = magFilter;
+            Texture texture;
+            texture.minFilter = minFilter;
+            texture.magFilter = magFilter;
 
-                texture.data = stbi_load(path, (s32*)&texture.width, (s32*)&texture.height, (s32*)&texture.channelCount, 0);
-                if (texture.data == NULL)
+            texture.data = stbi_load(path, (s32*)&texture.width, (s32*)&texture.height, (s32*)&texture.channelCount, 0);
+            if (texture.data == NULL)
+            {
+                WARN("Failed to load texture \"%s\"", path, texture.id);
+                texture.width = 64;
+                texture.height = 64;
+                return texture;
+            }
+
+            switch (texture.channelCount)
+            {
+                case 3:
                 {
-                    WARN("Failed to load texture \"%s\"", path, texture.id);
-                    texture.width = 64;
-                    texture.height = 64;
-                    return texture;
+                    texture.internalFormat = GL_RGB8;
+                    texture.dataFormat = GL_RGB;
+                    break;
                 }
 
-                switch (texture.channelCount)
+                case 4:
                 {
-                    case 3:
+                    texture.internalFormat = GL_RGBA8;
+                    texture.dataFormat = GL_RGBA;
+
+                    const u8* start = texture.data;
+                    const u8* end = texture.data + (texture.width * texture.height * 4);
+
+                    for (const u8* pixel = start; pixel < end; pixel += 4)
                     {
-                        texture.internalFormat = gammaCorrection ? GL_SRGB8 : GL_RGB8;
-                        texture.dataFormat = GL_RGB;
-                        break;
-                    }
-
-                    case 4:
-                    {
-                        texture.internalFormat = gammaCorrection ? GL_SRGB8_ALPHA8 : GL_RGBA8;
-                        texture.dataFormat = GL_RGBA;
-
-                        const u8* start = texture.data;
-                        const u8* end = texture.data + (texture.width * texture.height * 4);
-
-                        for (const u8* pixel = start; pixel < end; pixel += 4)
+                        if (pixel[3] < 0xFF)
                         {
-                            if (pixel[3] < 0xFF)
-                            {
-                                texture.hasTransparency = true;
-                                break;
-                            }
+                            texture.hasTransparency = true;
+                            break;
                         }
-                        break;
                     }
-
-                    default:
-                        break;
+                    break;
                 }
 
-                glGenTextures(1, &texture.id);
-                Invalidate(texture);
-                texture.isValid = true;
-
-                const Project& project = ProjectManager::GetActive();
-                const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(path, project);
-                if (AssetManager::IsAssetRegistered(relativePath))
-                    WARN("What: %s", relativePath.c_str());
-
-                INFO("Texture \"%s\" was loaded successfully with an ID of %d", path, texture.id);
-                return texture;
+                default:
+                    break;
             }
 
-            Texture LoadEmpty(u32 width, u32 height, TextureFormat format)
+            glGenTextures(1, &texture.id);
+            Invalidate(texture);
+            texture.isValid = true;
+
+            const Project& project = ProjectManager::GetActive();
+            const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(path, project);
+            if (AssetManager::IsAssetRegistered(relativePath))
+                WARN("What: %s", relativePath.c_str());
+
+            INFO("Texture \"%s\" was loaded successfully with an ID of %d", path, texture.id);
+            return texture;
+        }
+
+        Texture LoadEmpty(u32 width, u32 height, TextureFormat format)
+        {
+            Texture texture;
+            texture.width = width;
+            texture.height = height;
+
+            u32 formatSize = 0;
+
+            switch (format)
             {
-                Texture texture;
-                texture.width = width;
-                texture.height = height;
+                case TextureFormat::RGBA:
+                    texture.internalFormat = GL_RGBA8;
+                    texture.dataFormat = GL_RGBA;
+                    texture.channelCount = 4;
+                    formatSize = GL_UNSIGNED_BYTE;
+                    break;
 
-                u32 formatSize = 0;
+                case TextureFormat::DepthStencil:
+                    texture.internalFormat = GL_DEPTH24_STENCIL8;
+                    texture.dataFormat = GL_DEPTH_STENCIL;
+                    texture.channelCount = 4;
+                    formatSize = GL_UNSIGNED_INT_24_8;
+                    break;
 
-                switch (format)
-                {
-                    case TextureFormat::RGBA:
-                        texture.internalFormat = GL_RGBA8;
-                        texture.dataFormat = GL_RGBA;
-                        texture.channelCount = 4;
-                        formatSize = GL_UNSIGNED_BYTE;
-                        break;
+                case TextureFormat::RedInteger:
+                    texture.internalFormat = GL_R32I;
+                    texture.dataFormat = GL_RED_INTEGER;
+                    texture.channelCount = 1;
+                    formatSize = GL_UNSIGNED_BYTE;
+                    break;
 
-                    case TextureFormat::DepthStencil:
-                        texture.internalFormat = GL_DEPTH24_STENCIL8;
-                        texture.dataFormat = GL_DEPTH_STENCIL;
-                        texture.channelCount = 4;
-                        formatSize = GL_UNSIGNED_INT_24_8;
-                        break;
-
-                    case TextureFormat::RedInteger:
-                        texture.internalFormat = GL_R32I;
-                        texture.dataFormat = GL_RED_INTEGER;
-                        texture.channelCount = 1;
-                        formatSize = GL_UNSIGNED_BYTE;
-                        break;
-
-                    default:
-                        break;
-                }
-
-                glGenTextures(1, &texture.id);
-                glBindTexture(GL_TEXTURE_2D, texture.id);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-                glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
-                             texture.height, 0, texture.dataFormat, formatSize, NULL);
-
-                texture.isValid = true;
-                INFO("Empty texture loaded successfully with an ID of %d", texture.id);
-                return texture;
+                default:
+                    break;
             }
 
-            Texture LoadDefaultWhite()
+            glGenTextures(1, &texture.id);
+            glBindTexture(GL_TEXTURE_2D, texture.id);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
+                         texture.height, 0, texture.dataFormat, formatSize, NULL);
+
+            texture.isValid = true;
+            INFO("Empty texture loaded successfully with an ID of %d", texture.id);
+            return texture;
+        }
+
+        Texture LoadDefaultWhite()
+        {
+            Texture texture;
+            texture.width = 1;
+            texture.height = 1;
+            texture.internalFormat = GL_RGBA8;
+            texture.dataFormat = GL_RGBA;
+            texture.channelCount = 4;
+
+            glGenTextures(1, &texture.id);
+            glBindTexture(GL_TEXTURE_2D, texture.id);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+            u32 color = 0xFFFFFFFF;
+            glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
+                         texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, &color);
+
+            texture.isValid = true;
+            INFO("Default white texture was loaded successfully with an ID of %d", texture.id);
+            return texture;
+        }
+
+        void Unload(Texture& texture)
+        {
+            if (texture.id != 0)
             {
-                Texture texture;
-                texture.width = 1;
-                texture.height = 1;
-                texture.internalFormat = GL_RGBA8;
-                texture.dataFormat = GL_RGBA;
-                texture.channelCount = 4;
+                INFO("Texture with an ID of %d is unloading...", texture.id);
+                glDeleteTextures(1, &texture.id);
 
-                glGenTextures(1, &texture.id);
-                glBindTexture(GL_TEXTURE_2D, texture.id);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-                u32 color = 0xFFFFFFFF;
-                glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
-                             texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, &color);
-
-                texture.isValid = true;
-                INFO("Default white texture was loaded successfully with an ID of %d", texture.id);
-                return texture;
+                if (texture.data != NULL)
+                    stbi_image_free(texture.data);
             }
+        }
 
-            void Unload(Texture& texture)
-            {
-                if (texture.id != 0)
-                {
-                    INFO("Texture with an ID of %d is unloading...", texture.id);
-                    glDeleteTextures(1, &texture.id);
+        void Bind(const Texture& texture, u8 slot)
+        {
+            glBindTextureUnit(slot, texture.id);
+        }
 
-                    if (texture.data != NULL)
-                        stbi_image_free(texture.data);
-                }
-            }
+        void Invalidate(Texture& texture)
+        {
+            const u32 glMinFilter = Utils::TextureFilterToGL(texture.minFilter);
+            const u32 glMagFilter = Utils::TextureFilterToGL(texture.magFilter);
 
-            void Bind(const Texture& texture, u8 slot)
-            {
-                glBindTextureUnit(slot, texture.id);
-            }
-
-            void Invalidate(Texture& texture)
-            {
-                const u32 glMinFilter = Utils::TextureFilterToGL(texture.minFilter);
-                const u32 glMagFilter = Utils::TextureFilterToGL(texture.magFilter);
-
-                glBindTexture(GL_TEXTURE_2D, texture.id);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glMinFilter);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glMagFilter);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
-                             texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, texture.data);
-                glGenerateMipmap(GL_TEXTURE_2D);
-            }
+            glBindTexture(GL_TEXTURE_2D, texture.id);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glMinFilter);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glMagFilter);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexImage2D(GL_TEXTURE_2D, 0, texture.internalFormat, texture.width,
+                         texture.height, 0, texture.dataFormat, GL_UNSIGNED_BYTE, texture.data);
+            glGenerateMipmap(GL_TEXTURE_2D);
         }
     }
 }

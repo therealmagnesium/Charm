@@ -137,6 +137,35 @@ namespace Charm
             return types[(u8)type];
         }
 
+        FileDialogFilter AssetTypeToFileDialogFilter(Core::AssetType type)
+        {
+            FileDialogFilter filter;
+
+            switch (type)
+            {
+                case AssetType::Animation:
+                    filter.name = "Aniation";
+                    filter.specification = "anim";
+                    break;
+                case AssetType::AnimationController:
+                    filter.name = "Aniation Controller";
+                    filter.specification = "ac";
+                    break;
+                case AssetType::Material:
+                    filter.name = "Material";
+                    filter.specification = "chmat";
+                    break;
+                case AssetType::Texture:
+                    filter.name = "Texture";
+                    filter.specification = "png";
+                    break;
+                default:
+                    break;
+            }
+
+            return filter;
+        }
+
         AssetType StringToAssetType(const std::string& str)
         {
             std::unordered_map<std::string, AssetType> list;

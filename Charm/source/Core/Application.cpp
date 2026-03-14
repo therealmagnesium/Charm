@@ -14,106 +14,103 @@
 
 using namespace Charm::Graphics;
 
-namespace Charm
+namespace Charm::Core
 {
-    namespace Core
+    static ApplicationState state;
+    static bool isInitialized = false;
+
+    namespace Application
     {
-        static ApplicationState state;
-        static bool isInitialized = false;
-
-        namespace Application
+        void Setup(const ApplicationConfig& config)
         {
-            void Setup(const ApplicationConfig& config)
+            if (isInitialized)
             {
-                if (isInitialized)
-                {
-                    WARN("Cannot initialize the application more than once");
-                    return;
-                }
-
-                state.config = config;
-
-                ASSERT(state.config.funcs.OnCreate != NULL &&
-                           state.config.funcs.OnUpdate != NULL &&
-                           state.config.funcs.OnRender != NULL &&
-                           state.config.funcs.OnRenderUI != NULL &&
-                           state.config.funcs.OnShutdown != NULL,
-                       "The application's implementation hasn't been defined!");
-
-                printf("============================================ Core Program Begins "
-                       "=============================================\n");
-
-                Random::Init();
-                Input::Initialize();
-                Time::Initialize(60);
-                Renderer::Initialize();
-                FileDialogs::Init();
-                UI::SetupContext();
-                AssetManager::Init(&state.assets);
-
-                state.isRunning = true;
-                isInitialized = true;
-                INFO("Application \"%s\" was initiallized successfully", state.config.name.c_str());
-                printf("============================================ Client Program Begins "
-                       "=============================================\n");
+                WARN("Cannot initialize the application more than once");
+                return;
             }
 
-            void Shutdown()
-            {
-                INFO("Application \"%s\" is shutting down...", state.config.name.c_str());
+            state.config = config;
 
-                FileDialogs::Shutdown();
-                UI::DestroyContext();
-                Renderer::Shutdown();
+            ASSERT(state.config.funcs.OnCreate != NULL &&
+                       state.config.funcs.OnUpdate != NULL &&
+                       state.config.funcs.OnRender != NULL &&
+                       state.config.funcs.OnRenderUI != NULL &&
+                       state.config.funcs.OnShutdown != NULL,
+                   "The application's implementation hasn't been defined!");
 
-                isInitialized = false;
-            }
+            printf("============================================ Core Program Begins "
+                   "=============================================\n");
 
-            void Run()
-            {
-                state.config.funcs.OnCreate();
+            Random::Init();
+            Input::Initialize();
+            Time::Initialize(60);
+            Renderer::Initialize();
+            FileDialogs::Init();
+            UI::SetupContext();
+            AssetManager::Init(&state.assets);
 
-                while (state.isRunning)
-                {
-                    Time::Update();
-                    Window::HandleEvents();
-                    state.config.funcs.OnUpdate();
-
-                    RenderAPI::Clear();
-
-                    state.config.funcs.OnRender();
-
-                    UI::BeginFrome();
-                    state.config.funcs.OnRenderUI();
-                    UI::EndFrame();
-
-                    UI::Display();
-                    Window::Display();
-                }
-
-                printf("============================================ Client Program Ends "
-                       "=============================================\n");
-
-                state.config.funcs.OnShutdown();
-
-                printf("============================================ Core Program Ends "
-                       "=============================================\n");
-            }
-
-            void Quit()
-            {
-                state.isRunning = false;
-            }
-
-            bool IsRunning() { return state.isRunning; }
-            u32 GetPixelsPerUnit() { return state.pixelsPerUnit; }
-            const ApplicationConfig& GetConfig() { return state.config; }
-            const glm::vec2& GetViewportPosition() { return state.viewportPosition; }
-            const glm::vec2& GetViewportSize() { return state.viewportSize; }
-
-            void SetViewportPosition(const glm::vec2& position) { state.viewportPosition = position; }
-            void SetViewportSize(const glm::vec2& size) { state.viewportSize = size; }
-            void SetPixelsPerUnit(u32 pixelsPerUnit) { state.pixelsPerUnit = pixelsPerUnit; }
+            state.isRunning = true;
+            isInitialized = true;
+            INFO("Application \"%s\" was initiallized successfully", state.config.name.c_str());
+            printf("============================================ Client Program Begins "
+                   "=============================================\n");
         }
+
+        void Shutdown()
+        {
+            INFO("Application \"%s\" is shutting down...", state.config.name.c_str());
+
+            FileDialogs::Shutdown();
+            UI::DestroyContext();
+            Renderer::Shutdown();
+
+            isInitialized = false;
+        }
+
+        void Run()
+        {
+            state.config.funcs.OnCreate();
+
+            while (state.isRunning)
+            {
+                Time::Update();
+                Window::HandleEvents();
+                state.config.funcs.OnUpdate();
+
+                RenderAPI::Clear();
+
+                state.config.funcs.OnRender();
+
+                UI::BeginFrome();
+                state.config.funcs.OnRenderUI();
+                UI::EndFrame();
+
+                UI::Display();
+                Window::Display();
+            }
+
+            printf("============================================ Client Program Ends "
+                   "=============================================\n");
+
+            state.config.funcs.OnShutdown();
+
+            printf("============================================ Core Program Ends "
+                   "=============================================\n");
+        }
+
+        void Quit()
+        {
+            state.isRunning = false;
+        }
+
+        bool IsRunning() { return state.isRunning; }
+        u32 GetPixelsPerUnit() { return state.pixelsPerUnit; }
+        const ApplicationConfig& GetConfig() { return state.config; }
+        const glm::vec2& GetViewportPosition() { return state.viewportPosition; }
+        const glm::vec2& GetViewportSize() { return state.viewportSize; }
+
+        void SetViewportPosition(const glm::vec2& position) { state.viewportPosition = position; }
+        void SetViewportSize(const glm::vec2& size) { state.viewportSize = size; }
+        void SetPixelsPerUnit(u32 pixelsPerUnit) { state.pixelsPerUnit = pixelsPerUnit; }
     }
 }

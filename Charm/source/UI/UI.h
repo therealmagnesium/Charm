@@ -1,5 +1,7 @@
 #pragma once
+#include "Core/Asset.h"
 #include "Core/Base.h"
+
 #include <glm/glm.hpp>
 #include <filesystem>
 
@@ -11,6 +13,7 @@ namespace Charm
         struct AnimationController;
         struct Texture;
         struct TilePalette;
+        struct Material;
     }
 
     namespace UI
@@ -31,9 +34,11 @@ namespace Charm
         void DrawIntInputControl(const char* label, s32* v, s32 min, s32 max, float columnWidth = 100.f);
         void DrawTextInputControl(const char* label, std::string* s, u32 flags = 0, float columnWidth = 100.f);
         bool DrawFilesystemInputControl(const char* label, std::filesystem::path* p, u32 flags = 0, float columnWidth = 100.f);
+        bool DrawAssetInputWidget(const char* label, Core::AssetType type);
         void DrawAssetControls_Animation(Graphics::Animation* animation);
         void DrawAssetControls_AnimationController(Graphics::AnimationController* controller);
         void DrawAssetControls_Texture(Graphics::Texture* texture);
         void DrawAssetControls_TilePalette(Graphics::TilePalette* tilePalette);
+        void DrawAssetControls_Material(Graphics::Material* material);
     }
 }

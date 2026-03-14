@@ -1,7 +1,6 @@
 #version 450 core
 
-struct VertexData
-{
+struct VertexData {
     vec3 position;
     vec4 color;
     vec2 texCoord;
@@ -31,6 +30,8 @@ uniform Material u_material;
 uniform DirectionalLight u_sun;
 uniform vec3 u_cameraPosition = vec3(0.f);
 
+const float k_gamma = 2.2f;
+
 float CalculateDiffuse(vec3 N, vec3 lightDirection)
 {
     const float diffuseFactor = max(dot(N, lightDirection), 0.f);
@@ -48,7 +49,7 @@ float CalculateSpecular(vec3 N, vec3 lightDirection)
 
 vec4 GetColorAlbedo()
 {
-    const vec4 albedoTextureColor = texture(u_material.albedoTexture, v_input.texCoord);
+    const vec4 albedoTextureColor = pow(texture(u_material.albedoTexture, v_input.texCoord), vec4(vec3(k_gamma), 1.f));
     const vec4 albedo = u_material.albedo * albedoTextureColor;
     return albedo;
 }
@@ -69,7 +70,6 @@ void main()
     const vec3 lighting = ambient + (diffuse + specular) * u_sun.intensity;
     finalColor = vec4(lighting, 1.f) * albedo;
 
-    const float gamma = 2.2f;
-    finalColor.rgb = pow(finalColor.rgb, vec3(1.f / gamma));
+    finalColor.rgb = pow(finalColor.rgb, vec3(1.f / k_gamma));
     entityID = v_entityID;
 }

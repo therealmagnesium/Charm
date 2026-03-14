@@ -59,7 +59,7 @@ namespace Charm
 
         namespace Textures
         {
-            Texture Load(const char* path, bool gammaCorrection = false, TextureFilter minFilter = TextureFilter::LinearMipmapLinear, TextureFilter magFilter = TextureFilter::Linear);
+            Texture Load(const char* path, TextureFilter minFilter = TextureFilter::LinearMipmapLinear, TextureFilter magFilter = TextureFilter::Linear);
             Texture LoadEmpty(u32 width, u32 height, TextureFormat format);
             Texture LoadDefaultWhite();
             void Unload(Texture& texture);

@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Asset.h"
 #include "Graphics/Mesh.h"
+#include "Graphics/Material.h"
 
 namespace Charm
 {
