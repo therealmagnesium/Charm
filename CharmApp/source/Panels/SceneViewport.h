@@ -16,7 +16,7 @@ namespace CharmApp
 
     namespace SceneViewportPanel
     {
-        void Display(Framebuffer& framebuffer);
+        void Display(Texture& renderTarget);
 
         bool IsHovered();
         bool IsFocused();

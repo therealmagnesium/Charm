@@ -14,6 +14,7 @@ namespace Charm::Graphics
     struct Mesh;
     struct Model;
     struct Rectangle;
+    struct ShadowMap;
 
     enum class BatchMode : u8
     {
@@ -67,17 +68,30 @@ namespace Charm::Graphics
 
     struct RenderState
     {
-        glm::vec3 clearColor;
-        glm::mat4 viewMatrix;
-        glm::mat4 projectionMatrix;
         Shader quadShader;
         Shader circleShader;
         Shader lineShader;
         Shader diffuseShader;
         Shader blinnPhongShader;
         Shader outlineShader;
-        RendererGrid grid;
+        Shader postProcessingShader;
+        Shader shadowShader;
+
+        glm::mat4 viewMatrix;
+        glm::mat4 projectionMatrix;
         std::vector<RenderCommand> commands;
+
+        glm::vec3 clearColor;
+        RendererGrid grid;
+        float exposure = 1.f;
+        float ambience = 0.5f;
+        float bloomThreshold = 0.5f;
+        u32 bloomPasses = 6;
+
+        ShadowMap* activeShadowMap = nullptr;
+        glm::vec3 sunDirection = glm::vec3(-0.2f, -0.8f, -0.6f);
+        float cameraNearClip = 0.1f;
+        float cameraFarClip = 500.f;
     };
 
     namespace Renderer
@@ -107,6 +121,8 @@ namespace Charm::Graphics
         Shader& GetShaderDiffuse();
         Shader& GetShaderBlinnPhong();
         Shader& GetShaderOutline();
+        Shader& GetShaderPostProcessing();
+        Shader& GetShaderShadow();
         glm::vec3& GetClearColor();
         const glm::mat4& GetViewMatrix();
         const glm::mat4& GetProjectionMatrix();
@@ -114,8 +130,18 @@ namespace Charm::Graphics
         u32 GetCircleCount();
         u32 GetLineCount();
         u32 GetDrawCount();
+        float GetExposure();
+        float GetAmbience();
+        float GetBloomThreshold();
+        u32 GetBloomPasses();
 
         void SetClearColor(float r, float g, float b);
+        void SetExposure(float exposure);
+        void SetAmbience(float ambience);
+        void SetBloomThreshold(float threshold);
+        void SetBloomPasses(u32 count);
+        void SetShadowMap(ShadowMap* shadow);
+        void SetSunDirection(const glm::vec3& direction);
 
         void DrawRectangle(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
         void DrawRectangleRec(const Rectangle& rectangle, const glm::vec4& color);
@@ -141,6 +167,7 @@ namespace Charm::Graphics
         void DrawEntity(const glm::mat4& transform, const SpriteRendererComponent& spriteRenderer, s32 entityID);
         void DrawEntity(const glm::mat4& transform, const CircleRendererComponent& circleRenderer, s32 entityID);
 
+        void DrawScreenRect();
         void DrawGrid(const Camera2D& camera, const glm::vec2& resolution, u32 tileScale = 1);
     }
 }

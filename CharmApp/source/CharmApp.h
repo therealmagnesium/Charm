@@ -10,16 +10,20 @@ namespace CharmApp
 {
     struct CharmState
     {
+        std::filesystem::path currentScenePath;
         Project project;
         Timer timer;
         Framebuffer framebuffer;
+        Framebuffer framebuffersBloom[2];
         SceneState sceneState;
+        ShadowMap shadowMap;
         Scene editorScene;
         Scene runtimeScene;
         Scene* activeScene = NULL;
         s32 pixelData = -1;
         bool showPreferencesWindow = false;
-        std::filesystem::path currentScenePath;
+        bool isBloomPassHorizontal = true;
+        bool isViewportMaximized = false;
     };
 
     void OnCreate();
@@ -42,10 +46,13 @@ namespace CharmApp
     void DrawMenuBar();
     void DrawPreferencesMenu();
 
+    bool IsBloomPassHorizontal();
     s32 GetPixelData();
     Scene* GetActiveScene();
     SceneState GetActiveSceneState();
     Project& GetProject();
+    Framebuffer& GetFramebufferHDR();
+    Framebuffer& GetFramebufferBloom(bool horizontalPass);
 
     void SetPixelData(s32 data);
 }

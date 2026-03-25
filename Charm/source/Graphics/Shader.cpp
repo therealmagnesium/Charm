@@ -106,6 +106,12 @@ namespace Charm::Graphics
                 glUniform1f(shader.uniformLocations[name], value);
         }
 
+        void SetUniform(Shader& shader, const char* name, bool value)
+        {
+            if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                glUniform1ui(shader.uniformLocations[name], value);
+        }
+
         void SetUniform(Shader& shader, const char* name, const glm::vec2& value)
         {
             if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
@@ -134,6 +140,19 @@ namespace Charm::Graphics
         {
             if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
                 glUniform1iv(shader.uniformLocations[name], count, values);
+        }
+
+        void SetUniform(Shader& shader, const char* name, const glm::mat4* values, u32 count)
+        {
+            if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                glUniformMatrix4fv(shader.uniformLocations[name], count, GL_FALSE,
+                                   glm::value_ptr(values[0]));
+        }
+
+        void SetUniform(Shader& shader, const char* name, const float* values, u32 count)
+        {
+            if (shader.uniformLocations.find(name) != shader.uniformLocations.end())
+                glUniform1fv(shader.uniformLocations[name], count, values);
         }
 
         u32 Compile(u32 type, const char* source)

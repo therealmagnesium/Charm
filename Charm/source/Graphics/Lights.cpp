@@ -16,6 +16,8 @@ namespace Charm::Graphics
             Shaders::SetUniform(validShader, "u_sun.color", sun.color);
             Shaders::SetUniform(validShader, "u_sun.intensity", sun.intensity);
             Shaders::Unbind();
+
+            Renderer::SetSunDirection(sun.direction);
         }
     }
 }

@@ -32,8 +32,18 @@ namespace CharmApp
         FramebufferSpecification framebufferSpec;
         framebufferSpec.width = config.virtualWidth;
         framebufferSpec.height = config.virtualHeight;
-        framebufferSpec.attachments = {TextureFormat::RGBA, TextureFormat::RedInteger, TextureFormat::DepthStencil};
+        framebufferSpec.attachments = {TextureFormat::RGBA, TextureFormat::RedInteger, TextureFormat::RGBA, TextureFormat::DepthStencil};
         state.framebuffer = Framebuffers::Create(framebufferSpec);
+
+        FramebufferSpecification bloomSpec;
+        bloomSpec.width = config.virtualWidth;
+        bloomSpec.height = config.virtualHeight;
+        bloomSpec.attachments = {TextureFormat::RGBA};
+        state.framebuffersBloom[0] = Framebuffers::Create(bloomSpec);
+        state.framebuffersBloom[1] = Framebuffers::Create(bloomSpec);
+
+        state.shadowMap = ShadowMaps::Create();
+        Renderer::SetShadowMap(&state.shadowMap);
 
         state.editorScene = Scenes::Create();
         state.runtimeScene = Scenes::Create();
@@ -71,6 +81,9 @@ namespace CharmApp
         ToolbarPanel::Shutdown();
         AnimationPanel::Shutdown();
         Framebuffers::Destroy(state.framebuffer);
+        Framebuffers::Destroy(state.framebuffersBloom[0]);
+        Framebuffers::Destroy(state.framebuffersBloom[1]);
+        ShadowMaps::Destroy(state.shadowMap);
     }
 
     void OnUpdate()
@@ -85,6 +98,9 @@ namespace CharmApp
 
         if (state.sceneState == SceneState::Editor)
         {
+            if (Input::IsKeyPressed(KEY_F1))
+                state.isViewportMaximized = !state.isViewportMaximized;
+
             if (Input::IsKeyPressed(KEY_F2))
                 Scenes::ResetEditorCameras(*state.activeScene);
 
@@ -263,26 +279,55 @@ namespace CharmApp
         }
 
         Framebuffers::Unbind();
+
+        bool isFirstIteration = true;
+        Shader& postProcessingShader = Renderer::GetShaderPostProcessing();
+        Shaders::Bind(postProcessingShader);
+        Shaders::SetUniform(postProcessingShader, "u_shouldBlur", true);
+
+        for (u8 i = 0; i < Renderer::GetBloomPasses(); i++)
+        {
+            Framebuffers::Bind(state.framebuffersBloom[state.isBloomPassHorizontal]);
+            Shaders::SetUniform(postProcessingShader, "u_isHorizontal", state.isBloomPassHorizontal);
+
+            if (isFirstIteration)
+            {
+                Textures::Bind(state.framebuffer.colorAttachments[2], 0);
+                isFirstIteration = false;
+            }
+            else
+                Textures::Bind(state.framebuffersBloom[!state.isBloomPassHorizontal].colorAttachments[0], 0);
+
+            Renderer::DrawScreenRect();
+            state.isBloomPassHorizontal = !state.isBloomPassHorizontal;
+        }
+
+        Framebuffers::Unbind();
+        Shaders::Unbind();
     }
 
     void OnRenderUI()
     {
         ImGui::DockSpaceOverViewport();
 
-        DrawMenuBar();
-        DrawPreferencesMenu();
+        if (!state.isViewportMaximized)
+        {
+            DrawMenuBar();
+            DrawPreferencesMenu();
 
-        ImGui::ShowDemoWindow();
-        AnimationPanel::Display();
-        AssetRegistryPanel::Display();
-        ContentBrowserPanel::Display();
-        DebugStatsPanel::Display();
-        SceneHeirarchyPanel::Display();
-        InspectorPanel::Display();
-        TilePalettePanel::Display();
+            ImGui::ShowDemoWindow();
+            AnimationPanel::Display();
+            AssetRegistryPanel::Display();
+            ContentBrowserPanel::Display();
+            DebugStatsPanel::Display();
+            SceneHeirarchyPanel::Display();
+            InspectorPanel::Display();
+            TextureSlicerPanel::Display();
+            TilePalettePanel::Display();
+        }
+
         ToolbarPanel::Display();
-        SceneViewportPanel::Display(state.framebuffer);
-        TextureSlicerPanel::Display();
+        SceneViewportPanel::Display(state.framebuffer.colorAttachments[0]);
     }
 
     void OnScenePlay()
@@ -528,6 +573,14 @@ namespace CharmApp
         {
             ImGui::Begin("Preferences", &state.showPreferencesWindow);
 
+            if (ImGui::TreeNode("2D Grid"))
+            {
+                const float columnWidth = 110.f;
+                UI::DrawBoolControl("Is Enabled?", &state.project.grid.isEnabled, columnWidth);
+                UI::DrawIntInputControl("Tile Scale", (s32*)&state.project.grid.tileScale, 1, 0, columnWidth);
+                ImGui::TreePop();
+            }
+
             if (ImGui::TreeNode("General"))
             {
                 const float columnWidth = 125.f;
@@ -538,11 +591,28 @@ namespace CharmApp
                 ImGui::TreePop();
             }
 
-            if (ImGui::TreeNode("Editor Grid"))
+            if (ImGui::TreeNode("Renderer"))
             {
-                const float columnWidth = 110.f;
-                UI::DrawBoolControl("Is Enabled?", &state.project.grid.isEnabled, columnWidth);
-                UI::DrawIntInputControl("Tile Scale", (s32*)&state.project.grid.tileScale, 1, 0, columnWidth);
+                const float columnWidth = 125.f;
+                float ambience = Renderer::GetAmbience();
+                float exposure = Renderer::GetExposure();
+                float bloomThreshold = Renderer::GetBloomThreshold();
+                u32 bloomPasses = Renderer::GetBloomPasses();
+
+                UI::DrawFloatControl("Ambience", &ambience, 0.01f, 1.f);
+                UI::DrawFloatControl("Exposure", &exposure, 0.001f, 10.f);
+
+                if (ImGui::TreeNode("Bloom"))
+                {
+                    UI::DrawFloatControl("Threshold", &bloomThreshold, 0.1f, 10.f);
+                    UI::DrawIntInputControl("Passes", (s32*)&bloomPasses, 1, 12);
+                    ImGui::TreePop();
+                }
+
+                Renderer::SetAmbience(ambience);
+                Renderer::SetExposure(exposure);
+                Renderer::SetBloomThreshold(bloomThreshold);
+                Renderer::SetBloomPasses(bloomPasses);
                 ImGui::TreePop();
             }
 
@@ -550,10 +620,13 @@ namespace CharmApp
         }
     }
 
+    bool IsBloomPassHorizontal() { return state.isBloomPassHorizontal; }
     s32 GetPixelData() { return state.pixelData; }
     Scene* GetActiveScene() { return state.activeScene; }
     SceneState GetActiveSceneState() { return state.sceneState; }
     Project& GetProject() { return state.project; }
+    Framebuffer& GetFramebufferHDR() { return state.framebuffer; }
+    Framebuffer& GetFramebufferBloom(bool horizontalPass) { return state.framebuffersBloom[!horizontalPass]; }
 
     void SetPixelData(s32 data) { state.pixelData = data; }
 }

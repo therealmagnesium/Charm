@@ -1,8 +1,6 @@
 #include "Graphics/Texture.h"
-#include "Core/AssetManager.h"
 #include "Core/Log.h"
 #include "Core/Utils.h"
-#include "Projects/Project.h"
 
 #include <glad/glad.h>
 #include <stb_image.h>
@@ -65,11 +63,6 @@ namespace Charm::Graphics
             Invalidate(texture);
             texture.isValid = true;
 
-            const Project& project = ProjectManager::GetActive();
-            const std::filesystem::path relativePath = ProjectManager::GetAssetRelativePath(path, project);
-            if (AssetManager::IsAssetRegistered(relativePath))
-                WARN("What: %s", relativePath.c_str());
-
             INFO("Texture \"%s\" was loaded successfully with an ID of %d", path, texture.id);
             return texture;
         }
@@ -85,7 +78,7 @@ namespace Charm::Graphics
             switch (format)
             {
                 case TextureFormat::RGBA:
-                    texture.internalFormat = GL_RGBA8;
+                    texture.internalFormat = GL_RGBA16F;
                     texture.dataFormat = GL_RGBA;
                     texture.channelCount = 4;
                     formatSize = GL_UNSIGNED_BYTE;
@@ -163,6 +156,8 @@ namespace Charm::Graphics
 
         void Bind(const Texture& texture, u8 slot)
         {
+            // glBindTexture(GL_TEXTURE_2D, texture.id);
+            // glActiveTexture(GL_TEXTURE0 + slot);
             glBindTextureUnit(slot, texture.id);
         }
 

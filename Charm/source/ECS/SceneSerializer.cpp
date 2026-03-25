@@ -35,7 +35,20 @@ namespace Charm::ECS
 
             YAML::Emitter out;
             out << YAML::BeginMap;
-            out << YAML::Key << "Scene" << YAML::Value << "Untitled";
+            out << YAML::Key << "Scene" << YAML::Value << path.stem();
+
+            if (ProjectManager::GetActive().type == ProjectType::ThreeDimensional)
+            {
+                out << YAML::Key << "Editor Camera 3D" << YAML::Value << YAML::BeginMap;
+                out << YAML::Key << "Target" << YAML::Value << context->editorCamera3D.target;
+                out << YAML::Key << "Distance" << YAML::Value << context->editorCamera3D.distance;
+                out << YAML::Key << "FOV" << YAML::Value << context->editorCamera3D.fov;
+                out << YAML::Key << "Near Clip" << YAML::Value << context->editorCamera3D.nearClip;
+                out << YAML::Key << "Far Clip" << YAML::Value << context->editorCamera3D.farClip;
+                out << YAML::Key << "Yaw" << YAML::Value << context->editorCamera3D.yaw;
+                out << YAML::Key << "Pitch" << YAML::Value << context->editorCamera3D.pitch;
+                out << YAML::EndMap;
+            }
 
             out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
             for (auto entityID : context->registry.view<entt::entity>())
@@ -163,11 +176,21 @@ namespace Charm::ECS
                     texture->mode = Utils::StringToTextureMode(asset["Texture Mode"].as<std::string>());
                     texture->minFilter = Utils::StringToTextureFilter(asset["Texture Min Filter"].as<std::string>());
                     texture->magFilter = Utils::StringToTextureFilter(asset["Texture Mag Filter"].as<std::string>());
-                    // texture->rowCount = asset["Texture Row Count"].as<u32>();
-                    // texture->columnCount = asset["Texture Column Count"].as<u32>();
                     texture->pixelsPerUnit = asset["Texture Pixels Per Unit"].as<u32>();
                     Textures::Invalidate(*texture);
                 }
+            }
+
+            if (project.type == ProjectType::ThreeDimensional)
+            {
+                const auto& editorCameraNode = data["Editor Camera 3D"];
+                context->editorCamera3D.target = editorCameraNode["Target"].as<glm::vec3>();
+                context->editorCamera3D.distance = editorCameraNode["Distance"].as<float>();
+                context->editorCamera3D.fov = editorCameraNode["FOV"].as<float>();
+                context->editorCamera3D.nearClip = editorCameraNode["Near Clip"].as<float>();
+                context->editorCamera3D.farClip = editorCameraNode["Far Clip"].as<float>();
+                context->editorCamera3D.yaw = editorCameraNode["Yaw"].as<float>();
+                context->editorCamera3D.pitch = editorCameraNode["Pitch"].as<float>();
             }
 
             std::vector<std::pair<UUID, UUID>> parentChildRelationships;

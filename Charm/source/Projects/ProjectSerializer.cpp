@@ -2,11 +2,13 @@
 #include "Core/Application.h"
 #include "Core/Log.h"
 #include "Core/Utils.h"
+#include "Graphics/Renderer.h"
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
 using namespace Charm::Core;
+using namespace Charm::Graphics;
 
 namespace Charm::Projects
 {
@@ -24,25 +26,34 @@ namespace Charm::Projects
             YAML::Emitter out;
             out << YAML::BeginMap;
 
-            out << YAML::Key << "Project" << YAML::Value << YAML::BeginMap; // Project
+            out << YAML::Key << "Project" << YAML::Value << YAML::BeginMap;
             out << YAML::Key << "Name" << YAML::Value << context->name;
             out << YAML::Key << "Type" << YAML::Value << Utils::ProjectTypeToString(context->type);
             out << YAML::Key << "Start Scene" << YAML::Value << context->startScenePath.string();
             out << YAML::Key << "Assets Directory" << YAML::Value << context->assetsDirectory.string();
             out << YAML::Key << "Script Module" << YAML::Value << context->scriptModulePath.string();
-            out << YAML::EndMap; // Project
+            out << YAML::EndMap;
 
-            out << YAML::Key << "Settings" << YAML::Value << YAML::BeginMap; // Settings
-            out << YAML::Key << "General" << YAML::Value << YAML::BeginMap;  // General
+            out << YAML::Key << "Settings" << YAML::Value << YAML::BeginMap;
+
+            out << YAML::Key << "General" << YAML::Value << YAML::BeginMap;
             out << YAML::Key << "Pixels Per Unit" << YAML::Value << Application::GetPixelsPerUnit();
-            out << YAML::EndMap;                                                // General
-            out << YAML::Key << "Editor Grid" << YAML::Value << YAML::BeginMap; // Editor Grid
+            out << YAML::EndMap;
+
+            out << YAML::Key << "Editor Grid" << YAML::Value << YAML::BeginMap;
             out << YAML::Key << "Is Enabled?" << YAML::Value << context->grid.isEnabled;
             out << YAML::Key << "Tile Scale" << YAML::Value << context->grid.tileScale;
-            out << YAML::EndMap; // Editor Grid
-            out << YAML::EndMap; // Settings
+            out << YAML::EndMap;
 
-            out << YAML::EndMap; // Root
+            out << YAML::Key << "Renderer" << YAML::Value << YAML::BeginMap;
+            out << YAML::Key << "Exposure" << YAML::Value << Renderer::GetExposure();
+            out << YAML::Key << "Ambience" << YAML::Value << Renderer::GetAmbience();
+            out << YAML::Key << "Bloom Threshold" << YAML::Value << Renderer::GetBloomThreshold();
+            out << YAML::Key << "Bloom Passes" << YAML::Value << Renderer::GetBloomPasses();
+            out << YAML::EndMap;
+
+            out << YAML::EndMap;
+            out << YAML::EndMap;
 
             std::ofstream fout(path);
             if (fout.is_open())
@@ -84,11 +95,21 @@ namespace Charm::Projects
 
             const YAML::Node& generalSettingsNode = settingsNode["General"];
             const YAML::Node& gridSettingsNode = settingsNode["Editor Grid"];
+            const YAML::Node& rendererSettingsNode = settingsNode["Renderer"];
             context->grid.isEnabled = gridSettingsNode["Is Enabled?"].as<bool>();
             context->grid.tileScale = gridSettingsNode["Tile Scale"].as<u32>();
 
             const u32 pixelsPerUnit = generalSettingsNode["Pixels Per Unit"].as<u32>();
             Application::SetPixelsPerUnit(pixelsPerUnit);
+
+            const float exposure = rendererSettingsNode["Exposure"].as<float>();
+            const float ambience = rendererSettingsNode["Ambience"].as<float>();
+            const float bloomThreshold = rendererSettingsNode["Bloom Threshold"].as<float>();
+            const u32 bloomPasses = rendererSettingsNode["Bloom Passes"].as<u32>();
+            Renderer::SetExposure(exposure);
+            Renderer::SetAmbience(ambience);
+            Renderer::SetBloomThreshold(bloomThreshold);
+            Renderer::SetBloomPasses(bloomPasses);
         }
 
         void DeserializeRuntime(const std::filesystem::path& path) {}

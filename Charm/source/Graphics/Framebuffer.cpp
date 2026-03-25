@@ -46,20 +46,17 @@ namespace Charm::Graphics
 
         void Invalidate(Framebuffer& framebuffer)
         {
-            if (framebuffer.colorAttachmentSpecifications.size() > 0)
+            for (auto& spec : framebuffer.colorAttachmentSpecifications)
             {
-                for (auto& spec : framebuffer.colorAttachmentSpecifications)
-                {
-                    Texture blank = Textures::LoadEmpty(framebuffer.specification.width,
-                                                        framebuffer.specification.height,
-                                                        spec.format);
+                Texture blank = Textures::LoadEmpty(framebuffer.specification.width,
+                                                    framebuffer.specification.height,
+                                                    spec.format);
 
-                    glFramebufferTexture2D(GL_FRAMEBUFFER,
-                                           GL_COLOR_ATTACHMENT0 + framebuffer.colorAttachments.size(),
-                                           GL_TEXTURE_2D, blank.id, 0);
+                glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                       GL_COLOR_ATTACHMENT0 + framebuffer.colorAttachments.size(),
+                                       GL_TEXTURE_2D, blank.id, 0);
 
-                    framebuffer.colorAttachments.emplace_back(blank);
-                }
+                framebuffer.colorAttachments.emplace_back(blank);
             }
 
             if (framebuffer.depthAttachmentSpecification.format != TextureFormat::None)

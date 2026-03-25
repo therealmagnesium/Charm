@@ -30,6 +30,7 @@
 #include "Graphics/RendererInternals.h"
 #include "Graphics/Renderer.h"
 #include "Graphics/Shader.h"
+#include "Graphics/ShadowMap.h"
 #include "Graphics/Shapes.h"
 #include "Graphics/Texture.h"
 #include "Graphics/TilePalette.h"

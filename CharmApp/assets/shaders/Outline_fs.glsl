@@ -16,7 +16,7 @@ layout (location = 4) in flat int v_entityID;
 
 void main()
 {
-    const vec3 outlineColor = vec3(1.f, 0.6f, 0.4f);
+    const vec3 outlineColor = vec3(1.f, 0.08f, 0.02f);
     finalColor = vec4(outlineColor, 1.f);
     entityID = v_entityID;
 }

@@ -1,6 +1,7 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/RenderAPI.h"
 #include "Graphics/RendererInternals.h"
+#include "Graphics/ShadowMap.h"
 #include "Graphics/Camera.h"
 #include "Graphics/Material.h"
 #include "Graphics/Mesh.h"
@@ -150,15 +151,31 @@ namespace Charm::Graphics
             Shaders::CreateUniform(state.blinnPhongShader, "u_cameraPosition");
             Shaders::CreateUniform(state.blinnPhongShader, "u_matrixView");
             Shaders::CreateUniform(state.blinnPhongShader, "u_matrixProjection");
+            Shaders::CreateUniform(state.blinnPhongShader, "u_ambience");
+            Shaders::CreateUniform(state.blinnPhongShader, "u_bloomThreshold");
             Shaders::CreateUniform(state.blinnPhongShader, "u_material.albedo");
             Shaders::CreateUniform(state.blinnPhongShader, "u_material.albedoTexture");
             Shaders::CreateUniform(state.blinnPhongShader, "u_sun.direction");
             Shaders::CreateUniform(state.blinnPhongShader, "u_sun.color");
             Shaders::CreateUniform(state.blinnPhongShader, "u_sun.intensity");
+            Shaders::CreateUniform(state.blinnPhongShader, "u_shadowMap");
+            Shaders::CreateUniform(state.blinnPhongShader, "u_lightSpaceMatrices[0]");
+            Shaders::CreateUniform(state.blinnPhongShader, "u_shadowCascadeSplits[0]");
+
+            state.shadowShader = Shaders::Load("assets/shaders/ShadowMap_vs.glsl", "assets/shaders/ShadowMap_fs.glsl");
+            Shaders::CreateUniform(state.shadowShader, "u_lightSpaceMatrix");
 
             state.outlineShader = Shaders::Load("assets/shaders/Outline_vs.glsl", "assets/shaders/Outline_fs.glsl");
             Shaders::CreateUniform(state.outlineShader, "u_matrixView");
             Shaders::CreateUniform(state.outlineShader, "u_matrixProjection");
+
+            state.postProcessingShader = Shaders::Load("assets/shaders/PostProcessing_vs.glsl", "assets/shaders/PostProcessing_fs.glsl");
+            Shaders::CreateUniform(state.postProcessingShader, "u_matrixProjection");
+            Shaders::CreateUniform(state.postProcessingShader, "u_textureScreen");
+            Shaders::CreateUniform(state.postProcessingShader, "u_textureBloom");
+            Shaders::CreateUniform(state.postProcessingShader, "u_exposure");
+            Shaders::CreateUniform(state.postProcessingShader, "u_isHorizontal");
+            Shaders::CreateUniform(state.postProcessingShader, "u_shouldBlur");
 
             state.grid.vao = VertexArray::Create();
             state.grid.shader = Shaders::Load("assets/shaders/2DGrid_vs.glsl", "assets/shaders/2DGrid_fs.glsl");
@@ -188,6 +205,8 @@ namespace Charm::Graphics
             Shaders::Unload(state.diffuseShader);
             Shaders::Unload(state.blinnPhongShader);
             Shaders::Unload(state.outlineShader);
+            Shaders::Unload(state.postProcessingShader);
+            Shaders::Unload(state.shadowShader);
 
             Shaders::Unload(state.grid.shader);
             VertexArray::Destroy(state.grid.vao);
@@ -257,6 +276,8 @@ namespace Charm::Graphics
 
             state.viewMatrix = Cameras::GetViewMatrix3D(camera);
             state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
+            state.cameraNearClip = camera.nearClip;
+            state.cameraFarClip = camera.farClip;
 
             Shaders::Bind(state.diffuseShader);
             Shaders::SetUniform(state.diffuseShader, "u_matrixView", state.viewMatrix);
@@ -267,6 +288,27 @@ namespace Charm::Graphics
             Shaders::SetUniform(state.blinnPhongShader, "u_matrixView", state.viewMatrix);
             Shaders::SetUniform(state.blinnPhongShader, "u_matrixProjection", state.projectionMatrix);
             Shaders::SetUniform(state.blinnPhongShader, "u_cameraPosition", cameraPosition);
+            Shaders::SetUniform(state.blinnPhongShader, "u_ambience", state.ambience);
+            Shaders::SetUniform(state.blinnPhongShader, "u_bloomThreshold", state.bloomThreshold);
+
+            // Bind shadow map texture array to slot 1 and upload cascade data.
+            // Slot 0 is reserved for the material albedo texture (see SubmitCommand).
+            if (state.activeShadowMap && state.activeShadowMap->isValid)
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, state.activeShadowMap->depthTextureArray);
+                Shaders::SetUniform(state.blinnPhongShader, "u_shadowMap", 1);
+
+                glm::mat4 matrices[k_CSMCascadeCount];
+                float splits[k_CSMCascadeCount];
+                for (u32 i = 0; i < k_CSMCascadeCount; ++i)
+                {
+                    matrices[i] = state.activeShadowMap->cascades[i].lightSpaceMatrix;
+                    splits[i] = state.activeShadowMap->cascades[i].splitDepth;
+                }
+                Shaders::SetUniform(state.blinnPhongShader, "u_lightSpaceMatrices[0]", matrices, k_CSMCascadeCount);
+                Shaders::SetUniform(state.blinnPhongShader, "u_shadowCascadeSplits[0]", splits, k_CSMCascadeCount);
+            }
 
             Shaders::Bind(state.outlineShader);
             Shaders::SetUniform(state.outlineShader, "u_matrixView", state.viewMatrix);
@@ -305,6 +347,8 @@ namespace Charm::Graphics
 
             state.viewMatrix = Cameras::GetViewMatrix3D(camera);
             state.projectionMatrix = Cameras::GetProjectionMatrix3D(camera);
+            state.cameraNearClip = camera.nearClip;
+            state.cameraFarClip = camera.farClip;
 
             Shaders::Bind(state.diffuseShader);
             Shaders::SetUniform(state.diffuseShader, "u_matrixView", state.viewMatrix);
@@ -313,6 +357,23 @@ namespace Charm::Graphics
             Shaders::Bind(state.blinnPhongShader);
             Shaders::SetUniform(state.blinnPhongShader, "u_matrixView", state.viewMatrix);
             Shaders::SetUniform(state.blinnPhongShader, "u_matrixProjection", state.projectionMatrix);
+
+            if (state.activeShadowMap && state.activeShadowMap->isValid)
+            {
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, state.activeShadowMap->depthTextureArray);
+                Shaders::SetUniform(state.blinnPhongShader, "u_shadowMap", 1);
+
+                glm::mat4 matrices[k_CSMCascadeCount];
+                float splits[k_CSMCascadeCount];
+                for (u32 i = 0; i < k_CSMCascadeCount; ++i)
+                {
+                    matrices[i] = state.activeShadowMap->cascades[i].lightSpaceMatrix;
+                    splits[i] = state.activeShadowMap->cascades[i].splitDepth;
+                }
+                Shaders::SetUniform(state.blinnPhongShader, "u_lightSpaceMatrices[0]", matrices, k_CSMCascadeCount);
+                Shaders::SetUniform(state.blinnPhongShader, "u_shadowCascadeSplits[0]", splits, k_CSMCascadeCount);
+            }
         }
 
         void EndScene2D()
@@ -348,6 +409,96 @@ namespace Charm::Graphics
                 else
                     commandsTranslucent.emplace_back(command);
             }
+
+            // ------------------------------------------------------------------
+            // Shadow depth pass — render each cascade from the light's point of view.
+            // Only opaque geometry casts shadows; translucent objects are skipped.
+            // ------------------------------------------------------------------
+            if (state.activeShadowMap && state.activeShadowMap->isValid)
+            {
+                // Recompute cascade matrices now that we know the sun direction and
+                // camera matrices for this frame.
+                ShadowMaps::UpdateCascades(
+                    *state.activeShadowMap,
+                    state.viewMatrix,
+                    state.projectionMatrix,
+                    state.cameraNearClip,
+                    state.cameraFarClip,
+                    -state.sunDirection // UpdateCascades expects direction TOWARD light
+                );
+
+                glViewport(0, 0, k_ShadowMapResolution, k_ShadowMapResolution);
+                glEnable(GL_DEPTH_TEST);
+                Shaders::Bind(state.shadowShader);
+
+                int prevFBOID = 0;
+                glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBOID);
+                for (u32 cascade = 0; cascade < k_CSMCascadeCount; ++cascade)
+                {
+                    glBindFramebuffer(GL_FRAMEBUFFER, state.activeShadowMap->fbos[cascade]);
+                    glClear(GL_DEPTH_BUFFER_BIT);
+
+                    Shaders::SetUniform(state.shadowShader, "u_lightSpaceMatrix",
+                                        state.activeShadowMap->cascades[cascade].lightSpaceMatrix);
+
+                    for (const RenderCommand& command : commandsOpaque)
+                    {
+                        // Resolve single vs instanced
+                        InstanceData singleData;
+                        const InstanceData* data = nullptr;
+                        u32 count = 0;
+
+                        if (command.instanceData.empty())
+                        {
+                            singleData.transform = command.transform;
+                            singleData.entityID = command.entityID;
+                            data = &singleData;
+                            count = 1;
+                        }
+                        else
+                        {
+                            data = command.instanceData.data();
+                            count = command.instanceCount;
+                        }
+
+                        Meshes::UploadInstanceData(*command.mesh, data, count);
+                        VertexArray::Bind(command.mesh->vertexArray);
+                        IndexBuffer::Bind(command.mesh->indexBuffer);
+                        RenderAPI::DrawIndexedInstanced(PrimitiveType::Triangles,
+                                                        command.mesh->indices.size(), count);
+                        IndexBuffer::Unbind();
+                        VertexArray::Unbind();
+                    }
+                }
+
+                Shaders::Unbind();
+                glBindFramebuffer(GL_FRAMEBUFFER, prevFBOID);
+
+                // Restore viewport to the main framebuffer resolution.
+                {
+                    const auto& config = Core::Application::GetConfig();
+                    RenderAPI::SetViewport(0, 0, config.virtualWidth, config.virtualHeight);
+                }
+
+                // Re-upload the now-updated cascade uniforms to the blinnPhong shader
+                // (they were uploaded in BeginScene3D but before UpdateCascades ran).
+                Shaders::Bind(state.blinnPhongShader);
+                glm::mat4 matrices[k_CSMCascadeCount];
+                float splits[k_CSMCascadeCount];
+                for (u32 i = 0; i < k_CSMCascadeCount; ++i)
+                {
+                    matrices[i] = state.activeShadowMap->cascades[i].lightSpaceMatrix;
+                    splits[i] = state.activeShadowMap->cascades[i].splitDepth;
+                }
+                Shaders::SetUniform(state.blinnPhongShader, "u_lightSpaceMatrices[0]", matrices, k_CSMCascadeCount);
+                Shaders::SetUniform(state.blinnPhongShader, "u_shadowCascadeSplits[0]", splits, k_CSMCascadeCount);
+                Shaders::Unbind();
+
+                // Re-bind the shadow texture array so it is active for the lighting pass.
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, state.activeShadowMap->depthTextureArray);
+            }
+            // ------------------------------------------------------------------
 
             const glm::vec3 cameraPosition = glm::vec3(glm::inverse(state.viewMatrix)[3]);
             const auto SortByDistance = [&](const RenderCommand& a, const RenderCommand& b)
@@ -688,6 +839,14 @@ namespace Charm::Graphics
             AddEntityToBatch(transform, circleRenderer, entityID);
         }
 
+        void DrawScreenRect()
+        {
+            const u32 quadVertexCount = 6;
+            VertexArray::Bind(state.grid.vao);
+            RenderAPI::DrawArrays(PrimitiveType::Triangles, quadVertexCount);
+            VertexArray::Unbind();
+        }
+
         void DrawGrid(const Camera2D& camera, const glm::vec2& resolution, u32 tileScale)
         {
             const u32 quadVertexCount = 6;
@@ -709,6 +868,7 @@ namespace Charm::Graphics
         Shader& GetShaderDiffuse() { return state.diffuseShader; }
         Shader& GetShaderBlinnPhong() { return state.blinnPhongShader; }
         Shader& GetShaderOutline() { return state.outlineShader; }
+        Shader& GetShaderPostProcessing() { return state.postProcessingShader; }
         glm::vec3& GetClearColor() { return state.clearColor; }
         const glm::mat4& GetViewMatrix() { return state.viewMatrix; }
         const glm::mat4& GetProjectionMatrix() { return state.projectionMatrix; }
@@ -716,6 +876,10 @@ namespace Charm::Graphics
         u32 GetCircleCount() { return batchData.circleCount; }
         u32 GetLineCount() { return batchData.lineCount; }
         u32 GetDrawCount() { return batchData.drawCount; }
+        float GetExposure() { return state.exposure; }
+        float GetAmbience() { return state.ambience; }
+        float GetBloomThreshold() { return state.bloomThreshold; }
+        u32 GetBloomPasses() { return state.bloomPasses; }
 
         void SetClearColor(float r, float g, float b)
         {
@@ -723,6 +887,12 @@ namespace Charm::Graphics
             state.clearColor.g = g;
             state.clearColor.b = b;
         }
+        void SetExposure(float exposure) { state.exposure = exposure; }
+        void SetAmbience(float ambience) { state.ambience = ambience; }
+        void SetBloomThreshold(float threshold) { state.bloomThreshold = threshold; }
+        void SetBloomPasses(u32 count) { state.bloomPasses = count; }
+        void SetShadowMap(ShadowMap* shadow) { state.activeShadowMap = shadow; }
+        void SetSunDirection(const glm::vec3& direction) { state.sunDirection = direction; }
 
         void SetupBatchRendering()
         {
